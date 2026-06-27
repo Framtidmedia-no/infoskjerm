@@ -240,7 +240,7 @@ function WeatherSlide({ slide }: { slide: SlideContent }) {
   )
 }
 
-export function ScreenDisplay({ token }: { token: string }) {
+export function ScreenDisplay({ token, screenId, storeId }: { token: string; screenId?: string; storeId?: string }) {
   const [currentIndex, setCurrentIndex] = useState(0)
   const [isTransitioning, setIsTransitioning] = useState(false)
 
