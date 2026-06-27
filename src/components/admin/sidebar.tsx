@@ -18,7 +18,10 @@ import {
   Settings,
   Tag,
   ChevronRight,
+  LogOut,
 } from "lucide-react"
+import { createClient } from "@/lib/supabase/client"
+import { useRouter } from "next/navigation"
 
 const navGroups = [
   {
@@ -61,8 +64,26 @@ const navGroups = [
   },
 ]
 
-export function Sidebar() {
+interface SidebarProps {
+  user: { email: string; fullName: string; role: string }
+}
+
+const roleLabels: Record<string, string> = {
+  super_admin: "Super Admin",
+  chain_manager: "Kjedeleder",
+  store_manager: "Butikksjef",
+  store_employee: "Ansatt",
+}
+
+export function Sidebar({ user }: SidebarProps) {
   const pathname = usePathname()
+  const router = useRouter()
+
+  const handleLogout = async () => {
+    const supabase = createClient()
+    await supabase.auth.signOut()
+    router.push("/login")
+  }
 
   return (
     <aside className="fixed left-0 top-0 h-screen w-64 bg-zinc-950 flex flex-col z-40">
@@ -114,13 +135,16 @@ export function Sidebar() {
       {/* Footer */}
       <div className="px-4 py-4 border-t border-zinc-800">
         <div className="flex items-center gap-3">
-          <div className="w-7 h-7 rounded-full bg-emerald-500 flex items-center justify-center text-xs font-bold text-white">
-            A
+          <div className="w-7 h-7 rounded-full bg-emerald-500 flex items-center justify-center text-xs font-bold text-white flex-shrink-0">
+            {user.fullName.charAt(0).toUpperCase()}
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-white text-xs font-medium truncate">Admin</p>
-            <p className="text-zinc-500 text-xs truncate">super_admin</p>
+            <p className="text-white text-xs font-medium truncate">{user.fullName}</p>
+            <p className="text-zinc-500 text-xs truncate">{roleLabels[user.role] ?? user.role}</p>
           </div>
+          <button onClick={handleLogout} className="text-zinc-600 hover:text-zinc-300 transition-colors flex-shrink-0" title="Logg ut">
+            <LogOut className="w-4 h-4" />
+          </button>
         </div>
       </div>
     </aside>
