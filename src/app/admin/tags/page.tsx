@@ -5,6 +5,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Tag, Plus, Pencil } from "lucide-react"
 import { TagDeleteButton } from "./tag-delete-button"
+import { TagFormDialog } from "./tag-form-dialog"
 
 export const dynamic = "force-dynamic"
 
@@ -27,10 +28,17 @@ export default async function TagsPage() {
         title="Tags"
         subtitle="Grupper butikker for enkel publisering"
         actions={
-          <Button size="sm">
-            <Plus className="w-4 h-4" />
-            Ny tag
-          </Button>
+          <TagFormDialog
+            mode="create"
+            trigger={
+              <Button size="sm" asChild>
+                <span className="cursor-pointer flex items-center gap-1.5">
+                  <Plus className="w-4 h-4" />
+                  Ny tag
+                </span>
+              </Button>
+            }
+          />
         }
       />
 
@@ -71,9 +79,17 @@ export default async function TagsPage() {
                         </div>
                       </div>
                       <div className="flex gap-1">
-                        <Button variant="ghost" size="icon" className="h-7 w-7">
-                          <Pencil className="w-3.5 h-3.5" />
-                        </Button>
+                        <TagFormDialog
+                          mode="edit"
+                          tagId={tag.id}
+                          initialName={tag.name}
+                          initialColor={tag.color}
+                          trigger={
+                            <Button variant="ghost" size="icon" className="h-7 w-7 cursor-pointer" asChild>
+                              <span><Pencil className="w-3.5 h-3.5" /></span>
+                            </Button>
+                          }
+                        />
                         <TagDeleteButton tagId={tag.id} />
                       </div>
                     </div>
