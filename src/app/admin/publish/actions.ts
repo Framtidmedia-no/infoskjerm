@@ -1,6 +1,7 @@
 "use server"
 
 import { revalidatePath } from "next/cache"
+import { Resend } from "resend"
 import { createClient } from "@/lib/supabase/server"
 import { requireRole } from "@/lib/admin/require-role"
 import type { Json } from "@/types/database"
@@ -37,6 +38,40 @@ export async function submitForApproval(contentItemId: string) {
     performed_by: userId,
     snapshot: (item ?? {}) as Json,
   })
+
+  // Send email notification to managers (non-blocking — don't fail submission on email error)
+  try {
+    const resend = new Resend(process.env.RESEND_API_KEY)
+    const { data: managers } = await supabase
+      .from("users")
+      .select("email, full_name")
+      .in("role", ["super_admin", "chain_manager"])
+      .eq("tenant_id", item?.tenant_id ?? "")
+
+    if (managers && managers.length > 0) {
+      const itemTitle = (item?.title as string | null) ?? "Ukjent tittel"
+      await resend.emails.send({
+        from: "Infoskjerm <noreply@framtidmedia.no>",
+        to: managers.map((m) => m.email),
+        subject: `Nytt innhold venter godkjenning: ${itemTitle}`,
+        html: `
+          <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 24px;">
+            <h2 style="color: #18181b;">Innhold til godkjenning</h2>
+            <p>Et nytt innholdelement er sendt til godkjenning:</p>
+            <div style="background: #f4f4f5; border-radius: 8px; padding: 16px; margin: 16px 0;">
+              <strong style="font-size: 1.1em;">${itemTitle}</strong>
+            </div>
+            <a href="https://infoskjerm.vercel.app/admin/publish" style="display: inline-block; background: #18181b; color: white; padding: 12px 24px; border-radius: 8px; text-decoration: none; margin-top: 8px;">
+              Se godkjenningskøen →
+            </a>
+          </div>
+        `,
+      })
+    }
+  } catch (emailErr) {
+    // Log but don't throw — email failure must not block submission
+    console.error("Resend notification failed:", emailErr)
+  }
 
   revalidatePath("/admin/publish")
   return { ok: true }
