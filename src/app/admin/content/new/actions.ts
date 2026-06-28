@@ -12,6 +12,8 @@ export async function createContentItem(formData: FormData) {
   const title = formData.get("title") as string
   const type = formData.get("type") as ContentType
   const templateId = formData.get("template_id") as string | null
+  const validFrom = formData.get("valid_from") as string | null || null
+  const validTo = formData.get("valid_to") as string | null || null
 
   if (!title?.trim() || !type) {
     throw new Error("Tittel og type er påkrevd")
@@ -45,6 +47,8 @@ export async function createContentItem(formData: FormData) {
       status: "draft",
       tenant_id: user.tenant_id,
       created_by: userId,
+      valid_from: validFrom,
+      valid_to: validTo,
     })
     .select("id")
     .single()

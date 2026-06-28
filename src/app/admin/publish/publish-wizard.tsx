@@ -131,10 +131,10 @@ export function PublishWizard({ chains, tags, stores, pendingContent }: PublishW
           <CardContent className="space-y-6">
             <div className="grid grid-cols-4 gap-3">
               {[
-                { mode: "all" as TargetMode, icon: Globe, label: "Alle butikker", sub: `${stores.length} butikker` },
+                { mode: "all" as TargetMode, icon: Globe, label: "Alle enheter", sub: `${stores.length} enheter` },
                 { mode: "chains" as TargetMode, icon: Building2, label: "Kjeder", sub: chains.map((c) => c.name).join(", ") || "Ingen kjeder" },
                 { mode: "tags" as TargetMode, icon: Tag, label: "Tags", sub: "Geografiske grupper" },
-                { mode: "stores" as TargetMode, icon: Store, label: "Enkeltbutikker", sub: "Velg spesifikke" },
+                { mode: "stores" as TargetMode, icon: Store, label: "Enkeltenheter", sub: "Velg spesifikke" },
               ].map(({ mode, icon: Icon, label, sub }) => (
                 <button key={mode} onClick={() => setTargetMode(mode)}
                   className={`p-4 rounded-xl border-2 text-left transition-all ${targetMode === mode ? "border-zinc-900 bg-zinc-900 text-white" : "border-zinc-200 hover:border-zinc-300 bg-white"}`}
@@ -181,7 +181,7 @@ export function PublishWizard({ chains, tags, stores, pendingContent }: PublishW
             {targetMode === "stores" && (
               <div>
                 <div className="flex items-center justify-between mb-3">
-                  <p className="text-sm font-medium text-zinc-700">Velg butikker</p>
+                  <p className="text-sm font-medium text-zinc-700">Velg enheter</p>
                   <button onClick={() => setSelectedStores(selectedStores.length === stores.length ? [] : stores.map((s) => s.id))} className="text-xs text-zinc-500 hover:text-zinc-900">
                     {selectedStores.length === stores.length ? "Fjern alle" : "Velg alle"}
                   </button>
@@ -203,7 +203,7 @@ export function PublishWizard({ chains, tags, stores, pendingContent }: PublishW
               <div className="flex items-center gap-2">
                 <Monitor className="w-4 h-4 text-zinc-400" />
                 <p className="text-sm text-zinc-600">
-                  Sender til <span className="font-bold text-zinc-900">{targetMode === "all" ? stores.length : targetCount}</span> {targetMode === "chains" ? "kjede(r)" : targetMode === "tags" ? "tag(s)" : "butikk(er)"}
+                  Sender til <span className="font-bold text-zinc-900">{targetMode === "all" ? stores.length : targetCount}</span> {targetMode === "chains" ? "kjede(r)" : targetMode === "tags" ? "tag(s)" : "enhet(er)"}
                 </p>
               </div>
               <Button onClick={() => setStep(2)} disabled={targetMode !== "all" && targetCount === 0}>
@@ -265,10 +265,10 @@ export function PublishWizard({ chains, tags, stores, pendingContent }: PublishW
               <div className="flex items-center gap-2">
                 <span className="text-sm text-zinc-500 w-28">Mottakere:</span>
                 <span className="text-sm font-medium text-zinc-900">
-                  {targetMode === "all" ? `Alle butikker (${stores.length})`
+                  {targetMode === "all" ? `Alle enheter (${stores.length})`
                     : targetMode === "chains" ? `${selectedChains.length} kjede(r)`
                     : targetMode === "tags" ? `${selectedTags.length} tag(s)`
-                    : `${selectedStores.length} butikk(er)`}
+                    : `${selectedStores.length} enhet(er)`}
                 </span>
               </div>
               <div className="flex items-center gap-2">

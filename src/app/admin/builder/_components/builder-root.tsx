@@ -22,6 +22,7 @@ import type { Json } from "@/types/database"
 import type { ModuleRow } from "@/lib/admin/modules"
 import { Save, CheckCircle, AlertCircle, Loader2, Eye, Columns, Monitor } from "lucide-react"
 import { toast } from "sonner"
+import { BuilderPublishDialog } from "./builder-publish-dialog"
 
 interface BuilderRootProps {
   modules: ModuleRow[]
@@ -58,7 +59,6 @@ export function BuilderRoot({ modules, tenantId, userId, initialName = 'Nytt inn
     saveStatus: 'idle',
   })
 
-  const [publishing, setPublishing] = useState(false)
   const [previewMode, setPreviewMode] = useState<"panel" | "embedded">("panel")
 
   const sensors = useSensors(
@@ -178,25 +178,6 @@ export function BuilderRoot({ modules, tenantId, userId, initialName = 'Nytt inn
     }
   }
 
-  const handlePublish = async () => {
-    if (!state.contentItemId) {
-      await handleManualSave()
-      return
-    }
-    setPublishing(true)
-    try {
-      await supabase
-        .from('content_items')
-        .update({ status: 'live', updated_at: new Date().toISOString() })
-        .eq('id', state.contentItemId)
-      toast.success('Innholdet er nå live!')
-    } catch {
-      toast.error('Feil ved publisering')
-    } finally {
-      setPublishing(false)
-    }
-  }
-
   return (
     <div className="flex flex-col h-screen overflow-hidden">
       {/* Builder toolbar */}
@@ -241,13 +222,11 @@ export function BuilderRoot({ modules, tenantId, userId, initialName = 'Nytt inn
               Fullskjerm
             </a>
           )}
-          <button
-            onClick={handlePublish}
-            disabled={publishing}
-            className="flex items-center gap-1.5 text-sm font-medium px-3 py-1.5 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 transition-colors disabled:opacity-50"
-          >
-            {publishing ? "Publiserer..." : "Publiser"}
-          </button>
+          <BuilderPublishDialog
+            contentItemId={state.contentItemId}
+            onSaveFirst={handleManualSave}
+            onPublished={() => {}}
+          />
           <button
             onClick={handleManualSave}
             className="flex items-center gap-1.5 text-sm font-medium px-3 py-1.5 rounded-lg text-white transition-colors"

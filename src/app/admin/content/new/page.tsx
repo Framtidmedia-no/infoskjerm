@@ -3,7 +3,6 @@ import { Topbar } from "@/components/admin/topbar"
 import { createContentItem } from "./actions"
 import { Newspaper, Trophy, BarChart2, CloudSun, ImageIcon, Zap } from "lucide-react"
 import Link from "next/link"
-import { requireRole } from "@/lib/admin/require-role"
 import { createClient } from "@/lib/supabase/server"
 
 const CONTENT_TYPES = [
@@ -67,9 +66,25 @@ const TYPE_COLORS: Record<string, string> = {
   slide: "bg-zinc-100 text-zinc-700",
 }
 
-export default async function NewContentPage() {
+const BACK_LINKS: Record<string, string> = {
+  news: "/admin/content/news",
+  competition: "/admin/content/competitions",
+  stats: "/admin/content/stats",
+  weather: "/admin/content/weather",
+  slide: "/admin/content/slides",
+}
+
+export default async function NewContentPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ type?: string }>
+}) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
+  const params = await searchParams
+  const preselectedType = params.type && CONTENT_TYPES.some(t => t.key === params.type)
+    ? params.type as string
+    : "news"
 
   let templates: ContentTemplate[] = []
 
@@ -90,6 +105,8 @@ export default async function NewContentPage() {
     }
   }
 
+  const backLink = BACK_LINKS[preselectedType] ?? "/admin/content/news"
+
   return (
     <div className="flex flex-col flex-1">
       <Topbar
@@ -97,7 +114,7 @@ export default async function NewContentPage() {
         subtitle="Start fra en mal eller opprett fra bunnen av"
         actions={
           <Button variant="ghost" size="sm" asChild>
-            <Link href="/admin/content/news">Avbryt</Link>
+            <Link href={backLink}>Avbryt</Link>
           </Button>
         }
       />
@@ -171,7 +188,7 @@ export default async function NewContentPage() {
                       value={key}
                       required
                       className="sr-only"
-                      defaultChecked={key === "news"}
+                      defaultChecked={key === preselectedType}
                     />
                     <div className={`w-10 h-10 rounded-lg border flex items-center justify-center flex-shrink-0 ${color}`}>
                       <Icon className="w-5 h-5" />
@@ -182,6 +199,30 @@ export default async function NewContentPage() {
                     </div>
                   </label>
                 ))}
+              </div>
+            </div>
+
+            {/* Publiseringsperiode */}
+            <div className="space-y-2">
+              <p className="text-sm font-medium text-zinc-900">Publiseringsperiode <span className="text-zinc-400 font-normal">(valgfritt)</span></p>
+              <p className="text-xs text-zinc-500">Innholdet vises kun på skjermene innenfor denne perioden. Tomt = vises alltid (så lenge det er live).</p>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs text-zinc-500 mb-1 block">Fra dato</label>
+                  <input
+                    type="date"
+                    name="valid_from"
+                    className="w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 focus:outline-none focus:ring-2 focus:ring-zinc-900 focus:border-transparent"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs text-zinc-500 mb-1 block">Til dato</label>
+                  <input
+                    type="date"
+                    name="valid_to"
+                    className="w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 focus:outline-none focus:ring-2 focus:ring-zinc-900 focus:border-transparent"
+                  />
+                </div>
               </div>
             </div>
 

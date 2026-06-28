@@ -37,7 +37,7 @@ export default async function StatsPage() {
         subtitle={`${items.length} salgstall-innhold`}
         actions={
           <Button size="sm" asChild>
-            <Link href="/admin/builder" className="flex items-center gap-1.5">
+            <Link href="/admin/content/new?type=stats" className="flex items-center gap-1.5">
               <Plus className="w-4 h-4" />
               Nytt salgstall-innhold
             </Link>

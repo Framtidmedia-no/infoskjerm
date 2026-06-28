@@ -40,7 +40,7 @@ export default async function NewsPage() {
         subtitle={`${items.length} nyheter — ${pendingIds.length} venter godkjenning`}
         actions={
           <Button size="sm" asChild>
-            <Link href="/admin/builder" className="flex items-center gap-1.5">
+            <Link href="/admin/content/new?type=news" className="flex items-center gap-1.5">
               <Plus className="w-4 h-4" />
               Ny nyhet
             </Link>

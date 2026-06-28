@@ -12,6 +12,33 @@ export interface Slide {
   durationSeconds: number
 }
 
+function isScheduledNow(rule: { days?: number[]; start_time?: string; end_time?: string } | null): boolean {
+  if (!rule) return true
+  const now = new Date()
+  const day = now.getDay() // 0=Sunday
+  const time = now.toTimeString().slice(0, 5) // "HH:MM"
+
+  if (rule.days && rule.days.length > 0 && !rule.days.includes(day)) return false
+  if (rule.start_time && time < rule.start_time) return false
+  if (rule.end_time && time > rule.end_time) return false
+  return true
+}
+
+interface ContentItemRow {
+  id: string
+  title: string
+  module_key: string | null
+  body: Record<string, unknown> | null
+  status: string | null
+  schedule_rule: { days?: number[]; start_time?: string; end_time?: string } | null
+  is_priority: boolean
+}
+
+interface SlideInternal extends Slide {
+  scheduleRule: { days?: number[]; start_time?: string; end_time?: string } | null
+  isPriority: boolean
+}
+
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
   const token = req.headers.get("authorization")?.replace("Bearer ", "") ?? null
@@ -49,21 +76,21 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
         id,
         position,
         duration_seconds,
-        content_items(id, title, module_key, body, status)
+        content_items(id, title, module_key, body, status, schedule_rule, is_priority)
       `)
       .eq("playlist_id", playlistId)
       .order("position", { ascending: true })
 
-    const slides: Slide[] = []
+    const now = new Date().toISOString()
+    const slides: SlideInternal[] = []
     for (const item of items ?? []) {
-      const ci = item.content_items as {
-        id: string; title: string; module_key: string | null;
-        body: { builder_v1?: { placements?: Array<{ id: string; moduleKey: string; fields: Record<string, unknown>; durationSeconds: number }> } } | null;
-        status: string | null
-      } | null
+      const ci = item.content_items as ContentItemRow | null
       if (!ci || ci.status !== "live") continue
+      const ciRow = ci as ContentItemRow & { valid_from?: string | null; valid_to?: string | null }
+      if (ciRow.valid_from && now < ciRow.valid_from) continue
+      if (ciRow.valid_to && now > ciRow.valid_to) continue
 
-      const placements = ci.body?.builder_v1?.placements ?? []
+      const placements = (ci.body as { builder_v1?: { placements?: Array<{ id: string; moduleKey: string; fields: Record<string, unknown>; durationSeconds: number }> } } | null)?.builder_v1?.placements ?? []
       if (placements.length > 0) {
         for (const p of placements) {
           slides.push({
@@ -72,6 +99,8 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
             moduleKey: p.moduleKey,
             fields: p.fields,
             durationSeconds: p.durationSeconds,
+            scheduleRule: ci.schedule_rule,
+            isPriority: ci.is_priority,
           })
         }
       } else if (ci.module_key) {
@@ -81,10 +110,19 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
           moduleKey: ci.module_key,
           fields: (ci.body as Record<string, unknown>) ?? {},
           durationSeconds: item.duration_seconds,
+          scheduleRule: ci.schedule_rule,
+          isPriority: ci.is_priority,
         })
       }
     }
-    return NextResponse.json({ slides })
+
+    const scheduled = slides.filter(slide => isScheduledNow(slide.scheduleRule))
+    const priority = scheduled.filter(slide => slide.isPriority)
+    const finalSlides = priority.length > 0 ? priority : scheduled
+
+    return NextResponse.json({
+      slides: finalSlides.map(({ scheduleRule: _sr, isPriority: _ip, ...s }) => s),
+    })
   }
 
   // 2. Fallback: content_targets for this screen
@@ -100,7 +138,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     .select(`
       content_item_id,
       target_all, chain_id, store_id,
-      content_items!inner(id, title, module_key, body, status)
+      content_items!inner(id, title, module_key, body, status, schedule_rule, is_priority)
     `)
     .eq("content_items.status", "live")
     .or(orFilter.join(","))
@@ -110,7 +148,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
   type Target = {
     content_item_id: string; target_all: boolean | null;
     chain_id: string | null; store_id: string | null;
-    content_items: { id: string; title: string; module_key: string | null; body: Record<string, unknown> | null; status: string | null }
+    content_items: ContentItemRow
   }
 
   const matching = (targets as unknown as Target[] ?? []).filter(t =>
@@ -119,18 +157,44 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     (t.chain_id && t.chain_id === chainId)
   )
 
-  const slides: Slide[] = []
+  const now2 = new Date().toISOString()
+  const slides: SlideInternal[] = []
   for (const t of matching) {
     const ci = t.content_items
+    const ciDate = ci as ContentItemRow & { valid_from?: string | null; valid_to?: string | null }
+    if (ciDate.valid_from && now2 < ciDate.valid_from) continue
+    if (ciDate.valid_to && now2 > ciDate.valid_to) continue
     const placements = (ci.body as { builder_v1?: { placements?: Array<{ id: string; moduleKey: string; fields: Record<string, unknown>; durationSeconds: number }> } } | null)?.builder_v1?.placements ?? []
     if (placements.length > 0) {
       for (const p of placements) {
-        slides.push({ id: p.id, contentItemId: ci.id, moduleKey: p.moduleKey, fields: p.fields, durationSeconds: p.durationSeconds })
+        slides.push({
+          id: p.id,
+          contentItemId: ci.id,
+          moduleKey: p.moduleKey,
+          fields: p.fields,
+          durationSeconds: p.durationSeconds,
+          scheduleRule: ci.schedule_rule,
+          isPriority: ci.is_priority,
+        })
       }
     } else if (ci.module_key) {
-      slides.push({ id: ci.id, contentItemId: ci.id, moduleKey: ci.module_key, fields: ci.body ?? {}, durationSeconds: 15 })
+      slides.push({
+        id: ci.id,
+        contentItemId: ci.id,
+        moduleKey: ci.module_key,
+        fields: ci.body ?? {},
+        durationSeconds: 15,
+        scheduleRule: ci.schedule_rule,
+        isPriority: ci.is_priority,
+      })
     }
   }
 
-  return NextResponse.json({ slides })
+  const scheduled = slides.filter(slide => isScheduledNow(slide.scheduleRule))
+  const priority = scheduled.filter(slide => slide.isPriority)
+  const finalSlides = priority.length > 0 ? priority : scheduled
+
+  return NextResponse.json({
+    slides: finalSlides.map(({ scheduleRule: _sr, isPriority: _ip, ...s }) => s),
+  })
 }
