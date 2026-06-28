@@ -14,12 +14,12 @@ export function InternalNewsModule({ fields }: Props) {
   let titleClass = 'font-black leading-[0.95] tracking-tight text-white'
   if (!hasBody && !hasImage) {
     // Title-only mode — fill the screen
-    if (titleLength <= 20) titleClass += ' text-[12vw]'
-    else if (titleLength <= 40) titleClass += ' text-[8vw]'
-    else titleClass += ' text-[6vw]'
+    if (titleLength <= 20) titleClass += ' text-[12cqw]'
+    else if (titleLength <= 40) titleClass += ' text-[8cqw]'
+    else titleClass += ' text-[6cqw]'
   } else {
-    if (titleLength <= 30) titleClass += ' text-[6vw]'
-    else titleClass += ' text-[4.5vw]'
+    if (titleLength <= 30) titleClass += ' text-[6cqw]'
+    else titleClass += ' text-[4.5cqw]'
   }
 
   if (hasImage) {
@@ -36,13 +36,13 @@ export function InternalNewsModule({ fields }: Props) {
           <div>
             <h1 className={titleClass}>{title}</h1>
             {hasBody && (
-              <p className="text-[2.2vw] text-white/70 leading-relaxed mt-6 max-w-xl">
+              <p className="text-[2.2cqw] text-white/70 leading-relaxed mt-6 max-w-xl">
                 {body}
               </p>
             )}
           </div>
           {author && (
-            <p className="text-[1.4vw] text-white/40 font-medium">{author}</p>
+            <p className="text-[1.4cqw] text-white/40 font-medium">{author}</p>
           )}
         </div>
         {/* Right: image */}
@@ -77,25 +77,25 @@ export function InternalNewsModule({ fields }: Props) {
             </p>
             <div>
               <h1 className={titleClass}>{title}</h1>
-              <p className="text-[2.2vw] text-white/70 leading-relaxed mt-6 max-w-3xl">
+              <p className="text-[2.2cqw] text-white/70 leading-relaxed mt-6 max-w-3xl">
                 {body}
               </p>
             </div>
             {author && (
-              <p className="text-[1.4vw] text-white/40 font-medium">{author}</p>
+              <p className="text-[1.4cqw] text-white/40 font-medium">{author}</p>
             )}
           </>
         ) : (
           <>
             <p
-              className="text-[1.2vw] font-bold uppercase tracking-[0.25em] mb-10"
+              className="text-[1.2cqw] font-bold uppercase tracking-[0.25em] mb-10"
               style={{ color: 'var(--brand-primary, #16a34a)' }}
             >
               Intern nyhet
             </p>
             <h1 className={titleClass}>{title}</h1>
             {author && (
-              <p className="text-[1.4vw] text-white/40 font-medium mt-8">{author}</p>
+              <p className="text-[1.4cqw] text-white/40 font-medium mt-8">{author}</p>
             )}
           </>
         )}

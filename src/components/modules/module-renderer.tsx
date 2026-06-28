@@ -34,6 +34,16 @@ interface ModuleRendererProps {
 }
 
 export function ModuleRenderer({ moduleKey, fields }: ModuleRendererProps) {
+  // Establish a query container so modules using cqw/cqh size to their render
+  // box (a zone or the full screen), not the viewport.
+  return (
+    <div style={{ width: "100%", height: "100%", containerType: "size" }}>
+      {renderModule(moduleKey, fields)}
+    </div>
+  )
+}
+
+function renderModule(moduleKey: string, fields: Record<string, unknown>) {
   switch (moduleKey) {
     case 'internal-news': return <InternalNewsModule fields={fields} />
     case 'emergency-message': return <EmergencyMessageModule fields={fields} />

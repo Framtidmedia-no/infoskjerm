@@ -4,12 +4,20 @@ import { NextRequest, NextResponse } from "next/server"
 
 export const dynamic = "force-dynamic"
 
+export interface ZoneModuleData {
+  moduleKey: string
+  moduleName: string
+  fields: Record<string, unknown>
+}
+
 export interface Slide {
   id: string
   contentItemId: string
   moduleKey: string
   fields: Record<string, unknown>
   durationSeconds: number
+  /** Present when the content is a composed multi-zone screen (builder_v2). */
+  composition?: { layoutId: string; zones: Record<string, ZoneModuleData> }
 }
 
 function isScheduledNow(rule: { days?: number[]; start_time?: string; end_time?: string } | null): boolean {
@@ -37,6 +45,70 @@ interface ContentItemRow {
 interface SlideInternal extends Slide {
   scheduleRule: { days?: number[]; start_time?: string; end_time?: string } | null
   isPriority: boolean
+}
+
+type Body = {
+  builder_v2?: { layoutId?: string; zones?: Record<string, ZoneModuleData>; durationSeconds?: number }
+  builder_v1?: { placements?: Array<{ id: string; moduleKey: string; fields: Record<string, unknown>; durationSeconds: number }> }
+} | null
+
+/**
+ * Converts one content item into the slides it produces:
+ * - builder_v2 → ONE slide carrying the full zone composition
+ * - builder_v1 → one slide per placement (sequential)
+ * - legacy module_key → one slide
+ */
+function contentItemToSlides(
+  ci: ContentItemRow,
+  fallbackDuration: number,
+  fallbackSlideId: string,
+): SlideInternal[] {
+  const body = ci.body as Body
+  const out: SlideInternal[] = []
+
+  const v2 = body?.builder_v2
+  if (v2?.zones && Object.keys(v2.zones).length > 0) {
+    out.push({
+      id: ci.id,
+      contentItemId: ci.id,
+      moduleKey: "__composition__",
+      fields: {},
+      durationSeconds: v2.durationSeconds ?? fallbackDuration,
+      composition: { layoutId: v2.layoutId ?? "fullscreen", zones: v2.zones },
+      scheduleRule: ci.schedule_rule,
+      isPriority: ci.is_priority,
+    })
+    return out
+  }
+
+  const placements = body?.builder_v1?.placements ?? []
+  if (placements.length > 0) {
+    for (const p of placements) {
+      out.push({
+        id: p.id,
+        contentItemId: ci.id,
+        moduleKey: p.moduleKey,
+        fields: p.fields,
+        durationSeconds: p.durationSeconds,
+        scheduleRule: ci.schedule_rule,
+        isPriority: ci.is_priority,
+      })
+    }
+    return out
+  }
+
+  if (ci.module_key) {
+    out.push({
+      id: fallbackSlideId,
+      contentItemId: ci.id,
+      moduleKey: ci.module_key,
+      fields: (ci.body as Record<string, unknown>) ?? {},
+      durationSeconds: fallbackDuration,
+      scheduleRule: ci.schedule_rule,
+      isPriority: ci.is_priority,
+    })
+  }
+  return out
 }
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -90,30 +162,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
       if (ciRow.valid_from && now < ciRow.valid_from) continue
       if (ciRow.valid_to && now > ciRow.valid_to) continue
 
-      const placements = (ci.body as { builder_v1?: { placements?: Array<{ id: string; moduleKey: string; fields: Record<string, unknown>; durationSeconds: number }> } } | null)?.builder_v1?.placements ?? []
-      if (placements.length > 0) {
-        for (const p of placements) {
-          slides.push({
-            id: p.id,
-            contentItemId: ci.id,
-            moduleKey: p.moduleKey,
-            fields: p.fields,
-            durationSeconds: p.durationSeconds,
-            scheduleRule: ci.schedule_rule,
-            isPriority: ci.is_priority,
-          })
-        }
-      } else if (ci.module_key) {
-        slides.push({
-          id: item.id,
-          contentItemId: ci.id,
-          moduleKey: ci.module_key,
-          fields: (ci.body as Record<string, unknown>) ?? {},
-          durationSeconds: item.duration_seconds,
-          scheduleRule: ci.schedule_rule,
-          isPriority: ci.is_priority,
-        })
-      }
+      slides.push(...contentItemToSlides(ci, item.duration_seconds, item.id))
     }
 
     const scheduled = slides.filter(slide => isScheduledNow(slide.scheduleRule))
@@ -164,30 +213,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     const ciDate = ci as ContentItemRow & { valid_from?: string | null; valid_to?: string | null }
     if (ciDate.valid_from && now2 < ciDate.valid_from) continue
     if (ciDate.valid_to && now2 > ciDate.valid_to) continue
-    const placements = (ci.body as { builder_v1?: { placements?: Array<{ id: string; moduleKey: string; fields: Record<string, unknown>; durationSeconds: number }> } } | null)?.builder_v1?.placements ?? []
-    if (placements.length > 0) {
-      for (const p of placements) {
-        slides.push({
-          id: p.id,
-          contentItemId: ci.id,
-          moduleKey: p.moduleKey,
-          fields: p.fields,
-          durationSeconds: p.durationSeconds,
-          scheduleRule: ci.schedule_rule,
-          isPriority: ci.is_priority,
-        })
-      }
-    } else if (ci.module_key) {
-      slides.push({
-        id: ci.id,
-        contentItemId: ci.id,
-        moduleKey: ci.module_key,
-        fields: ci.body ?? {},
-        durationSeconds: 15,
-        scheduleRule: ci.schedule_rule,
-        isPriority: ci.is_priority,
-      })
-    }
+    slides.push(...contentItemToSlides(ci, 15, ci.id))
   }
 
   const scheduled = slides.filter(slide => isScheduledNow(slide.scheduleRule))

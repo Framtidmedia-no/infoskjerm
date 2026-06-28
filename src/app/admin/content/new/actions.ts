@@ -27,32 +27,31 @@ export async function createContentItem(formData: FormData) {
 
   if (!user) throw new Error("Bruker ikke funnet")
 
-  function genId() {
-    return Math.random().toString(36).slice(2, 10)
+  // Default v2 composition per type — opens the builder with a layout and the
+  // matching module already placed in the main zone (title pre-filled).
+  function fullscreenWith(moduleKey: string, moduleName: string, fields: Record<string, unknown>): Json {
+    return JSON.parse(JSON.stringify({
+      builder_v2: {
+        layoutId: "fullscreen",
+        zones: { main: { moduleKey, moduleName, fields } },
+        durationSeconds: 15,
+      },
+    })) as Json
   }
 
-  // Default placements per type — saves user from having to drag a module manually
-  const defaultPlacementsByType: Record<ContentType, Json> = {
-    news: {
-      builder_v1: {
-        placements: [
-          { id: genId(), moduleKey: "internal-news", moduleName: "Intern nyhet", fields: { title: title.trim() }, durationSeconds: 15 },
-        ],
-      },
-    },
-    weather: {
-      builder_v1: {
-        placements: [
-          { id: genId(), moduleKey: "weather", moduleName: "Vær", fields: {}, durationSeconds: 15 },
-        ],
-      },
-    },
-    competition: { builder_v1: { placements: [] } },
-    stats: { builder_v1: { placements: [] } },
-    slide: { builder_v1: { placements: [] } },
+  const emptyComposition = JSON.parse(JSON.stringify({
+    builder_v2: { layoutId: "fullscreen", zones: {}, durationSeconds: 15 },
+  })) as Json
+
+  const defaultBodyByType: Record<ContentType, Json> = {
+    news: fullscreenWith("internal-news", "Intern nyhet", { title: title.trim() }),
+    weather: fullscreenWith("weather", "Vær", {}),
+    competition: fullscreenWith("competition", "Konkurranse", { title: title.trim() }),
+    stats: fullscreenWith("sales-stats", "Salgstall", {}),
+    slide: emptyComposition,
   }
 
-  let body: Json = defaultPlacementsByType[type] ?? {}
+  let body: Json = defaultBodyByType[type] ?? emptyComposition
 
   if (templateId) {
     const { data: template } = await supabase

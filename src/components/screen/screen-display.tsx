@@ -2,6 +2,8 @@
 
 import { useEffect, useState, useCallback, useRef } from "react"
 import { ModuleRenderer } from "@/components/modules/module-renderer"
+import { ScaledScreen } from "@/components/screen/scaled-screen"
+import { ZoneLayoutRenderer } from "@/components/modules/zone-layout-renderer"
 import type { Slide } from "@/app/api/screens/[id]/current-content/route"
 
 const POLL_INTERVAL_MS = 30_000
@@ -216,16 +218,21 @@ export function ScreenDisplay({
 
   return (
     <div className="w-screen h-screen overflow-hidden relative bg-black" style={cssVars}>
-      {/* Slide content */}
+      {/* Slide content — everything renders at a 1920×1080 reference and scales
+          to the TV, so the admin preview matches the screen exactly. */}
       <div
         className="absolute inset-0 transition-opacity"
         style={{ opacity: isTransitioning ? 0 : 1, transitionDuration: '400ms' }}
       >
-        {slide.moduleKey === "__clock__" ? (
-          <ClockSlide chainName={chainName} chainShortName={chainShortName} storeName={storeName} />
-        ) : (
-          <ModuleRenderer moduleKey={slide.moduleKey} fields={slide.fields} />
-        )}
+        <ScaledScreen>
+          {slide.moduleKey === "__clock__" ? (
+            <ClockSlide chainName={chainName} chainShortName={chainShortName} storeName={storeName} />
+          ) : slide.composition ? (
+            <ZoneLayoutRenderer layoutId={slide.composition.layoutId} zones={slide.composition.zones} />
+          ) : (
+            <ModuleRenderer moduleKey={slide.moduleKey} fields={slide.fields} />
+          )}
+        </ScaledScreen>
       </div>
 
       {/* Footer */}

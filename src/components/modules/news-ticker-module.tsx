@@ -22,7 +22,7 @@ export function NewsTickerModule({ fields }: Props) {
         <div className="flex-1 flex flex-col justify-center overflow-hidden">
           <style>{`
             @keyframes ticker-scroll {
-              0%   { transform: translateX(100vw); }
+              0%   { transform: translateX(100cqw); }
               100% { transform: translateX(-100%); }
             }
             .ticker-track {
