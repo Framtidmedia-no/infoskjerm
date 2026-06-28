@@ -100,10 +100,9 @@ const NO_DATA = `<div style="display:flex;align-items:center;justify-content:cen
 
 const CLOCK_FORMAT = `<div style="font-family:Arial,Helvetica,sans-serif;text-align:center;color:#fff;line-height:1;"><div style="font-size:104px;font-weight:900;letter-spacing:-2px;">[HH:mm]</div><div style="font-size:30px;color:rgba(255,255,255,.6);margin-top:14px;text-transform:capitalize;">[dddd D. MMMM]</div></div>`
 
-// Real ticker: pulsing red "NYTT" indicator + horizontally scrolling text.
-const TICKER_HTML = `<div style="display:flex;align-items:center;height:120px;width:1840px;background:#16a34a;font-family:Arial,Helvetica,sans-serif;overflow:hidden;box-sizing:border-box;"><div style="display:flex;align-items:center;gap:16px;padding:0 34px;flex:0 0 auto;z-index:2;background:#16a34a;height:120px;"><span style="display:inline-block;width:20px;height:20px;border-radius:50%;background:#ef4444;animation:grpulse 1.4s ease-out infinite;"></span><span style="color:#fff;font-weight:900;font-size:30px;letter-spacing:3px;">NYTT</span></div><div style="flex:1 1 auto;overflow:hidden;position:relative;height:120px;"><div style="position:absolute;top:0;left:0;height:120px;display:flex;align-items:center;white-space:nowrap;color:#fff;font-size:34px;font-weight:600;padding-left:1640px;animation:grticker 28s linear infinite;">${TICKER_TEXT}</div></div></div><style>@keyframes grpulse{0%{box-shadow:0 0 0 0 rgba(239,68,68,.75)}70%{box-shadow:0 0 0 26px rgba(239,68,68,0)}100%{box-shadow:0 0 0 0 rgba(239,68,68,0)}}@keyframes grticker{0%{transform:translateX(0)}100%{transform:translateX(-100%)}}</style>`
-
 const WEATHER_URI = `${APP_URL}/widget/vaer?lat=${WEATHER.lat}&lon=${WEATHER.lon}&navn=${encodeURIComponent(WEATHER.navn)}`
+// Ticker is a webpage widget (like weather) so Xibo never sanitises its CSS animations.
+const TICKER_URI = `${APP_URL}/widget/ticker?text=${encodeURIComponent(TICKER_TEXT)}`
 
 // ---------- build ----------
 async function resolveLayoutId() {
@@ -188,14 +187,14 @@ async function main() {
   })
   console.log(`  ✓ vær (${WEATHER_URI})`)
 
-  // 4. Ticker (scrolling + red pulse, bottom).
+  // 4. Ticker (webpage widget: scrolling text + red pulse, bottom).
   const tickerPl = await addRegion(draftId, { width: 1840, height: 120, top: 920, left: 40 })
-  const tickerWidget = await api(`/playlist/widget/text/${tickerPl}`, { method: "POST" })
+  const tickerWidget = await api(`/playlist/widget/webpage/${tickerPl}`, { method: "POST" })
   await api(`/playlist/widget/${tickerWidget.widgetId}`, {
     method: "PUT",
-    form: { text: TICKER_HTML, duration: PERSIST_SECONDS, useDuration: 1 },
+    form: { uri: TICKER_URI, transparency: 0, modeid: "1", isPreNavigate: 1, duration: PERSIST_SECONDS, useDuration: 1 },
   })
-  console.log("  ✓ ticker (scroll + puls)")
+  console.log("  ✓ ticker (webpage: scroll + puls)")
 
   await api(`/layout/publish/${layoutId}`, { method: "PUT", form: { publishNow: 1 } })
   console.log(`\n✅ Publisert. Forhåndsvis: ${BASE}/campaign/${BASE_CAMPAIGN_ID}/preview`)
