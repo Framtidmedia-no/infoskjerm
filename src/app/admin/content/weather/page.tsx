@@ -52,7 +52,7 @@ export default async function WeatherPage() {
             <p className="text-xs text-blue-700 mt-0.5">Skjermene henter vær automatisk basert på GPS-koordinatene til hver enhet. Oppdateres hver 30. minutt. API-kobling aktiveres i neste fase.</p>
           </div>
         </div>
-        <ContentItemListClient items={items} emptyMessage="Ingen vær-innhold er opprettet ennå." />
+        <ContentItemListClient items={items} emptyMessage="Ingen vær-innhold er opprettet ennå." createHref="/admin/content/new?type=weather" createLabel="Opprett vær-innhold" />
       </div>
     </div>
   )

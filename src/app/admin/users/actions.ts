@@ -3,8 +3,20 @@
 import { revalidatePath } from "next/cache"
 import { requireRole } from "@/lib/admin/require-role"
 import { createClient } from "@supabase/supabase-js"
+import { createAdminClient } from "@/lib/supabase/server"
 
 type UserRole = "super_admin" | "chain_manager" | "store_manager" | "store_employee"
+
+export async function inviteUser(email: string, role: Exclude<UserRole, "super_admin">) {
+  await requireRole(["super_admin", "chain_manager"])
+  const admin = createAdminClient()
+  const { error } = await admin.auth.admin.inviteUserByEmail(email, {
+    data: { role },
+  })
+  if (error) return { ok: false, error: error.message }
+  revalidatePath("/admin/users")
+  return { ok: true }
+}
 
 export async function deleteUser(userId: string) {
   const { supabase } = await requireRole(["super_admin", "chain_manager"])

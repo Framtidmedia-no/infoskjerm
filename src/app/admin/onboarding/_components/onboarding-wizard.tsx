@@ -66,7 +66,7 @@ export function OnboardingWizard() {
   const steps = [
     { n: 1, icon: Building2, label: "Tenant" },
     { n: 2, icon: Building2, label: "Kjede" },
-    { n: 3, icon: Store, label: "Butikk" },
+    { n: 3, icon: Store, label: "Enhet" },
     { n: 4, icon: Monitor, label: "Ferdig" },
   ]
 
@@ -173,11 +173,11 @@ export function OnboardingWizard() {
       {step === 3 && (
         <div className="bg-white border border-zinc-100 rounded-2xl p-6 space-y-4">
           <div>
-            <h2 className="text-base font-semibold text-zinc-900 mb-1">Opprett første butikk</h2>
-            <p className="text-sm text-zinc-500">Legg til første butikk for denne kjeden. Flere kan legges til senere.</p>
+            <h2 className="text-base font-semibold text-zinc-900 mb-1">Opprett første enhet</h2>
+            <p className="text-sm text-zinc-500">Legg til første enhet (butikk/lokasjon) for denne kjeden. Flere kan legges til later.</p>
           </div>
           <div>
-            <label className="block text-xs font-medium text-zinc-600 mb-1">Butikknavn</label>
+            <label className="block text-xs font-medium text-zinc-600 mb-1">Enhetsnavn</label>
             <input
               type="text"
               value={storeName}
@@ -213,7 +213,7 @@ export function OnboardingWizard() {
             <div className="text-sm text-zinc-700 space-y-1">
               <p>✓ Tenant: <span className="font-medium">{tenantName}</span></p>
               <p>✓ Kjede: <span className="font-medium">{chainType}</span></p>
-              <p>✓ Butikk: <span className="font-medium">{storeName}</span></p>
+              <p>✓ Enhet: <span className="font-medium">{storeName}</span></p>
             </div>
           </div>
           <div className="flex gap-3">

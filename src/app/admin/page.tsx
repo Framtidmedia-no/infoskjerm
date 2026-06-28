@@ -1,10 +1,10 @@
 import { Topbar } from "@/components/admin/topbar"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card" // still used for chains + screens sections
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { ScreenStatusDot } from "@/components/admin/screen-status-dot"
 import { AnimatedStatCard } from "./_components/animated-stat-card"
 import { PageTransition } from "@/components/admin/page-transition"
-import { Monitor, Store, AlertCircle, CheckCircle2, ArrowRight } from "lucide-react"
+import { Monitor, Store, AlertCircle, CheckCircle2, ArrowRight, UserPlus, Newspaper, Send, Rocket } from "lucide-react"
 import Link from "next/link"
 import { createClient } from "@/lib/supabase/server"
 import { getAdminStats, getChainOverview, formatLastSeen, getScreenStatusColor } from "@/lib/admin/queries"
@@ -13,6 +13,12 @@ export const dynamic = "force-dynamic"
 
 export default async function AdminDashboard() {
   const supabase = await createClient()
+
+  const { data: { user: authUser } } = await supabase.auth.getUser()
+  const { data: currentUser } = authUser
+    ? await supabase.from("users").select("role").eq("id", authUser.id).single()
+    : { data: null }
+  const isSuperAdmin = currentUser?.role === "super_admin"
 
   const [stats, chains, activityResult] = await Promise.all([
     getAdminStats(supabase),
@@ -84,6 +90,47 @@ export default async function AdminDashboard() {
             delay={0.15}
           />
         </div>
+
+        {/* Kom i gang — vises når systemet er nyoppsatt */}
+        {isSuperAdmin && stats.totalStores === 0 && (
+          <div className="bg-gradient-to-br from-zinc-900 to-zinc-800 rounded-2xl p-6 text-white">
+            <div className="flex items-center gap-2 mb-4">
+              <Rocket className="w-5 h-5 text-amber-400" />
+              <h2 className="text-sm font-bold uppercase tracking-wider text-zinc-300">Kom i gang</h2>
+            </div>
+            <p className="text-zinc-300 text-sm mb-5">Følg disse stegene for å sette opp infoskjerm-systemet.</p>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              {[
+                { step: 1, label: "Sett opp organisasjon", desc: "Opprett kjede og enheter", href: "/admin/onboarding", icon: Store, done: false },
+                { step: 2, label: "Registrer skjerm", desc: "Koble til Raspberry Pi", href: "/admin/screens", icon: Monitor, done: stats.totalScreens > 0 },
+                { step: 3, label: "Opprett innhold", desc: "Nyheter, slides, salgstall", href: "/admin/content/news", icon: Newspaper, done: stats.liveContent > 0 },
+                { step: 4, label: "Inviter team", desc: "Legg til medarbeidere", href: "/admin/users", icon: UserPlus, done: false },
+              ].map(({ step, label, desc, href, icon: Icon, done }) => (
+                <Link key={step} href={href} className={`group rounded-xl p-4 border transition-all ${done ? "border-emerald-500/30 bg-emerald-500/10" : "border-white/10 bg-white/5 hover:bg-white/10"}`}>
+                  <div className={`w-7 h-7 rounded-lg flex items-center justify-center mb-3 ${done ? "bg-emerald-500" : "bg-white/10 group-hover:bg-white/20"}`}>
+                    {done ? <CheckCircle2 className="w-4 h-4 text-white" /> : <Icon className="w-4 h-4 text-zinc-300" />}
+                  </div>
+                  <p className="text-xs font-semibold text-white leading-tight">{label}</p>
+                  <p className="text-[10px] text-zinc-400 mt-0.5">{desc}</p>
+                  {!done && <p className="text-[10px] text-amber-400 mt-2 flex items-center gap-1">Steg {step} <ArrowRight className="w-2.5 h-2.5" /></p>}
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Kom i gang for ikke-super_admin — vises til store_manager uten screens */}
+        {!isSuperAdmin && stats.totalScreens === 0 && stats.liveContent === 0 && (
+          <div className="bg-blue-50 border border-blue-100 rounded-2xl p-5 flex items-start gap-4">
+            <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center flex-shrink-0">
+              <Newspaper className="w-5 h-5 text-white" />
+            </div>
+            <div>
+              <h2 className="text-sm font-bold text-zinc-900 mb-1">Slik kommer du i gang</h2>
+              <p className="text-sm text-zinc-600">Gå til <Link href="/admin/content/news" className="underline font-medium">Nyheter</Link> og opprett ditt første innhold. Deretter bruker du <Link href="/admin/publish" className="underline font-medium">Publiser</Link> for å sende det til skjermene.</p>
+            </div>
+          </div>
+        )}
 
         <div className="grid grid-cols-3 gap-4">
           <Card className="col-span-1">

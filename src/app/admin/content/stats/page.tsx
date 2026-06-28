@@ -45,7 +45,7 @@ export default async function StatsPage() {
         }
       />
       <div className="flex-1 p-6 space-y-3">
-        <ContentItemListClient items={items} emptyMessage="Ingen salgstall-innhold er opprettet ennå." />
+        <ContentItemListClient items={items} emptyMessage="Ingen salgstall-innhold er opprettet ennå." createHref="/admin/content/new?type=stats" createLabel="Opprett salgstall-innhold" />
       </div>
     </div>
   )

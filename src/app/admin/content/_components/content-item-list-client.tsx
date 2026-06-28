@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState } from "react"
-import { Search, Pencil, Eye, BarChart3, CloudSun, Image as ImageIcon, Trophy, Newspaper, Layers, Clock, User } from "lucide-react"
+import { Search, Pencil, Eye, BarChart3, CloudSun, Image as ImageIcon, Trophy, Newspaper, Layers, Clock, User, Plus } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -42,9 +42,11 @@ const TYPE_ICONS: Record<string, React.ElementType> = {
 interface Props {
   items: ContentListItem[]
   emptyMessage?: string
+  createHref?: string
+  createLabel?: string
 }
 
-export function ContentItemListClient({ items, emptyMessage = "Ingen elementer funnet." }: Props) {
+export function ContentItemListClient({ items, emptyMessage = "Ingen elementer funnet.", createHref, createLabel }: Props) {
   const [query, setQuery] = useState("")
 
   const filtered = query.trim()
@@ -78,9 +80,27 @@ export function ContentItemListClient({ items, emptyMessage = "Ingen elementer f
       )}
 
       {filtered.length === 0 ? (
-        <div className="flex items-center justify-center h-32">
-          <p className="text-zinc-400 text-sm">{query ? `Ingen treff på "${query}"` : emptyMessage}</p>
-        </div>
+        query ? (
+          <div className="flex items-center justify-center h-32">
+            <p className="text-zinc-400 text-sm">Ingen treff på &ldquo;{query}&rdquo;</p>
+          </div>
+        ) : (
+          <div className="flex flex-col items-center justify-center py-12 bg-white border border-zinc-100 rounded-xl text-center">
+            <div className="w-12 h-12 bg-zinc-100 rounded-full flex items-center justify-center mb-3">
+              <Plus className="w-6 h-6 text-zinc-400" />
+            </div>
+            <p className="text-zinc-700 text-sm font-medium mb-1">{emptyMessage}</p>
+            <p className="text-zinc-400 text-xs mb-4">Trykk på knappen øverst for å opprette ditt første element.</p>
+            {createHref && (
+              <Button size="sm" asChild>
+                <Link href={createHref} className="flex items-center gap-1.5">
+                  <Plus className="w-3.5 h-3.5" />
+                  {createLabel ?? "Opprett nytt"}
+                </Link>
+              </Button>
+            )}
+          </div>
+        )
       ) : (
         <div className="space-y-2">
           {filtered.map(item => {

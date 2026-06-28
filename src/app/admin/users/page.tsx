@@ -3,10 +3,10 @@ import { getUsersWithDetails } from "@/lib/admin/queries"
 import { requireRole } from "@/lib/admin/require-role"
 import { Topbar } from "@/components/admin/topbar"
 import { Card, CardContent } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Shield, Building2, Store, UserCircle, Info } from "lucide-react"
+import { Shield, Building2, Store, UserCircle } from "lucide-react"
 import { UserDeleteButton } from "./user-delete-button"
 import { UserRoleSelect } from "./user-role-select"
+import { InviteUserForm } from "./invite-user-form"
 
 export const dynamic = "force-dynamic"
 
@@ -29,12 +29,7 @@ export default async function UsersPage() {
       <Topbar
         title="Brukere"
         subtitle={`${users.length} brukere — 4 roller`}
-        actions={
-          <div className="hidden sm:flex items-center gap-2 bg-blue-50 border border-blue-200 rounded-lg px-3 py-1.5">
-            <Info className="w-3.5 h-3.5 text-blue-500 flex-shrink-0" />
-            <span className="text-xs text-blue-700">Nye brukere opprettes via Supabase Dashboard</span>
-          </div>
-        }
+        actions={<InviteUserForm />}
       />
       <div className="flex-1 p-6">
         {users.length === 0 ? (

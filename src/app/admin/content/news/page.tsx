@@ -49,7 +49,7 @@ export default async function NewsPage() {
       />
       <div className="flex-1 p-6 space-y-3">
         <BulkApproveBar pendingIds={pendingIds} />
-        <ContentItemListClient items={items} emptyMessage="Ingen nyheter er opprettet ennå." />
+        <ContentItemListClient items={items} emptyMessage="Ingen nyheter er opprettet ennå." createHref="/admin/content/new?type=news" createLabel="Opprett første nyhet" />
       </div>
     </div>
   )

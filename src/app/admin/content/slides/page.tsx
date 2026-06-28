@@ -47,7 +47,7 @@ export default async function SlidesPage() {
         }
       />
       <div className="flex-1 p-6 space-y-3">
-        <ContentItemListClient items={items} emptyMessage="Ingen slides er opprettet ennå." />
+        <ContentItemListClient items={items} emptyMessage="Ingen slides er opprettet ennå." createHref="/admin/content/new?type=slide" createLabel="Opprett første slide" />
       </div>
     </div>
   )

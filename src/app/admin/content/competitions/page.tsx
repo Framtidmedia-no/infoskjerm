@@ -47,7 +47,7 @@ export default async function CompetitionsPage() {
         }
       />
       <div className="flex-1 p-6 space-y-4">
-        <ContentItemListClient items={items} emptyMessage="Ingen konkurranser er opprettet ennå." />
+        <ContentItemListClient items={items} emptyMessage="Ingen konkurranser er opprettet ennå." createHref="/admin/content/new?type=competition" createLabel="Opprett første konkurranse" />
       </div>
     </div>
   )
