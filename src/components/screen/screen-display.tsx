@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState, useCallback } from "react"
+import { useEffect, useState, useCallback, useRef } from "react"
 import { ModuleRenderer } from "@/components/modules/module-renderer"
 import type { Slide } from "@/app/api/screens/[id]/current-content/route"
 
@@ -68,6 +68,7 @@ export function ScreenDisplay({
   const [currentIndex, setCurrentIndex] = useState(0)
   const [isTransitioning, setIsTransitioning] = useState(false)
   const [isPoweredOff, setIsPoweredOff] = useState(false)
+  const transitionTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const fetchContent = useCallback(async () => {
     if (!screenId) return
@@ -79,7 +80,6 @@ export function ScreenDisplay({
       const json = await res.json() as { slides?: Slide[] }
       if (json.slides && json.slides.length > 0) {
         setSlides([CLOCK_SLIDE, ...json.slides])
-        setCurrentIndex(0)
       }
     } catch {
       // keep existing slides on network error
@@ -120,14 +120,17 @@ export function ScreenDisplay({
     if (slides.length === 0) return
     const slide = slides[currentIndex % slides.length]
     const duration = (slide.durationSeconds ?? 10) * 1000
-    const timer = setTimeout(() => {
+    const outer = setTimeout(() => {
       setIsTransitioning(true)
-      setTimeout(() => {
+      transitionTimerRef.current = setTimeout(() => {
         setCurrentIndex((prev) => (prev + 1) % slides.length)
         setIsTransitioning(false)
       }, 500)
     }, duration)
-    return () => clearTimeout(timer)
+    return () => {
+      clearTimeout(outer)
+      if (transitionTimerRef.current) clearTimeout(transitionTimerRef.current)
+    }
   }, [currentIndex, slides])
 
   if (isPoweredOff) {

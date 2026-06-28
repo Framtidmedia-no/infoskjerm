@@ -25,9 +25,9 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
 
   if (!screen) return NextResponse.json({ error: "Not found" }, { status: 404 })
 
-  const { data: { user } } = await supabase.auth.getUser()
+  const { data: authData } = await supabase.auth.getUser()
   const hasValidToken = token !== null && (screen as { token?: string | null }).token === token
-  const hasAdminSession = !!user
+  const hasAdminSession = !!authData?.user
 
   if (!hasValidToken && !hasAdminSession) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
@@ -91,6 +91,10 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
   const storeId = (screen as { store_id: string | null }).store_id
   const chainId = (screen.stores as { chain_id: string } | null)?.chain_id ?? null
 
+  const orFilter = [`target_all.eq.true`]
+  if (storeId) orFilter.push(`store_id.eq.${storeId}`)
+  if (chainId) orFilter.push(`chain_id.eq.${chainId}`)
+
   const { data: targets } = await supabase
     .from("content_targets")
     .select(`
@@ -99,8 +103,9 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
       content_items!inner(id, title, module_key, body, status)
     `)
     .eq("content_items.status", "live")
+    .or(orFilter.join(","))
     .order("content_item_id", { ascending: false })
-    .limit(10)
+    .limit(20)
 
   type Target = {
     content_item_id: string; target_all: boolean | null;
