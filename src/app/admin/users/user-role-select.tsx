@@ -2,14 +2,13 @@
 
 import { useState } from "react"
 import { updateUserRole } from "./actions"
-
-type UserRole = "super_admin" | "chain_manager" | "store_manager" | "store_employee"
+import { type UserRole, ROLE_LABELS } from "@/lib/roles"
 
 const roleOptions: { value: UserRole; label: string }[] = [
-  { value: "super_admin", label: "Super Admin" },
-  { value: "chain_manager", label: "Kjedeleder" },
-  { value: "store_manager", label: "Butikksjef" },
-  { value: "store_employee", label: "Ansatt" },
+  { value: "super_admin", label: ROLE_LABELS.super_admin },
+  { value: "chain_manager", label: ROLE_LABELS.chain_manager },
+  { value: "store_manager", label: ROLE_LABELS.store_manager },
+  { value: "store_employee", label: ROLE_LABELS.store_employee },
 ]
 
 export function UserRoleSelect({ userId, currentRole }: { userId: string; currentRole: UserRole }) {

@@ -58,7 +58,7 @@ const navGroups: NavGroup[] = [
     items: [
       { href: "/admin/users", label: "Brukere", icon: Users, roles: ["super_admin", "chain_manager"] },
       { href: "/admin/modules", label: "Moduler", icon: Layers, roles: ["super_admin"] },
-      { href: "/admin/zones", label: "Soner", icon: Layout, roles: ["super_admin", "chain_manager"] },
+      { href: "/admin/zones", label: "Skjermlayout", icon: Layout, roles: ["super_admin"] },
       { href: "/admin/onboarding", label: "Ny tenant", icon: UserPlus, roles: ["super_admin"] },
       { href: "/admin/settings", label: "Innstillinger", icon: Settings, roles: ["super_admin", "chain_manager", "store_manager"] },
     ],
@@ -77,9 +77,9 @@ interface SidebarProps {
 
 const roleLabels: Record<string, string> = {
   super_admin: "Super Admin",
-  chain_manager: "Kjedeleder",
-  store_manager: "Butikksjef",
-  store_employee: "Ansatt",
+  chain_manager: "Tenant Admin",
+  store_manager: "Enhetsadmin",
+  store_employee: "Redaktør",
 }
 
 export function Sidebar({ user }: SidebarProps) {

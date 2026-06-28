@@ -4,18 +4,20 @@ import { useState } from "react"
 import { UserPlus, X, Loader2 } from "lucide-react"
 import { inviteUser } from "./actions"
 
-type UserRole = "chain_manager" | "store_manager" | "store_employee"
+import { ROLE_LABELS, ROLE_DESCRIPTIONS } from "@/lib/roles"
 
-const ROLE_OPTIONS: { value: UserRole; label: string; desc: string }[] = [
-  { value: "chain_manager", label: "Kjedeleder", desc: "Full tilgang til innhold og brukere" },
-  { value: "store_manager", label: "Butikksjef", desc: "Kan opprette og publisere innhold" },
-  { value: "store_employee", label: "Ansatt", desc: "Kan se og opprette utkast" },
+type InviteRole = "chain_manager" | "store_manager" | "store_employee"
+
+const ROLE_OPTIONS: { value: InviteRole; label: string; desc: string }[] = [
+  { value: "chain_manager", label: ROLE_LABELS.chain_manager, desc: ROLE_DESCRIPTIONS.chain_manager },
+  { value: "store_manager", label: ROLE_LABELS.store_manager, desc: ROLE_DESCRIPTIONS.store_manager },
+  { value: "store_employee", label: ROLE_LABELS.store_employee, desc: ROLE_DESCRIPTIONS.store_employee },
 ]
 
 export function InviteUserForm() {
   const [open, setOpen] = useState(false)
   const [email, setEmail] = useState("")
-  const [role, setRole] = useState<UserRole>("store_employee")
+  const [role, setRole] = useState<InviteRole>("store_employee")
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)

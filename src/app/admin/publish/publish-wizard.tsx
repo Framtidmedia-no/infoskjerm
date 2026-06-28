@@ -4,7 +4,7 @@ import { useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Globe, Tag, Store, Building2, Monitor, ChevronRight, CheckCircle2, Clock, CheckCircle, Calendar } from "lucide-react"
+import { Globe, Tag, LayoutGrid, Building2, Monitor, ChevronRight, CheckCircle2, Clock, CheckCircle, Calendar } from "lucide-react"
 import { publishContent } from "./actions"
 import { toast } from "sonner"
 
@@ -134,7 +134,7 @@ export function PublishWizard({ chains, tags, stores, pendingContent }: PublishW
                 { mode: "all" as TargetMode, icon: Globe, label: "Alle enheter", sub: `${stores.length} enheter` },
                 { mode: "chains" as TargetMode, icon: Building2, label: "Kjeder", sub: chains.map((c) => c.name).join(", ") || "Ingen kjeder" },
                 { mode: "tags" as TargetMode, icon: Tag, label: "Tags", sub: "Geografiske grupper" },
-                { mode: "stores" as TargetMode, icon: Store, label: "Enkeltenheter", sub: "Velg spesifikke" },
+                { mode: "stores" as TargetMode, icon: LayoutGrid, label: "Enkeltenheter", sub: "Velg spesifikke" },
               ].map(({ mode, icon: Icon, label, sub }) => (
                 <button key={mode} onClick={() => setTargetMode(mode)}
                   className={`p-4 rounded-xl border-2 text-left transition-all ${targetMode === mode ? "border-zinc-900 bg-zinc-900 text-white" : "border-zinc-200 hover:border-zinc-300 bg-white"}`}

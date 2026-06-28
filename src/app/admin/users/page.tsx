@@ -3,20 +3,19 @@ import { getUsersWithDetails } from "@/lib/admin/queries"
 import { requireRole } from "@/lib/admin/require-role"
 import { Topbar } from "@/components/admin/topbar"
 import { Card, CardContent } from "@/components/ui/card"
-import { Shield, Building2, Store, UserCircle } from "lucide-react"
+import { Shield, Building2, LayoutGrid, UserCircle } from "lucide-react"
 import { UserDeleteButton } from "./user-delete-button"
 import { UserRoleSelect } from "./user-role-select"
 import { InviteUserForm } from "./invite-user-form"
+import { type UserRole, ROLE_LABELS } from "@/lib/roles"
 
 export const dynamic = "force-dynamic"
 
-type UserRole = "super_admin" | "chain_manager" | "store_manager" | "store_employee"
-
 const roleConfig: Record<UserRole, { label: string; icon: React.ElementType; color: string; bg: string }> = {
-  super_admin: { label: "Super Admin", icon: Shield, color: "text-violet-700", bg: "bg-violet-50" },
-  chain_manager: { label: "Kjedeleder", icon: Building2, color: "text-blue-700", bg: "bg-blue-50" },
-  store_manager: { label: "Butikksjef", icon: Store, color: "text-emerald-700", bg: "bg-emerald-50" },
-  store_employee: { label: "Ansatt", icon: UserCircle, color: "text-zinc-600", bg: "bg-zinc-50" },
+  super_admin: { label: ROLE_LABELS.super_admin, icon: Shield, color: "text-violet-700", bg: "bg-violet-50" },
+  chain_manager: { label: ROLE_LABELS.chain_manager, icon: Building2, color: "text-blue-700", bg: "bg-blue-50" },
+  store_manager: { label: ROLE_LABELS.store_manager, icon: LayoutGrid, color: "text-emerald-700", bg: "bg-emerald-50" },
+  store_employee: { label: ROLE_LABELS.store_employee, icon: UserCircle, color: "text-zinc-600", bg: "bg-zinc-50" },
 }
 
 export default async function UsersPage() {
@@ -28,7 +27,7 @@ export default async function UsersPage() {
     <div className="flex flex-col flex-1">
       <Topbar
         title="Brukere"
-        subtitle={`${users.length} brukere — 4 roller`}
+        subtitle={`${users.length} brukere`}
         actions={<InviteUserForm />}
       />
       <div className="flex-1 p-6">
