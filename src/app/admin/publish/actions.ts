@@ -61,16 +61,15 @@ export async function submitForApproval(contentItemId: string) {
             <div style="background: #f4f4f5; border-radius: 8px; padding: 16px; margin: 16px 0;">
               <strong style="font-size: 1.1em;">${itemTitle}</strong>
             </div>
-            <a href="https://infoskjerm.vercel.app/admin/publish" style="display: inline-block; background: #18181b; color: white; padding: 12px 24px; border-radius: 8px; text-decoration: none; margin-top: 8px;">
+            <a href="${process.env.NEXT_PUBLIC_APP_URL ?? (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000')}/admin/publish" style="display: inline-block; background: #18181b; color: white; padding: 12px 24px; border-radius: 8px; text-decoration: none; margin-top: 8px;">
               Se godkjenningskøen →
             </a>
           </div>
         `,
       })
     }
-  } catch (emailErr) {
-    // Log but don't throw — email failure must not block submission
-    console.error("Resend notification failed:", emailErr)
+  } catch {
+    // Swallow — email failure must not block submission
   }
 
   revalidatePath("/admin/publish")

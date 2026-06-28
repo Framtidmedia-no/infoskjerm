@@ -67,3 +67,15 @@ INSERT INTO module_registry (key, name, category, description, icon, schema) VAL
  '{"fields":[{"key":"title","label":"Tittel","type":"text","required":true},{"key":"metric","label":"Nøkkeltall","type":"text","required":false},{"key":"metric_label","label":"Forklaring av nøkkeltall","type":"text","required":false},{"key":"description","label":"Beskrivelse","type":"textarea","required":false},{"key":"goal","label":"Mål","type":"text","required":false},{"key":"image_url","label":"Bilde-URL","type":"image","required":false}]}'::jsonb)
 
 ON CONFLICT (key) DO NOTHING;
+
+-- Sprint N: News-ticker modul (finnes i kode som news-ticker-module.tsx)
+INSERT INTO module_registry (key, name, category, description, icon, schema)
+VALUES (
+  'news-ticker',
+  'Nyheter-ticker',
+  'informasjon',
+  'Rullende tekstbånd med nyhetsoverskrifter eller meldinger.',
+  'Newspaper',
+  '{"fields":[{"key":"title","label":"Tittel (valgfri)","type":"text","required":false},{"key":"ticker_text","label":"Ticker-tekst (separer elementer med pipe-tegn)","type":"textarea","required":true},{"key":"speed","label":"Hastighet (sekunder for ett gjennomløp)","type":"number","required":false},{"key":"bg_color","label":"Bakgrunnsfarge (hex)","type":"color","required":false},{"key":"text_color","label":"Tekstfarge (hex)","type":"color","required":false}]}'::jsonb
+)
+ON CONFLICT (key) DO NOTHING;

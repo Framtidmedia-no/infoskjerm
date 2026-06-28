@@ -37,7 +37,7 @@ export async function getAdminStats(supabase: AdminSupabase): Promise<AdminStats
     supabase.from('screens').select('id, last_heartbeat, status'),
     supabase.from('content_items').select('id', { count: 'exact', head: true }).eq('status', 'pending_approval'),
     supabase.from('stores').select('id', { count: 'exact', head: true }),
-    supabase.from('content_items').select('id', { count: 'exact', head: true }).eq('status', 'approved'),
+    supabase.from('content_items').select('id', { count: 'exact', head: true }).eq('status', 'live'),
   ])
 
   const screens = screensResult.data ?? []

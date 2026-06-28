@@ -7,7 +7,7 @@ import type { Slide } from "@/app/api/screens/[id]/current-content/route"
 const POLL_INTERVAL_MS = 30_000
 const COMMAND_POLL_MS = 15_000
 
-function ClockSlide() {
+function ClockSlide({ chainShortName = "GR", chainName = "Gange-Rolv" }: { chainShortName?: string; chainName?: string }) {
   const [time, setTime] = useState(new Date())
   useEffect(() => {
     const t = setInterval(() => setTime(new Date()), 1000)
@@ -19,9 +19,9 @@ function ClockSlide() {
     <div className="flex flex-col items-center justify-center h-full text-white">
       <div className="mb-8">
         <div className="w-24 h-24 rounded-2xl bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center mx-auto mb-6 shadow-2xl shadow-emerald-900/50">
-          <span className="text-4xl font-bold text-white">GR</span>
+          <span className="text-4xl font-bold text-white">{chainShortName}</span>
         </div>
-        <p className="text-center text-zinc-400 text-lg font-medium tracking-wide">Gange-Rolv</p>
+        <p className="text-center text-zinc-400 text-lg font-medium tracking-wide">{chainName}</p>
       </div>
       <p className="text-9xl font-black tabular-nums tracking-tighter text-white">
         {time.getHours().toString().padStart(2, "0")}
@@ -59,10 +59,14 @@ const CLOCK_SLIDE: Slide = {
 export function ScreenDisplay({
   token,
   screenId,
+  chainName = "Gange-Rolv",
+  chainShortName = "GR",
 }: {
   token: string
   screenId?: string
   storeId?: string
+  chainName?: string
+  chainShortName?: string
 }) {
   const [slides, setSlides] = useState<Slide[]>([CLOCK_SLIDE])
   const [currentIndex, setCurrentIndex] = useState(0)
@@ -153,7 +157,7 @@ export function ScreenDisplay({
       />
       <div className="relative z-10 h-full transition-opacity duration-500" style={{ opacity: isTransitioning ? 0 : 1 }}>
         {slide.moduleKey === "__clock__" ? (
-          <ClockSlide />
+          <ClockSlide chainShortName={chainShortName} chainName={chainName} />
         ) : (
           <ModuleRenderer moduleKey={slide.moduleKey} fields={slide.fields} />
         )}
@@ -161,9 +165,9 @@ export function ScreenDisplay({
       <div className="absolute bottom-0 left-0 right-0 z-20 flex items-center justify-between px-10 py-4 bg-gradient-to-t from-black/60 to-transparent">
         <div className="flex items-center gap-3">
           <div className="w-6 h-6 rounded-md bg-emerald-500 flex items-center justify-center">
-            <span className="text-white text-[10px] font-black">GR</span>
+            <span className="text-white text-[10px] font-black">{chainShortName}</span>
           </div>
-          <span className="text-zinc-400 text-sm font-medium">Gange-Rolv</span>
+          <span className="text-zinc-400 text-sm font-medium">{chainName}</span>
         </div>
         <div className="flex items-center gap-2">
           {slides.map((_, i) => (

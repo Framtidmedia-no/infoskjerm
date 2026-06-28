@@ -294,7 +294,7 @@ export function BuilderRoot({ modules, tenantId, userId, initialName = 'Nytt inn
                       <iframe
                         src={`/preview/${state.contentItemId}`}
                         className="w-full h-full border-0"
-                        key={state.placements.length}
+                        key={JSON.stringify(state.placements).length + state.placements.map(p => JSON.stringify(p.fields)).join('')}
                       />
                     ) : (
                       <div className="flex items-center justify-center h-full text-zinc-600">

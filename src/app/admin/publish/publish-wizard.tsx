@@ -66,14 +66,21 @@ export function PublishWizard({ chains, tags, stores, pendingContent }: PublishW
     if (selectedContent.length === 0) return
     setPublishing(true)
     setPublishError(null)
-    const result = await publishContent(
-      selectedContent[0],
-      targetMode,
-      selectedIds,
-      scheduledAt || null
-    )
+    for (const itemId of selectedContent) {
+      const result = await publishContent(
+        itemId,
+        targetMode,
+        selectedIds,
+        scheduledAt || null
+      )
+      if (!result.ok) {
+        setPublishing(false)
+        setPublishError(result.error ?? "Feil ved publisering")
+        toast.error(result.error ?? "Feil ved publisering")
+        return
+      }
+    }
     setPublishing(false)
-    if (!result.ok) { setPublishError(result.error ?? "Feil ved publisering"); toast.error(result.error ?? "Feil ved publisering"); return }
     setPublished(true)
     toast.success(scheduledAt ? 'Innhold planlagt' : '🚀 Innhold er nå live!')
   }

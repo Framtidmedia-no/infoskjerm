@@ -52,6 +52,5 @@ export async function GET(request: Request) {
     )
   )
 
-  console.log(`[cron] Promoted ${ids.length} scheduled items to live`)
   return NextResponse.json({ promoted: ids.length, ids })
 }

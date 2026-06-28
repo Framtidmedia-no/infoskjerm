@@ -18,15 +18,17 @@ export async function GET(req: NextRequest) {
 
   const command = (screen as { pending_command?: string | null }).pending_command ?? null
 
+  const now = new Date().toISOString()
+
   if (command) {
     await supabase
       .from("screens")
-      .update({ pending_command: null, last_seen_at: new Date().toISOString() })
+      .update({ pending_command: null, last_seen_at: now, last_heartbeat: now })
       .eq("id", screen.id)
   } else {
     await supabase
       .from("screens")
-      .update({ last_seen_at: new Date().toISOString() })
+      .update({ last_seen_at: now, last_heartbeat: now })
       .eq("id", screen.id)
   }
 

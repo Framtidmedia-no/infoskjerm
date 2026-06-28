@@ -16,7 +16,7 @@ export function useAutosave(
   contentItemId: string | null,
   onSaved: (id: string) => void,
   onStatus: (status: SaveStatus) => void,
-  delayMs = 30_000
+  delayMs = 2000
 ) {
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const isFirstRender = useRef(true)

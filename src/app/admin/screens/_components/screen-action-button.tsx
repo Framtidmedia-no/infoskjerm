@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { RefreshCw } from "lucide-react"
-import { createClient } from "@/lib/supabase/client"
+import { sendCommand } from "../actions"
 
 interface ScreenActionButtonProps {
   screenId: string
@@ -21,11 +21,10 @@ export function ScreenActionButton({ screenId, action }: ScreenActionButtonProps
 
   const handleAction = async () => {
     setLoading(true)
-    const supabase = createClient()
-    await supabase
-      .from("screens")
-      .update({ pending_command: action })
-      .eq("id", screenId)
+    const result = await sendCommand(screenId, action)
+    if (!result.ok) {
+      console.error("Feil ved sending av kommando:", result.error)
+    }
     setLoading(false)
   }
 
