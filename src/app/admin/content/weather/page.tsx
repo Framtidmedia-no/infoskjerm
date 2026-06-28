@@ -1,34 +1,42 @@
+import { createClient } from "@/lib/supabase/server"
+import { getContentItems } from "@/lib/admin/queries"
 import { Topbar } from "@/components/admin/topbar"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { CloudSun, Pencil } from "lucide-react"
+import { CloudSun, Plus, Pencil, Eye, Clock, Store } from "lucide-react"
+import Link from "next/link"
+import { ContentDeleteButton } from "../_components/content-delete-button"
 
-const storeWeather = [
-  { store: "EUROSPAR BLINDHEIM", city: "Ålesund", lat: "62.4724", lon: "6.1549", forecast: ["☀️", "⛅", "🌧️", "⛅", "☀️", "☀️", "⛅"], temps: [19, 18, 14, 16, 21, 22, 18] },
-  { store: "EUROSPAR HAREID", city: "Hareid", lat: "62.3695", lon: "6.0249", forecast: ["☀️", "⛅", "🌧️", "⛅", "☀️", "☀️", "⛅"], temps: [18, 17, 13, 15, 20, 21, 17] },
-  { store: "EUROSPAR MOA", city: "Ålesund", lat: "62.4724", lon: "6.1549", forecast: ["☀️", "⛅", "🌧️", "⛅", "☀️", "☀️", "⛅"], temps: [19, 18, 14, 16, 21, 22, 18] },
-  { store: "EUROSPAR LARSGÅRDEN", city: "Ålesund", lat: "62.4724", lon: "6.1549", forecast: ["☀️", "⛅", "🌧️", "⛅", "☀️", "☀️", "⛅"], temps: [19, 18, 14, 16, 21, 22, 18] },
-  { store: "EUROSPAR ÅLESUND STORSENTER", city: "Ålesund", lat: "62.4724", lon: "6.1549", forecast: ["☀️", "⛅", "🌧️", "⛅", "☀️", "☀️", "⛅"], temps: [19, 18, 14, 16, 21, 22, 18] },
-  { store: "EUROSPAR ØRSTA", city: "Ørsta", lat: "62.2006", lon: "6.1315", forecast: ["⛅", "🌧️", "🌧️", "⛅", "☀️", "⛅", "🌦️"], temps: [17, 14, 13, 16, 19, 17, 16] },
-  { store: "JOKER GODØY", city: "Giske", lat: "62.4986", lon: "6.0632", forecast: ["☀️", "☀️", "⛅", "⛅", "☀️", "☀️", "⛅"], temps: [20, 20, 17, 16, 22, 23, 19] },
-  { store: "JOKER ÅHEIM", city: "Sande", lat: "62.3500", lon: "5.6833", forecast: ["⛅", "⛅", "🌧️", "⛅", "☀️", "☀️", "⛅"], temps: [18, 17, 13, 15, 20, 21, 17] },
-  { store: "SPAR HORNINDAL", city: "Hornindal", lat: "61.9681", lon: "6.5233", forecast: ["☀️", "⛅", "🌧️", "🌦️", "☀️", "☀️", "⛅"], temps: [21, 19, 15, 17, 23, 24, 20] },
-  { store: "SPAR RAUDEBERG", city: "Vågsøy", lat: "61.9861", lon: "5.1380", forecast: ["🌧️", "🌧️", "🌧️", "⛅", "⛅", "☀️", "⛅"], temps: [15, 14, 13, 16, 17, 19, 17] },
-  { store: "SPAR ULSTEINVIK", city: "Ulstein", lat: "62.3432", lon: "5.8515", forecast: ["☀️", "⛅", "🌧️", "⛅", "☀️", "☀️", "⛅"], temps: [18, 17, 13, 15, 20, 21, 17] },
-]
+export const dynamic = "force-dynamic"
 
-const days = ["Man", "Tir", "Ons", "Tor", "Fre", "Lør", "Søn"]
+const statusConfig = {
+  approved: { label: "Publisert", variant: "success" as const },
+  pending_approval: { label: "Venter godkjenning", variant: "warning" as const },
+  draft: { label: "Utkast", variant: "secondary" as const },
+  rejected: { label: "Avvist", variant: "destructive" as const },
+}
 
-export default function WeatherPage() {
+export default async function WeatherPage() {
+  const supabase = await createClient()
+  const weatherItems = await getContentItems(supabase, "weather")
+
   return (
     <div className="flex flex-col flex-1">
       <Topbar
         title="Vær"
         subtitle="Automatisk yr.no-data basert på butikkens koordinater"
-        actions={<Button size="sm" variant="outline"><Pencil className="w-4 h-4" />Rediger lokasjoner</Button>}
+        actions={
+          <Button size="sm" asChild>
+            <Link href="/admin/builder" className="flex items-center gap-1.5">
+              <Plus className="w-4 h-4" />
+              Nytt vær-innhold
+            </Link>
+          </Button>
+        }
       />
-      <div className="flex-1 p-6">
-        <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 mb-6 flex items-start gap-3">
+      <div className="flex-1 p-6 space-y-3">
+        <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 flex items-start gap-3">
           <CloudSun className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
           <div>
             <p className="text-sm font-semibold text-blue-900">Automatisk værhenting fra yr.no</p>
@@ -36,30 +44,62 @@ export default function WeatherPage() {
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
-          {storeWeather.map((s) => (
-            <Card key={s.store} className="hover:shadow-md transition-shadow">
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between mb-3">
-                  <div>
-                    <p className="font-semibold text-zinc-900 text-sm">{s.store}</p>
-                    <p className="text-xs text-zinc-400">{s.city} — {s.lat}°N, {s.lon}°Ø</p>
-                  </div>
-                  <span className="text-2xl">{s.forecast[0]}</span>
-                </div>
-                <div className="flex gap-2">
-                  {days.map((day, i) => (
-                    <div key={day} className="flex-1 text-center bg-zinc-50 rounded-lg py-2">
-                      <p className="text-[9px] text-zinc-400 uppercase">{day}</p>
-                      <p className="text-sm my-0.5">{s.forecast[i]}</p>
-                      <p className="text-xs font-semibold text-zinc-700">{s.temps[i]}°</p>
+        {weatherItems.length === 0 ? (
+          <div className="flex items-center justify-center h-48">
+            <p className="text-zinc-400 text-sm">Ingen vær-innhold er opprettet ennå.</p>
+          </div>
+        ) : (
+          weatherItems.map((item) => {
+            const statusKey = (item.status ?? "draft") as keyof typeof statusConfig
+            const statusCfg = statusConfig[statusKey] ?? statusConfig.draft
+            const author = ((item as unknown as Record<string, unknown>)['users!created_by'] as { full_name: string } | null)?.full_name ?? "Ukjent"
+            const created = item.created_at
+              ? new Date(item.created_at).toLocaleDateString("nb-NO", { day: "numeric", month: "short", year: "numeric" })
+              : "—"
+
+            return (
+              <Card key={item.id} className="hover:shadow-md transition-shadow">
+                <CardContent className="p-5">
+                  <div className="flex items-start gap-4">
+                    <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center flex-shrink-0">
+                      <CloudSun className="w-5 h-5 text-blue-600" />
                     </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-3 mb-1">
+                        <h3 className="font-semibold text-zinc-900">{item.title}</h3>
+                        <Badge variant={statusCfg.variant}>{statusCfg.label}</Badge>
+                      </div>
+                      <div className="flex items-center gap-4 mt-2">
+                        <div className="flex items-center gap-1">
+                          <Store className="w-3 h-3 text-zinc-400" />
+                          <span className="text-xs text-zinc-500">{author}</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Clock className="w-3 h-3 text-zinc-400" />
+                          <span className="text-xs text-zinc-500">{created}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      <Button variant="ghost" size="icon" className="h-8 w-8" asChild>
+                        <Link href={`/preview/${item.id}`} target="_blank">
+                          <Eye className="w-4 h-4" />
+                        </Link>
+                      </Button>
+                      <Button variant="ghost" size="icon" className="h-8 w-8" asChild>
+                        <Link href={`/admin/builder?id=${item.id}`}>
+                          <Pencil className="w-4 h-4" />
+                        </Link>
+                      </Button>
+                      <ContentDeleteButton itemId={item.id} />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )
+          })
+        )}
       </div>
     </div>
   )
