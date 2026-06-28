@@ -67,10 +67,6 @@ export default async function StoreDetailPage({ params }: PageProps) {
                 <p className="text-sm font-mono text-zinc-700">{store.org_number}</p>
               </div>
               <div>
-                <p className="text-[10px] text-zinc-400 uppercase tracking-wide mb-1">GLN</p>
-                <p className="text-sm font-mono text-zinc-700">{store.gln}</p>
-              </div>
-              <div>
                 <p className="text-[10px] text-zinc-400 uppercase tracking-wide mb-1">By</p>
                 <p className="text-sm text-zinc-700">{store.city}</p>
               </div>

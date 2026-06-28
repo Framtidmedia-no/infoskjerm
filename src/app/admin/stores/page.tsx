@@ -128,10 +128,6 @@ export default async function StoresPage({
                                 <p className="text-xs font-mono text-zinc-600">{store.org_number ?? "—"}</p>
                               </div>
                               <div>
-                                <p className="text-[10px] text-zinc-400 uppercase tracking-wide">GLN</p>
-                                <p className="text-xs font-mono text-zinc-600">{store.gln ?? "—"}</p>
-                              </div>
-                              <div>
                                 <p className="text-[10px] text-zinc-400 uppercase tracking-wide">By</p>
                                 <p className="text-xs text-zinc-600">{store.city ?? "—"}</p>
                               </div>
