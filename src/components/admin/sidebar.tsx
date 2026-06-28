@@ -30,6 +30,7 @@ const navGroups: NavGroup[] = [
     label: "Oversikt",
     items: [
       { href: "/admin", label: "Dashboard", icon: LayoutDashboard, roles: ["super_admin", "chain_manager", "area_manager", "store_manager", "store_employee"] },
+      { href: "/admin/cms", label: "Skjermsystem", icon: Monitor, roles: ["super_admin", "chain_manager", "area_manager"] },
     ],
   },
   {
