@@ -1,10 +1,12 @@
 import { createClient } from "@/lib/supabase/server"
 import { Topbar } from "@/components/admin/topbar"
 import { ZonePicker } from "./_components/zone-picker"
+import { requireRole } from "@/lib/admin/require-role"
 
 export const dynamic = "force-dynamic"
 
 export default async function ZonesPage() {
+  await requireRole(["super_admin", "chain_manager"])
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 

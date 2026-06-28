@@ -12,10 +12,17 @@ export const dynamic = "force-dynamic"
 export default async function AdminDashboard() {
   const supabase = await createClient()
 
-  const [stats, chains] = await Promise.all([
+  const [stats, chains, activityResult] = await Promise.all([
     getAdminStats(supabase),
     getChainOverview(supabase),
+    supabase
+      .from("publish_log")
+      .select("id, action, created_at, content_item_id, content_items(title), users(full_name)")
+      .order("created_at", { ascending: false })
+      .limit(8),
   ])
+
+  const activityLog = activityResult.data ?? []
 
   const { data: recentScreens } = await supabase
     .from("screens")
@@ -175,6 +182,41 @@ export default async function AdminDashboard() {
             </CardContent>
           </Card>
         </div>
+        {/* Siste aktivitet */}
+        {activityLog && activityLog.length > 0 && (
+          <div className="bg-white rounded-xl border border-zinc-100 p-5">
+            <h2 className="text-sm font-semibold text-zinc-700 mb-4 uppercase tracking-widest">Siste aktivitet</h2>
+            <div className="space-y-3">
+              {activityLog.map((entry) => {
+                const actionLabels: Record<string, { label: string; color: string }> = {
+                  published: { label: "Publisert", color: "text-emerald-600" },
+                  scheduled: { label: "Planlagt", color: "text-cyan-600" },
+                  approved: { label: "Godkjent", color: "text-blue-600" },
+                  rejected: { label: "Avvist", color: "text-red-500" },
+                  submitted_for_approval: { label: "Sendt til godkjenning", color: "text-amber-600" },
+                  rolled_back: { label: "Angret", color: "text-orange-500" },
+                  auto_published: { label: "Autopublisert", color: "text-emerald-600" },
+                }
+                const cfg = actionLabels[entry.action] ?? { label: entry.action, color: "text-zinc-500" }
+                const contentTitle = (entry.content_items as { title: string } | null)?.title ?? "—"
+                const userName = (entry.users as { full_name: string } | null)?.full_name ?? "System"
+                const time = entry.created_at
+                  ? new Date(entry.created_at).toLocaleString("nb-NO", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })
+                  : "—"
+
+                return (
+                  <div key={entry.id} className="flex items-center gap-3 text-sm">
+                    <div className="w-1.5 h-1.5 rounded-full bg-zinc-300 flex-shrink-0" />
+                    <span className={`font-medium ${cfg.color} flex-shrink-0`}>{cfg.label}</span>
+                    <span className="text-zinc-700 truncate flex-1">{contentTitle}</span>
+                    <span className="text-zinc-400 flex-shrink-0">{userName}</span>
+                    <span className="text-zinc-300 text-xs flex-shrink-0">{time}</span>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )

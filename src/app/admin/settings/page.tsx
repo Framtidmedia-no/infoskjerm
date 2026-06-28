@@ -4,10 +4,12 @@ import { Monitor } from "lucide-react"
 import { createClient } from "@/lib/supabase/server"
 import { DevicesPanel, type ScreenRow } from "./devices-panel"
 import { BrandingPanel } from "./branding-panel"
+import { requireRole } from "@/lib/admin/require-role"
 
 export const dynamic = "force-dynamic"
 
 export default async function SettingsPage() {
+  await requireRole(["super_admin", "chain_manager", "store_manager"])
   const supabase = await createClient()
 
   const [{ data: screens }, { data: stores }, { data: chains }] = await Promise.all([

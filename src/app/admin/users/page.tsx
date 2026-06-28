@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server"
 import { getUsersWithDetails } from "@/lib/admin/queries"
+import { requireRole } from "@/lib/admin/require-role"
 import { Topbar } from "@/components/admin/topbar"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -19,6 +20,7 @@ const roleConfig: Record<UserRole, { label: string; icon: React.ElementType; col
 }
 
 export default async function UsersPage() {
+  await requireRole(["super_admin", "chain_manager"])
   const supabase = await createClient()
   const users = await getUsersWithDetails(supabase)
 

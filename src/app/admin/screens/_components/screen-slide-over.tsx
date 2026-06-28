@@ -1,7 +1,7 @@
 "use client"
 
-import { useState } from "react"
-import { X, RefreshCw, Power, PowerOff, Settings2, Info, Clock, Wifi, WifiOff, RotateCcw } from "lucide-react"
+import { useState, useEffect } from "react"
+import { X, RefreshCw, Power, PowerOff, Settings2, Info, Clock, Wifi, WifiOff, RotateCcw, Tv2 } from "lucide-react"
 import { sendCommand, setMaintenanceMode } from "../actions"
 
 interface ScreenData {
@@ -46,6 +46,17 @@ type CommandKey = "reload" | "reboot" | "power_off" | "power_on"
 export function ScreenSlideOver({ screen, onClose }: ScreenSlideOverProps) {
   const [loading, setLoading] = useState<CommandKey | "maintenance" | null>(null)
   const [feedback, setFeedback] = useState<string | null>(null)
+  const [currentContent, setCurrentContent] = useState<{ id: string; title: string; type: string } | null>(null)
+  const [loadingContent, setLoadingContent] = useState(false)
+
+  useEffect(() => {
+    if (!screen) { setCurrentContent(null); return }
+    setLoadingContent(true)
+    fetch(`/api/screens/${screen.id}/current-content`)
+      .then(r => r.json())
+      .then(data => { setCurrentContent(data.content); setLoadingContent(false) })
+      .catch(() => setLoadingContent(false))
+  }, [screen?.id])
 
   if (!screen) return null
 
@@ -156,6 +167,33 @@ export function ScreenSlideOver({ screen, onClose }: ScreenSlideOverProps) {
               </div>
             )}
           </div>
+        </div>
+
+        {/* Kjører nå */}
+        <div className="px-5 py-4 border-t border-zinc-100">
+          <p className="text-xs font-semibold text-zinc-500 uppercase tracking-widest mb-3 flex items-center gap-2">
+            <Tv2 className="w-3.5 h-3.5" /> Kjører nå
+          </p>
+          {loadingContent ? (
+            <div className="h-12 bg-zinc-50 rounded-xl animate-pulse" />
+          ) : currentContent ? (
+            <div className="bg-zinc-50 rounded-xl px-4 py-3 flex items-center justify-between">
+              <div>
+                <p className="text-sm font-semibold text-zinc-900">{currentContent.title}</p>
+                <p className="text-xs text-zinc-400 mt-0.5">{currentContent.type}</p>
+              </div>
+              <a
+                href={`/preview/${currentContent.id}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-xs text-zinc-400 hover:text-zinc-700 border border-zinc-200 px-2.5 py-1 rounded-lg transition-colors"
+              >
+                Vis
+              </a>
+            </div>
+          ) : (
+            <p className="text-sm text-zinc-400 italic">Ingen live innhold funnet for denne skjermen.</p>
+          )}
         </div>
 
         {/* Remote control */}
