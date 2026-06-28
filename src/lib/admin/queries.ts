@@ -112,6 +112,26 @@ export async function getStoresGroupedByChain(supabase: AdminSupabase) {
   return chains ?? []
 }
 
+export async function getStoresBoard(supabase: AdminSupabase) {
+  const { data: chains } = await supabase
+    .from('chains')
+    .select(
+      'id, name, color, stores(id, name, company_name, city, email, org_number, gln, screens(id), store_tags(tags(id, name, color)))'
+    )
+    .order('name')
+
+  return chains ?? []
+}
+
+export async function getAllTags(supabase: AdminSupabase) {
+  const { data } = await supabase
+    .from('tags')
+    .select('id, name, color')
+    .order('name')
+
+  return data ?? []
+}
+
 export async function getTagsWithStores(supabase: AdminSupabase) {
   const { data } = await supabase
     .from('tags')

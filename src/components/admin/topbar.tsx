@@ -1,4 +1,4 @@
-import { Bell, ChevronLeft } from "lucide-react"
+import { ChevronLeft } from "lucide-react"
 import Link from "next/link"
 
 interface TopbarProps {
@@ -30,10 +30,6 @@ export function Topbar({ title, subtitle, actions, backHref }: TopbarProps) {
 
         <div className="flex items-center gap-2">
           {actions}
-          <button className="relative p-2.5 text-zinc-500 hover:text-zinc-900 hover:bg-zinc-50 rounded-lg transition-colors">
-            <Bell className="w-4 h-4" />
-            <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full" style={{ backgroundColor: "var(--brand-primary)" }} />
-          </button>
         </div>
       </div>
     </header>

@@ -11,18 +11,33 @@ const AUTHOR_ROLES = ["super_admin", "chain_manager", "area_manager", "store_man
 export default async function ContentListPage() {
   const { supabase } = await requireRole([...AUTHOR_ROLES])
 
-  const { data: items } = await supabase
-    .from("content_items")
-    .select("id, title, type, status, body, valid_from, valid_to, created_at, updated_at, content_targets(target_all, store_id, tag_id)")
-    .order("created_at", { ascending: false })
+  const [{ data: items }, { data: stores }, { data: tags }] = await Promise.all([
+    supabase
+      .from("content_items")
+      .select("id, title, type, status, body, valid_from, valid_to, created_at, updated_at, content_targets(target_all, store_id, tag_id)")
+      .order("created_at", { ascending: false }),
+    supabase.from("stores").select("id, name").order("name"),
+    supabase.from("tags").select("id, name").order("name"),
+  ])
+
+  const storeName = new Map((stores ?? []).map((s) => [s.id, s.name]))
+  const tagName = new Map((tags ?? []).map((t) => [t.id, t.name]))
 
   const rows: ContentRow[] = (items ?? []).map((it) => {
     const targets = (it.content_targets ?? []) as { target_all: boolean | null; store_id: string | null; tag_id: string | null }[]
+    const storeIds = targets.filter((t) => t.store_id).map((t) => t.store_id as string)
+    const tagIds = targets.filter((t) => t.tag_id).map((t) => t.tag_id as string)
     let mode: ContentRow["target"]["mode"] = "none"
-    let count = 0
-    if (targets.some((t) => t.store_id)) { mode = "stores"; count = targets.filter((t) => t.store_id).length }
-    else if (targets.some((t) => t.tag_id)) { mode = "tags"; count = targets.filter((t) => t.tag_id).length }
-    else if (targets.some((t) => t.target_all)) { mode = "all" }
+    if (storeIds.length) mode = "stores"
+    else if (tagIds.length) mode = "tags"
+    else if (targets.some((t) => t.target_all)) mode = "all"
+
+    const names = mode === "stores"
+      ? storeIds.map((id) => storeName.get(id)).filter((x): x is string => !!x)
+      : mode === "tags"
+        ? tagIds.map((id) => tagName.get(id)).filter((x): x is string => !!x)
+        : []
+
     const body = (it.body ?? {}) as { imageUrl?: string | null }
     return {
       id: it.id,
@@ -33,7 +48,9 @@ export default async function ContentListPage() {
       validFrom: it.valid_from,
       validTo: it.valid_to,
       updatedAt: it.updated_at,
-      target: { mode, count },
+      target: { mode, count: mode === "stores" ? storeIds.length : tagIds.length, names },
+      storeIds,
+      tagIds,
     }
   })
 
@@ -49,7 +66,7 @@ export default async function ContentListPage() {
         }
       />
       <div className="flex-1 p-6 max-w-6xl">
-        <ContentListClient items={rows} />
+        <ContentListClient items={rows} stores={stores ?? []} tags={tags ?? []} />
       </div>
     </div>
   )

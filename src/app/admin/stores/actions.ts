@@ -18,6 +18,60 @@ export async function deleteStore(storeId: string) {
   return { ok: true }
 }
 
+export async function toggleStoreTag(storeId: string, tagId: string, assign: boolean) {
+  const { supabase } = await requireUser()
+  if (assign) {
+    const { error } = await supabase
+      .from("store_tags")
+      .upsert({ store_id: storeId, tag_id: tagId })
+    if (error) return { ok: false, error: error.message }
+  } else {
+    const { error } = await supabase
+      .from("store_tags")
+      .delete()
+      .eq("store_id", storeId)
+      .eq("tag_id", tagId)
+    if (error) return { ok: false, error: error.message }
+  }
+  revalidatePath("/admin/stores")
+  return { ok: true }
+}
+
+interface CreatedTag {
+  id: string
+  name: string
+  color: string
+}
+
+type CreateTagResult =
+  | { ok: true; tag: CreatedTag }
+  | { ok: false; error: string }
+
+export async function createTag(name: string, color: string): Promise<CreateTagResult> {
+  const trimmed = name.trim()
+  if (!trimmed) return { ok: false, error: "Tag-navn kan ikke være tomt" }
+
+  const { supabase, userId } = await requireUser()
+
+  const { data: profile } = await supabase
+    .from("users")
+    .select("tenant_id")
+    .eq("id", userId)
+    .single()
+
+  if (!profile) return { ok: false, error: "Bruker ikke funnet" }
+
+  const { data, error } = await supabase
+    .from("tags")
+    .insert({ name: trimmed, color, tenant_id: profile.tenant_id })
+    .select("id, name, color")
+    .single()
+
+  if (error) return { ok: false, error: error.message }
+  revalidatePath("/admin/stores")
+  return { ok: true, tag: data }
+}
+
 export async function createStore(data: {
   name: string
   company_name: string
