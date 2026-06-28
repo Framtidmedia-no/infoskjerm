@@ -23,6 +23,7 @@ import { ProductSpotlightModule } from './product-spotlight-module'
 import { SeasonalItemsModule } from './seasonal-items-module'
 import { CustomUrlModule } from './custom-url-module'
 import { SustainabilityInfoModule } from './sustainability-info-module'
+import { NewsTickerModule } from './news-ticker-module'
 
 interface ModuleRendererProps {
   moduleKey: string
@@ -56,6 +57,7 @@ export function ModuleRenderer({ moduleKey, fields }: ModuleRendererProps) {
     case 'seasonal-items': return <SeasonalItemsModule fields={fields} />
     case 'custom-url': return <CustomUrlModule fields={fields} />
     case 'sustainability-info': return <SustainabilityInfoModule fields={fields} />
+    case 'news-ticker': return <NewsTickerModule fields={fields} />
     default: return (
       <div className="flex items-center justify-center h-full text-zinc-400 text-2xl font-medium">
         Ukjent modul: {moduleKey}

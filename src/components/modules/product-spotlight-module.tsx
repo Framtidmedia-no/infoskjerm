@@ -26,7 +26,20 @@ export function ProductSpotlightModule({ fields }: Props) {
         </div>
         {imageUrl && (
           <div className="w-80 h-80 rounded-3xl overflow-hidden border border-white/10 flex-shrink-0">
-            <img src={imageUrl} alt={productName} className="w-full h-full object-cover" />
+            <style>{`
+              @keyframes ken-burns {
+                0%   { transform: scale(1) translate(0, 0); }
+                25%  { transform: scale(1.08) translate(-1%, -1%); }
+                75%  { transform: scale(1.12) translate(1%, 0%); }
+                100% { transform: scale(1) translate(0, 0); }
+              }
+              .ken-burns-img { animation: ken-burns 12s ease-in-out infinite; }
+            `}</style>
+            <img
+              src={imageUrl}
+              alt={productName}
+              className="w-full h-full object-cover ken-burns-img"
+            />
           </div>
         )}
       </div>

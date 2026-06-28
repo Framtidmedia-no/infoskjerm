@@ -50,6 +50,35 @@ export function PreviewDisplay({ item }: { item: ContentItem }) {
   return (
     <div className="w-screen h-screen bg-zinc-950 overflow-hidden relative" style={{ fontFamily: "system-ui, sans-serif" }}>
       <div className="absolute inset-0 bg-gradient-to-br from-zinc-950 via-zinc-900 to-zinc-950" />
+      {/* Ambient floating particles */}
+      <style>{`
+        @keyframes float-particle {
+          0%, 100% { transform: translateY(0px) translateX(0px); opacity: 0.15; }
+          33%       { transform: translateY(-20px) translateX(10px); opacity: 0.25; }
+          66%       { transform: translateY(-10px) translateX(-8px); opacity: 0.1; }
+        }
+        .particle {
+          position: absolute;
+          border-radius: 50%;
+          background: rgba(255,255,255,0.1);
+          animation: float-particle linear infinite;
+          pointer-events: none;
+        }
+      `}</style>
+      {Array.from({ length: 12 }, (_, i) => (
+        <div
+          key={i}
+          className="particle"
+          style={{
+            width: `${4 + (i % 4) * 3}px`,
+            height: `${4 + (i % 4) * 3}px`,
+            left: `${i * 8.33}%`,
+            top: `${(i * 7 + 10) % 90}%`,
+            animationDuration: `${8 + i * 1.5}s`,
+            animationDelay: `${-i * 0.8}s`,
+          }}
+        />
+      ))}
       <div className="relative z-10 h-full transition-opacity duration-500" style={{ opacity: isTransitioning ? 0 : 1 }}>
         {placements.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-zinc-500">
