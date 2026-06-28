@@ -1,11 +1,11 @@
 import { Topbar } from "@/components/admin/topbar"
 import { Button } from "@/components/ui/button"
 import { PageTransition } from "@/components/admin/page-transition"
-import { Plus, Monitor, CheckCircle2, XCircle, Settings2 } from "lucide-react"
+import { Plus } from "lucide-react"
 import Link from "next/link"
 import { createClient } from "@/lib/supabase/server"
 import { getScreensWithStore, getScreenStatusColor } from "@/lib/admin/queries"
-import { ScreenMapClient } from "./_components/screen-map-client"
+import { ScreensRealtimeWrapper } from "./_components/screens-realtime-wrapper"
 
 export const dynamic = "force-dynamic"
 
@@ -56,28 +56,7 @@ export default async function ScreensPage() {
       />
 
       <div className="flex-1 p-6">
-        {/* Stats row */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
-          {[
-            { icon: CheckCircle2, label: "Online", count: online, color: "text-emerald-600", bg: "bg-emerald-50" },
-            { icon: XCircle, label: "Offline", count: offline, color: "text-red-600", bg: "bg-red-50" },
-            { icon: Settings2, label: "Vedlikehold", count: maintenance, color: "text-zinc-500", bg: "bg-zinc-100" },
-            { icon: Monitor, label: "Totalt", count: rawScreens.length, color: "text-blue-600", bg: "bg-blue-50" },
-          ].map(({ icon: Icon, label, count, color, bg }) => (
-            <div key={label} className="bg-white rounded-xl border border-zinc-100 p-4 flex items-center gap-3">
-              <div className={`w-9 h-9 rounded-lg ${bg} flex items-center justify-center`}>
-                <Icon className={`w-5 h-5 ${color}`} />
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-zinc-900">{count}</p>
-                <p className="text-xs text-zinc-500">{label}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {/* Live map */}
-        <ScreenMapClient screens={screens} />
+        <ScreensRealtimeWrapper screens={screens} />
       </div>
       </PageTransition>
     </div>
