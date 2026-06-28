@@ -7,9 +7,13 @@ import { Shield, Building2, LayoutGrid, UserCircle, Network } from "lucide-react
 import { UserDeleteButton } from "./user-delete-button"
 import { UserRoleSelect } from "./user-role-select"
 import { InviteUserForm } from "./invite-user-form"
+import { UserStoreAccess } from "./user-store-access"
 import { type UserRole, ROLE_LABELS } from "@/lib/roles"
 
 export const dynamic = "force-dynamic"
+
+// Roles whose access is scoped to specific stores
+const STORE_SCOPED: UserRole[] = ["area_manager", "store_manager", "store_employee"]
 
 const roleConfig: Record<UserRole, { label: string; icon: React.ElementType; color: string; bg: string }> = {
   super_admin: { label: ROLE_LABELS.super_admin, icon: Shield, color: "text-violet-700", bg: "bg-violet-50" },
@@ -23,6 +27,8 @@ export default async function UsersPage() {
   await requireRole(["super_admin", "chain_manager"])
   const supabase = await createClient()
   const users = await getUsersWithDetails(supabase)
+  const { data: storesData } = await supabase.from("stores").select("id, name").order("name")
+  const allStores = (storesData ?? []) as { id: string; name: string }[]
 
   return (
     <div className="flex flex-col flex-1">
@@ -53,7 +59,6 @@ export default async function UsersPage() {
                     const role = (user.role ?? "store_employee") as UserRole
                     const cfg = roleConfig[role] ?? roleConfig.store_employee
                     const Icon = cfg.icon
-                    const chain = (user.chains as unknown as { name: string; color: string } | null)
                     const userStores = (user.user_stores as unknown as Array<{ stores: { id: string; name: string } | null }>) ?? []
                     const displayName = user.full_name ?? user.email ?? "Ukjent"
 
@@ -77,17 +82,17 @@ export default async function UsersPage() {
                           </div>
                         </td>
                         <td className="px-4 py-3.5">
-                          <div className="flex flex-wrap gap-1">
-                            {chain ? (
-                              <span className="text-xs bg-zinc-100 text-zinc-600 px-2 py-0.5 rounded-full">{chain.name}</span>
-                            ) : userStores.length > 0 ? (
-                              userStores.slice(0, 3).map((us) => us.stores ? (
-                                <span key={us.stores.id} className="text-xs bg-zinc-100 text-zinc-600 px-2 py-0.5 rounded-full">{us.stores.name}</span>
-                              ) : null)
-                            ) : (
-                              <span className="text-xs text-zinc-400">Ingen tilgang satt</span>
-                            )}
-                          </div>
+                          {role === "super_admin" || role === "chain_manager" ? (
+                            <span className="text-xs text-zinc-500">Alle butikker</span>
+                          ) : STORE_SCOPED.includes(role) ? (
+                            <UserStoreAccess
+                              userId={user.id}
+                              allStores={allStores}
+                              currentStoreIds={userStores.map((us) => us.stores?.id).filter((x): x is string => !!x)}
+                            />
+                          ) : (
+                            <span className="text-xs text-zinc-400">Ingen tilgang satt</span>
+                          )}
                         </td>
                         <td className="px-4 py-3.5">
                           <div className="flex items-center gap-2">

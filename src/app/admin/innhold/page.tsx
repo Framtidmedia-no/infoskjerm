@@ -13,8 +13,8 @@ export default async function ContentListPage() {
 
   const { data: items } = await supabase
     .from("content_items")
-    .select("id, title, type, status, valid_from, valid_to, updated_at, content_targets(target_all, store_id, tag_id)")
-    .order("updated_at", { ascending: false })
+    .select("id, title, type, status, body, valid_from, valid_to, created_at, updated_at, content_targets(target_all, store_id, tag_id)")
+    .order("created_at", { ascending: false })
 
   const rows: ContentRow[] = (items ?? []).map((it) => {
     const targets = (it.content_targets ?? []) as { target_all: boolean | null; store_id: string | null; tag_id: string | null }[]
@@ -23,11 +23,13 @@ export default async function ContentListPage() {
     if (targets.some((t) => t.store_id)) { mode = "stores"; count = targets.filter((t) => t.store_id).length }
     else if (targets.some((t) => t.tag_id)) { mode = "tags"; count = targets.filter((t) => t.tag_id).length }
     else if (targets.some((t) => t.target_all)) { mode = "all" }
+    const body = (it.body ?? {}) as { imageUrl?: string | null }
     return {
       id: it.id,
       title: it.title,
       type: it.type,
       status: it.status,
+      imageUrl: body.imageUrl ?? null,
       validFrom: it.valid_from,
       validTo: it.valid_to,
       updatedAt: it.updated_at,
@@ -46,7 +48,7 @@ export default async function ContentListPage() {
           </Link>
         }
       />
-      <div className="flex-1 p-6 max-w-3xl">
+      <div className="flex-1 p-6 max-w-6xl">
         <ContentListClient items={rows} />
       </div>
     </div>

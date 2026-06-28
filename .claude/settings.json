@@ -46,7 +46,8 @@
       "Bash(curl -s --max-time 12 --resolve xibo.framtidtech.no:443:157.180.73.205 \"https://xibo.framtidtech.no/login\")",
       "Bash(echo \"1.1.1.1: $\\(dig +short xibo.framtidtech.no @1.1.1.1\\)\")",
       "Bash(ssh -i ~/.ssh/id_ed25519 root@157.180.73.205 'cd /opt/xibo && docker compose exec -T cms-db mysql -ucms -p'\\\\''__CMDSUB_OUTPUT__'\\\\'' cms -e '\\\\''SELECT id, description FROM oauth_scopes;'\\\\''')",
-      "Bash(python3 -c \"import sys,json; g=json.load\\(sys.stdin\\); print\\('Totalt:', len\\(g\\)\\); [print\\(' ',x['displayGroup']\\) for x in g]\")"
+      "Bash(python3 -c \"import sys,json; g=json.load\\(sys.stdin\\); print\\('Totalt:', len\\(g\\)\\); [print\\(' ',x['displayGroup']\\) for x in g]\")",
+      "Bash(ssh -i ~/.ssh/id_ed25519 root@157.180.73.205 'cd /opt/xibo && docker compose logs --tail=40 cms-web 2>/dev/null | grep -iE '\\\\''error|exception|fonts'\\\\'' | tail -12')"
     ],
     "additionalDirectories": [
       "/Users/frlund3/Documents/GitHub/infoskjerm/src/app/preview/[id]",

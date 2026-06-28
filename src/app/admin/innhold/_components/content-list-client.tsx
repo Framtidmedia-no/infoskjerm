@@ -7,7 +7,7 @@ import { deleteContent, duplicateContent } from "../actions"
 import { toast } from "sonner"
 import {
   Newspaper, Trophy, BarChart2, CloudSun, ImageIcon,
-  Globe, Store as StoreIcon, Tag, Copy, Trash2, Pencil, MoreVertical,
+  Globe, Store as StoreIcon, Tag, Copy, Trash2, Pencil, MoreVertical, Calendar,
 } from "lucide-react"
 
 export interface ContentRow {
@@ -15,25 +15,26 @@ export interface ContentRow {
   title: string
   type: string
   status: string | null
+  imageUrl: string | null
   validFrom: string | null
   validTo: string | null
   updatedAt: string | null
   target: { mode: "all" | "stores" | "tags" | "none"; count: number }
 }
 
-const TYPE_META: Record<string, { label: string; icon: React.ElementType; color: string }> = {
-  news: { label: "Nyhet", icon: Newspaper, color: "bg-blue-50 text-blue-700" },
-  competition: { label: "Konkurranse", icon: Trophy, color: "bg-amber-50 text-amber-700" },
-  slide: { label: "Tilbud/annet", icon: ImageIcon, color: "bg-zinc-100 text-zinc-600" },
-  stats: { label: "Salgstall", icon: BarChart2, color: "bg-emerald-50 text-emerald-700" },
-  weather: { label: "Vær", icon: CloudSun, color: "bg-sky-50 text-sky-700" },
+const TYPE_META: Record<string, { label: string; icon: React.ElementType; badge: string; gradient: string }> = {
+  news: { label: "Nyhet", icon: Newspaper, badge: "bg-blue-600 text-white", gradient: "from-blue-500 to-blue-700" },
+  competition: { label: "Konkurranse", icon: Trophy, badge: "bg-amber-500 text-white", gradient: "from-amber-400 to-amber-600" },
+  slide: { label: "Tilbud", icon: ImageIcon, badge: "bg-zinc-700 text-white", gradient: "from-zinc-600 to-zinc-800" },
+  stats: { label: "Salgstall", icon: BarChart2, badge: "bg-emerald-600 text-white", gradient: "from-emerald-500 to-emerald-700" },
+  weather: { label: "Vær", icon: CloudSun, badge: "bg-sky-500 text-white", gradient: "from-sky-400 to-sky-600" },
 }
 
 const STATUS_META: Record<string, { label: string; color: string }> = {
-  draft: { label: "Utkast", color: "bg-zinc-100 text-zinc-500" },
-  live: { label: "Publisert", color: "bg-emerald-100 text-emerald-700" },
-  scheduled: { label: "Planlagt", color: "bg-cyan-100 text-cyan-700" },
-  archived: { label: "Arkivert", color: "bg-zinc-100 text-zinc-400" },
+  draft: { label: "Utkast", color: "bg-white/90 text-zinc-600 ring-1 ring-zinc-200" },
+  live: { label: "Publisert", color: "bg-emerald-500 text-white" },
+  scheduled: { label: "Planlagt", color: "bg-cyan-500 text-white" },
+  archived: { label: "Arkivert", color: "bg-zinc-400 text-white" },
 }
 
 function targetLabel(t: ContentRow["target"]) {
@@ -41,6 +42,14 @@ function targetLabel(t: ContentRow["target"]) {
   if (t.mode === "stores") return { icon: StoreIcon, text: `${t.count} butikk${t.count === 1 ? "" : "er"}` }
   if (t.mode === "tags") return { icon: Tag, text: `${t.count} tagg${t.count === 1 ? "" : "er"}` }
   return { icon: Globe, text: "Ikke målrettet" }
+}
+
+function formatPeriod(from: string | null, to: string | null): string | null {
+  if (!from && !to) return null
+  const fmt = (d: string) => new Date(d).toLocaleDateString("nb-NO", { day: "numeric", month: "short" })
+  if (from && to) return `${fmt(from)} – ${fmt(to)}`
+  if (from) return `Fra ${fmt(from)}`
+  return `Til ${fmt(to!)}`
 }
 
 export function ContentListClient({ items }: { items: ContentRow[] }) {
@@ -77,36 +86,54 @@ export function ContentListClient({ items }: { items: ContentRow[] }) {
   }
 
   return (
-    <div className="space-y-2">
+    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
       {items.map((item) => {
         const tm = TYPE_META[item.type] ?? TYPE_META.slide
         const sm = STATUS_META[item.status ?? "draft"] ?? STATUS_META.draft
         const tl = targetLabel(item.target)
         const TypeIcon = tm.icon
         const TargetIcon = tl.icon
+        const period = formatPeriod(item.validFrom, item.validTo)
         return (
-          <div key={item.id} className={`group flex items-center gap-4 rounded-xl border border-zinc-200 bg-white px-4 py-3 hover:border-zinc-300 transition-colors ${busyId === item.id ? "opacity-50" : ""}`}>
-            <div className={`w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 ${tm.color}`}>
-              <TypeIcon className="w-4 h-4" />
-            </div>
-            <Link href={`/admin/innhold/${item.id}`} className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-zinc-900 truncate">{item.title || "Uten tittel"}</p>
-              <div className="flex items-center gap-2 mt-0.5">
-                <span className="text-[11px] text-zinc-400">{tm.label}</span>
-                <span className="text-zinc-300">·</span>
-                <span className="flex items-center gap-1 text-[11px] text-zinc-400"><TargetIcon className="w-3 h-3" />{tl.text}</span>
-              </div>
+          <div key={item.id} className={`group relative rounded-2xl bg-white border border-zinc-200 overflow-hidden hover:shadow-lg hover:border-zinc-300 transition-all ${busyId === item.id ? "opacity-50" : ""}`}>
+            {/* Media */}
+            <Link href={`/admin/innhold/${item.id}`} className="block relative aspect-[16/9] overflow-hidden">
+              {item.imageUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={item.imageUrl} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+              ) : (
+                <div className={`w-full h-full bg-gradient-to-br ${tm.gradient} flex items-center justify-center`}>
+                  <TypeIcon className="w-10 h-10 text-white/40" />
+                </div>
+              )}
+              {/* Type badge */}
+              <span className={`absolute top-2.5 left-2.5 inline-flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-full ${tm.badge} shadow-sm`}>
+                <TypeIcon className="w-3 h-3" /> {tm.label}
+              </span>
+              {/* Status badge */}
+              <span className={`absolute top-2.5 right-2.5 text-[10px] font-semibold px-2 py-1 rounded-full ${sm.color} shadow-sm`}>{sm.label}</span>
             </Link>
-            <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full ${sm.color}`}>{sm.label}</span>
 
-            <div className="relative">
-              <button onClick={() => setMenuId(menuId === item.id ? null : item.id)} className="w-7 h-7 rounded-lg flex items-center justify-center text-zinc-400 hover:bg-zinc-100 hover:text-zinc-700">
+            {/* Body */}
+            <div className="p-3.5">
+              <Link href={`/admin/innhold/${item.id}`}>
+                <h3 className="text-sm font-semibold text-zinc-900 line-clamp-2 leading-snug hover:text-zinc-600">{item.title || "Uten tittel"}</h3>
+              </Link>
+              <div className="flex items-center gap-3 mt-2 text-[11px] text-zinc-400">
+                <span className="flex items-center gap-1"><TargetIcon className="w-3 h-3" />{tl.text}</span>
+                {period && <span className="flex items-center gap-1"><Calendar className="w-3 h-3" />{period}</span>}
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div className="absolute bottom-2.5 right-2.5">
+              <button onClick={() => setMenuId(menuId === item.id ? null : item.id)} className="w-7 h-7 rounded-lg flex items-center justify-center text-zinc-400 bg-white/80 hover:bg-zinc-100 hover:text-zinc-700 opacity-0 group-hover:opacity-100 transition-opacity">
                 <MoreVertical className="w-4 h-4" />
               </button>
               {menuId === item.id && (
                 <>
                   <div className="fixed inset-0 z-10" onClick={() => setMenuId(null)} />
-                  <div className="absolute right-0 top-8 z-20 w-40 rounded-xl border border-zinc-200 bg-white shadow-lg py-1">
+                  <div className="absolute right-0 bottom-9 z-20 w-40 rounded-xl border border-zinc-200 bg-white shadow-lg py-1">
                     <Link href={`/admin/innhold/${item.id}`} className="flex items-center gap-2 px-3 py-2 text-xs text-zinc-700 hover:bg-zinc-50"><Pencil className="w-3.5 h-3.5" /> Rediger</Link>
                     <button onClick={() => handleDuplicate(item.id)} className="w-full flex items-center gap-2 px-3 py-2 text-xs text-zinc-700 hover:bg-zinc-50"><Copy className="w-3.5 h-3.5" /> Dupliser</button>
                     <button onClick={() => handleDelete(item.id)} className="w-full flex items-center gap-2 px-3 py-2 text-xs text-red-600 hover:bg-red-50"><Trash2 className="w-3.5 h-3.5" /> Slett</button>

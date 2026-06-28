@@ -47,3 +47,18 @@ export async function updateUserRole(userId: string, role: UserRole) {
   revalidatePath("/admin/users")
   return { ok: true }
 }
+
+export async function setUserStores(userId: string, storeIds: string[]) {
+  const { supabase } = await requireRole(["super_admin", "chain_manager", "area_manager"])
+  // Replace the user's store assignments
+  const { error: delError } = await supabase.from("user_stores").delete().eq("user_id", userId)
+  if (delError) return { ok: false, error: delError.message }
+  if (storeIds.length > 0) {
+    const { error } = await supabase
+      .from("user_stores")
+      .insert(storeIds.map((sid) => ({ user_id: userId, store_id: sid })))
+    if (error) return { ok: false, error: error.message }
+  }
+  revalidatePath("/admin/users")
+  return { ok: true }
+}
