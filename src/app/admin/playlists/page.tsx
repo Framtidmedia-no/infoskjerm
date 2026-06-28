@@ -2,7 +2,7 @@ import { createClient } from "@/lib/supabase/server"
 import { getPlaylistsWithItems } from "@/lib/admin/queries"
 import { Topbar } from "@/components/admin/topbar"
 import { Card, CardContent } from "@/components/ui/card"
-import { Play, ListVideo } from "lucide-react"
+import { Play, ListVideo, ArrowRight } from "lucide-react"
 import Link from "next/link"
 import { PlaylistDeleteButton } from "./playlist-delete-button"
 import { PlaylistFormDialog } from "./playlist-form-dialog"
@@ -27,10 +27,29 @@ export default async function PlaylistsPage() {
         subtitle={`${playlists.length} spillelister`}
         actions={<PlaylistFormDialog />}
       />
-      <div className="flex-1 p-6">
+      <div className="flex-1 p-6 space-y-6">
+        {/* Forklaring */}
+        <div className="bg-zinc-50 border border-zinc-100 rounded-xl p-4">
+          <p className="text-xs font-semibold text-zinc-500 uppercase tracking-widest mb-2">Slik fungerer det</p>
+          <div className="flex items-center gap-2 text-sm text-zinc-700 flex-wrap">
+            <span className="bg-white border border-zinc-200 rounded-lg px-3 py-1.5 font-medium">Opprett innhold</span>
+            <ArrowRight className="w-4 h-4 text-zinc-400 flex-shrink-0" />
+            <span className="bg-white border border-zinc-200 rounded-lg px-3 py-1.5 font-medium">Legg til i spilleliste</span>
+            <ArrowRight className="w-4 h-4 text-zinc-400 flex-shrink-0" />
+            <span className="bg-white border border-zinc-200 rounded-lg px-3 py-1.5 font-medium">Koble spilleliste til skjerm</span>
+            <ArrowRight className="w-4 h-4 text-zinc-400 flex-shrink-0" />
+            <span className="bg-white border border-zinc-200 rounded-lg px-3 py-1.5 font-medium text-emerald-700 border-emerald-200">Innhold vises på skjermen</span>
+          </div>
+        </div>
+
         {playlists.length === 0 ? (
-          <div className="flex items-center justify-center h-48">
-            <p className="text-zinc-400 text-sm">Ingen spillelister er opprettet ennå.</p>
+          <div className="flex flex-col items-center justify-center py-16 bg-white border border-zinc-100 rounded-xl text-center">
+            <div className="w-12 h-12 bg-zinc-50 rounded-2xl flex items-center justify-center mb-4">
+              <ListVideo className="w-6 h-6 text-zinc-300" />
+            </div>
+            <p className="text-zinc-700 font-semibold text-sm mb-1">Ingen spillelister ennå</p>
+            <p className="text-zinc-400 text-sm mb-5 max-w-xs">Opprett en spilleliste, legg til innhold, og koble den til en skjerm.</p>
+            <PlaylistFormDialog />
           </div>
         ) : (
           <div className="grid grid-cols-2 gap-4">

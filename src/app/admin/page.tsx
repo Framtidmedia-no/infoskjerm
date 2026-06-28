@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button"
 import { ScreenStatusDot } from "@/components/admin/screen-status-dot"
 import { AnimatedStatCard } from "./_components/animated-stat-card"
 import { PageTransition } from "@/components/admin/page-transition"
-import { Monitor, Store, AlertCircle, CheckCircle2, ArrowRight, UserPlus, Newspaper, Send, Rocket } from "lucide-react"
+import { Monitor, Store, AlertCircle, CheckCircle2, ArrowRight, UserPlus, Newspaper, Send, Rocket, ListVideo, PenSquare } from "lucide-react"
 import Link from "next/link"
 import { createClient } from "@/lib/supabase/server"
 import { getAdminStats, getChainOverview, formatLastSeen, getScreenStatusColor } from "@/lib/admin/queries"
@@ -119,15 +119,30 @@ export default async function AdminDashboard() {
           </div>
         )}
 
-        {/* Kom i gang for ikke-super_admin — vises til store_manager uten screens */}
-        {!isSuperAdmin && stats.totalScreens === 0 && stats.liveContent === 0 && (
-          <div className="bg-blue-50 border border-blue-100 rounded-2xl p-5 flex items-start gap-4">
-            <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center flex-shrink-0">
-              <Newspaper className="w-5 h-5 text-white" />
-            </div>
-            <div>
-              <h2 className="text-sm font-bold text-zinc-900 mb-1">Slik kommer du i gang</h2>
-              <p className="text-sm text-zinc-600">Gå til <Link href="/admin/content/news" className="underline font-medium">Nyheter</Link> og opprett ditt første innhold. Deretter bruker du <Link href="/admin/publish" className="underline font-medium">Publiser</Link> for å sende det til skjermene.</p>
+        {/* Arbeidsflyt-guide — vises alltid til chain_manager/store_manager */}
+        {!isSuperAdmin && (
+          <div className="bg-white border border-zinc-100 rounded-2xl p-5">
+            <p className="text-xs font-semibold text-zinc-400 uppercase tracking-widest mb-3">Slik fungerer infoskjerm-systemet</p>
+            <div className="flex items-center gap-2 flex-wrap">
+              <Link href="/admin/content" className="flex items-center gap-2 bg-zinc-50 hover:bg-zinc-100 border border-zinc-200 rounded-xl px-4 py-3 transition-all group">
+                <PenSquare className="w-4 h-4 text-zinc-500 group-hover:text-zinc-900" />
+                <span className="text-sm font-medium text-zinc-700 group-hover:text-zinc-900">1. Opprett innhold</span>
+              </Link>
+              <ArrowRight className="w-4 h-4 text-zinc-300 flex-shrink-0" />
+              <Link href="/admin/playlists" className="flex items-center gap-2 bg-zinc-50 hover:bg-zinc-100 border border-zinc-200 rounded-xl px-4 py-3 transition-all group">
+                <ListVideo className="w-4 h-4 text-zinc-500 group-hover:text-zinc-900" />
+                <span className="text-sm font-medium text-zinc-700 group-hover:text-zinc-900">2. Legg til i spilleliste</span>
+              </Link>
+              <ArrowRight className="w-4 h-4 text-zinc-300 flex-shrink-0" />
+              <Link href="/admin/screens" className="flex items-center gap-2 bg-zinc-50 hover:bg-zinc-100 border border-zinc-200 rounded-xl px-4 py-3 transition-all group">
+                <Monitor className="w-4 h-4 text-zinc-500 group-hover:text-zinc-900" />
+                <span className="text-sm font-medium text-zinc-700 group-hover:text-zinc-900">3. Koble til skjerm</span>
+              </Link>
+              <ArrowRight className="w-4 h-4 text-zinc-300 flex-shrink-0" />
+              <Link href="/admin/publish" className="flex items-center gap-2 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-xl px-4 py-3 transition-all group">
+                <Send className="w-4 h-4 text-emerald-600" />
+                <span className="text-sm font-medium text-emerald-700">4. Publiser</span>
+              </Link>
             </div>
           </div>
         )}

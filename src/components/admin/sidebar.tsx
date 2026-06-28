@@ -43,7 +43,7 @@ const navGroups: NavGroup[] = [
     label: "Innhold",
     items: [
       { href: "/admin/content", label: "Alt innhold", icon: FileStack, roles: ["super_admin", "chain_manager", "store_manager", "store_employee"], matchPrefix: true },
-      { href: "/admin/playlists", label: "Skjermoppsett", icon: ListVideo, roles: ["super_admin", "chain_manager"], matchPrefix: true },
+      { href: "/admin/playlists", label: "Spillelister", icon: ListVideo, roles: ["super_admin", "chain_manager"], matchPrefix: true },
       { href: "/admin/emergency", label: "Nødkringkasting", icon: AlertTriangle, roles: ["super_admin", "chain_manager"] },
     ],
   },
