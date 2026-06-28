@@ -38,7 +38,7 @@ export default async function SlidesPage() {
         subtitle={`${activeCount} publiserte slides`}
         actions={
           <Button size="sm" asChild>
-            <Link href="/admin/builder" className="flex items-center gap-1.5">
+            <Link href="/admin/content/new" className="flex items-center gap-1.5">
               <Plus className="w-4 h-4" />
               Ny slide
             </Link>

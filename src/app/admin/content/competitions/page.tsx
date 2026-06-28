@@ -32,7 +32,7 @@ export default async function CompetitionsPage() {
         subtitle={`${activeCount} publiserte konkurranser`}
         actions={
           <Button size="sm" asChild>
-            <Link href="/admin/builder" className="flex items-center gap-1.5">
+            <Link href="/admin/content/new" className="flex items-center gap-1.5">
               <Plus className="w-4 h-4" />
               Ny konkurranse
             </Link>

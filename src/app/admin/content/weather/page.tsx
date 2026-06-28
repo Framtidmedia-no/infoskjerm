@@ -30,7 +30,7 @@ export default async function WeatherPage() {
         subtitle="Automatisk yr.no-data basert på butikkens koordinater"
         actions={
           <Button size="sm" asChild>
-            <Link href="/admin/builder" className="flex items-center gap-1.5">
+            <Link href="/admin/content/new" className="flex items-center gap-1.5">
               <Plus className="w-4 h-4" />
               Nytt vær-innhold
             </Link>
