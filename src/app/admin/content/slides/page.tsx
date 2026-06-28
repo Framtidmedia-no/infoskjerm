@@ -3,7 +3,9 @@ import { getContentItems } from "@/lib/admin/queries"
 import { Topbar } from "@/components/admin/topbar"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Plus, Pencil, Trash2, Eye, Image as ImageIcon, GripVertical } from "lucide-react"
+import { Plus, Pencil, Eye, Image as ImageIcon, GripVertical } from "lucide-react"
+import Link from "next/link"
+import { ContentDeleteButton } from "../_components/content-delete-button"
 
 export const dynamic = "force-dynamic"
 
@@ -33,9 +35,11 @@ export default async function SlidesPage() {
         title="Slides"
         subtitle={`${activeCount} publiserte slides`}
         actions={
-          <Button size="sm">
-            <Plus className="w-4 h-4" />
-            Ny slide
+          <Button size="sm" asChild>
+            <Link href="/admin/builder" className="flex items-center gap-1.5">
+              <Plus className="w-4 h-4" />
+              Ny slide
+            </Link>
           </Button>
         }
       />
@@ -71,9 +75,17 @@ export default async function SlidesPage() {
                     </span>
 
                     <div className="flex items-center gap-1">
-                      <Button variant="ghost" size="icon" className="h-8 w-8"><Eye className="w-4 h-4" /></Button>
-                      <Button variant="ghost" size="icon" className="h-8 w-8"><Pencil className="w-4 h-4" /></Button>
-                      <Button variant="ghost" size="icon" className="h-8 w-8 text-red-500 hover:bg-red-50"><Trash2 className="w-4 h-4" /></Button>
+                      <Button variant="ghost" size="icon" className="h-8 w-8" asChild>
+                        <Link href={`/preview/${slide.id}`} target="_blank">
+                          <Eye className="w-4 h-4" />
+                        </Link>
+                      </Button>
+                      <Button variant="ghost" size="icon" className="h-8 w-8" asChild>
+                        <Link href={`/admin/builder?id=${slide.id}`}>
+                          <Pencil className="w-4 h-4" />
+                        </Link>
+                      </Button>
+                      <ContentDeleteButton itemId={slide.id} />
                     </div>
                   </div>
                 </CardContent>

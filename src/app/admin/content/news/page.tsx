@@ -4,7 +4,11 @@ import { Topbar } from "@/components/admin/topbar"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Plus, Pencil, Trash2, Eye, Clock, Store } from "lucide-react"
+import { Plus, Pencil, Eye, Clock, Store } from "lucide-react"
+import Link from "next/link"
+import { ContentDeleteButton } from "../_components/content-delete-button"
+import { ContentApproveButton } from "../_components/content-approve-button"
+import { ContentRejectButton } from "../_components/content-reject-button"
 
 export const dynamic = "force-dynamic"
 
@@ -27,15 +31,16 @@ export default async function NewsPage() {
         title="Nyheter"
         subtitle={`${news.length} nyheter — ${pendingCount} venter godkjenning`}
         actions={
-          <Button size="sm">
-            <Plus className="w-4 h-4" />
-            Ny nyhet
+          <Button size="sm" asChild>
+            <Link href="/admin/builder" className="flex items-center gap-1.5">
+              <Plus className="w-4 h-4" />
+              Ny nyhet
+            </Link>
           </Button>
         }
       />
 
       <div className="flex-1 p-6 space-y-3">
-        {/* Pending approval banner */}
         {pendingCount > 0 && (
           <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -49,9 +54,6 @@ export default async function NewsPage() {
                 <p className="text-xs text-amber-700">Ansatte har sendt inn innhold som trenger din godkjenning</p>
               </div>
             </div>
-            <Button size="sm" variant="outline" className="border-amber-300 text-amber-800 hover:bg-amber-100">
-              Godkjenn nå
-            </Button>
           </div>
         )}
 
@@ -97,19 +99,21 @@ export default async function NewsPage() {
                     <div className="flex items-center gap-2 flex-shrink-0">
                       {item.status === "pending_approval" && (
                         <>
-                          <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700">Godkjenn</Button>
-                          <Button size="sm" variant="outline" className="text-red-600 border-red-200 hover:bg-red-50">Avvis</Button>
+                          <ContentApproveButton itemId={item.id} />
+                          <ContentRejectButton itemId={item.id} />
                         </>
                       )}
-                      <Button variant="ghost" size="icon" className="h-8 w-8">
-                        <Eye className="w-4 h-4" />
+                      <Button variant="ghost" size="icon" className="h-8 w-8" asChild>
+                        <Link href={`/preview/${item.id}`} target="_blank">
+                          <Eye className="w-4 h-4" />
+                        </Link>
                       </Button>
-                      <Button variant="ghost" size="icon" className="h-8 w-8">
-                        <Pencil className="w-4 h-4" />
+                      <Button variant="ghost" size="icon" className="h-8 w-8" asChild>
+                        <Link href={`/admin/builder?id=${item.id}`}>
+                          <Pencil className="w-4 h-4" />
+                        </Link>
                       </Button>
-                      <Button variant="ghost" size="icon" className="h-8 w-8 text-red-500 hover:bg-red-50">
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
+                      <ContentDeleteButton itemId={item.id} />
                     </div>
                   </div>
                 </CardContent>

@@ -35,6 +35,7 @@ function LayoutPreview({ layout }: { layout: PredefinedLayout }) {
 
 export function ZonePicker({ currentLayoutId }: ZonePickerProps) {
   const [selected, setSelected] = useState(currentLayoutId ?? "fullscreen")
+  const [savedId, setSavedId] = useState<string | null>(currentLayoutId)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -47,6 +48,7 @@ export function ZonePicker({ currentLayoutId }: ZonePickerProps) {
     const res = await saveZoneLayout(selected, layout as unknown as Json)
     setSaving(false)
     if (!res.ok) { setError(res.error ?? "Feil"); return }
+    setSavedId(selected)
     setSaved(true)
     setTimeout(() => setSaved(false), 2500)
   }
@@ -88,7 +90,7 @@ export function ZonePicker({ currentLayoutId }: ZonePickerProps) {
       <div className="flex items-center gap-3">
         <button
           onClick={handleSave}
-          disabled={saving || selected === currentLayoutId}
+          disabled={selected === savedId || saving}
           className="flex items-center gap-2 bg-zinc-900 text-white text-sm font-medium px-4 py-2 rounded-xl hover:bg-zinc-700 transition-colors disabled:opacity-50"
         >
           {saving ? "Lagrer..." : saved ? "Lagret ✓" : "Lagre layout"}

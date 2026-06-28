@@ -2,8 +2,9 @@ import { createClient } from "@/lib/supabase/server"
 import { getPlaylistsWithItems } from "@/lib/admin/queries"
 import { Topbar } from "@/components/admin/topbar"
 import { Card, CardContent } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Plus, Pencil, Trash2, Play, ListVideo } from "lucide-react"
+import { Play, ListVideo } from "lucide-react"
+import { PlaylistDeleteButton } from "./playlist-delete-button"
+import { PlaylistFormDialog } from "./playlist-form-dialog"
 
 export const dynamic = "force-dynamic"
 
@@ -23,12 +24,7 @@ export default async function PlaylistsPage() {
       <Topbar
         title="Spillelister"
         subtitle={`${playlists.length} spillelister`}
-        actions={
-          <Button size="sm">
-            <Plus className="w-4 h-4" />
-            Ny spilleliste
-          </Button>
-        }
+        actions={<PlaylistFormDialog />}
       />
       <div className="flex-1 p-6">
         {playlists.length === 0 ? (
@@ -86,8 +82,7 @@ export default async function PlaylistsPage() {
 
                     <div className="flex items-center justify-end pt-3 border-t border-zinc-100">
                       <div className="flex items-center gap-1">
-                        <Button variant="ghost" size="icon" className="h-7 w-7"><Pencil className="w-3.5 h-3.5" /></Button>
-                        <Button variant="ghost" size="icon" className="h-7 w-7 text-red-500 hover:bg-red-50"><Trash2 className="w-3.5 h-3.5" /></Button>
+                        <PlaylistDeleteButton playlistId={pl.id} />
                       </div>
                     </div>
                   </CardContent>

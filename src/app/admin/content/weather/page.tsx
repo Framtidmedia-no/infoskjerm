@@ -4,7 +4,9 @@ import { Topbar } from "@/components/admin/topbar"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { CloudSun, Plus, Pencil, Trash2, Eye, Clock, Store } from "lucide-react"
+import { CloudSun, Plus, Pencil, Eye, Clock, Store } from "lucide-react"
+import Link from "next/link"
+import { ContentDeleteButton } from "../_components/content-delete-button"
 
 export const dynamic = "force-dynamic"
 
@@ -25,9 +27,11 @@ export default async function WeatherPage() {
         title="Vær"
         subtitle="Automatisk yr.no-data basert på butikkens koordinater"
         actions={
-          <Button size="sm">
-            <Plus className="w-4 h-4" />
-            Nytt vær-innhold
+          <Button size="sm" asChild>
+            <Link href="/admin/builder" className="flex items-center gap-1.5">
+              <Plus className="w-4 h-4" />
+              Nytt vær-innhold
+            </Link>
           </Button>
         }
       />
@@ -78,15 +82,17 @@ export default async function WeatherPage() {
                     </div>
 
                     <div className="flex items-center gap-2 flex-shrink-0">
-                      <Button variant="ghost" size="icon" className="h-8 w-8">
-                        <Eye className="w-4 h-4" />
+                      <Button variant="ghost" size="icon" className="h-8 w-8" asChild>
+                        <Link href={`/preview/${item.id}`} target="_blank">
+                          <Eye className="w-4 h-4" />
+                        </Link>
                       </Button>
-                      <Button variant="ghost" size="icon" className="h-8 w-8">
-                        <Pencil className="w-4 h-4" />
+                      <Button variant="ghost" size="icon" className="h-8 w-8" asChild>
+                        <Link href={`/admin/builder?id=${item.id}`}>
+                          <Pencil className="w-4 h-4" />
+                        </Link>
                       </Button>
-                      <Button variant="ghost" size="icon" className="h-8 w-8 text-red-500 hover:bg-red-50">
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
+                      <ContentDeleteButton itemId={item.id} />
                     </div>
                   </div>
                 </CardContent>

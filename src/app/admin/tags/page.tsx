@@ -4,6 +4,7 @@ import { Topbar } from "@/components/admin/topbar"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Tag, Plus, Pencil } from "lucide-react"
+import Link from "next/link"
 import { TagDeleteButton } from "./tag-delete-button"
 import { TagFormDialog } from "./tag-form-dialog"
 
@@ -110,8 +111,10 @@ export default async function TagsPage() {
                       <p className="text-xs text-zinc-400 italic">Ingen butikker lagt til ennå</p>
                     )}
 
-                    <Button variant="outline" size="sm" className="w-full mt-4 text-xs">
-                      Administrer butikker
+                    <Button variant="outline" size="sm" className="w-full mt-4 text-xs" asChild>
+                      <Link href={`/admin/stores?tag=${tag.id}`}>
+                        Administrer butikker
+                      </Link>
                     </Button>
                   </CardContent>
                 </Card>
@@ -119,15 +122,20 @@ export default async function TagsPage() {
             })}
 
             {/* Add new tag card */}
-            <Card className="border-dashed border-2 hover:border-zinc-300 transition-colors cursor-pointer">
-              <CardContent className="p-5 flex flex-col items-center justify-center h-full min-h-40 text-center">
-                <div className="w-10 h-10 rounded-xl bg-zinc-100 flex items-center justify-center mb-3">
-                  <Plus className="w-5 h-5 text-zinc-400" />
-                </div>
-                <p className="text-sm font-medium text-zinc-400">Legg til tag</p>
-                <p className="text-xs text-zinc-300 mt-1">F.eks. VESTLAND, KYST, KAMPANJE</p>
-              </CardContent>
-            </Card>
+            <TagFormDialog
+              mode="create"
+              trigger={
+                <Card className="border-dashed border-2 hover:border-zinc-300 transition-colors cursor-pointer">
+                  <CardContent className="p-5 flex flex-col items-center justify-center h-full min-h-40 text-center">
+                    <div className="w-10 h-10 rounded-xl bg-zinc-100 flex items-center justify-center mb-3">
+                      <Plus className="w-5 h-5 text-zinc-400" />
+                    </div>
+                    <p className="text-sm font-medium text-zinc-400">Legg til tag</p>
+                    <p className="text-xs text-zinc-300 mt-1">F.eks. VESTLAND, KYST, KAMPANJE</p>
+                  </CardContent>
+                </Card>
+              }
+            />
           </div>
         )}
       </div>

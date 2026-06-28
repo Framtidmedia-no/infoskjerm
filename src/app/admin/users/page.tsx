@@ -3,11 +3,15 @@ import { getUsersWithDetails } from "@/lib/admin/queries"
 import { Topbar } from "@/components/admin/topbar"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Plus, Pencil, Trash2, Shield, Building2, Store, UserCircle } from "lucide-react"
+import { Shield, Building2, Store, UserCircle, Info } from "lucide-react"
+import { UserDeleteButton } from "./user-delete-button"
+import { UserRoleSelect } from "./user-role-select"
 
 export const dynamic = "force-dynamic"
 
-const roleConfig = {
+type UserRole = "super_admin" | "chain_manager" | "store_manager" | "store_employee"
+
+const roleConfig: Record<UserRole, { label: string; icon: React.ElementType; color: string; bg: string }> = {
   super_admin: { label: "Super Admin", icon: Shield, color: "text-violet-700", bg: "bg-violet-50" },
   chain_manager: { label: "Kjedeleder", icon: Building2, color: "text-blue-700", bg: "bg-blue-50" },
   store_manager: { label: "Butikksjef", icon: Store, color: "text-emerald-700", bg: "bg-emerald-50" },
@@ -23,7 +27,12 @@ export default async function UsersPage() {
       <Topbar
         title="Brukere"
         subtitle={`${users.length} brukere — 4 roller`}
-        actions={<Button size="sm"><Plus className="w-4 h-4" />Ny bruker</Button>}
+        actions={
+          <div className="flex items-center gap-2 bg-blue-50 border border-blue-200 rounded-lg px-3 py-1.5">
+            <Info className="w-3.5 h-3.5 text-blue-500 flex-shrink-0" />
+            <span className="text-xs text-blue-700">Nye brukere opprettes via Supabase Dashboard</span>
+          </div>
+        }
       />
       <div className="flex-1 p-6">
         {users.length === 0 ? (
@@ -44,7 +53,7 @@ export default async function UsersPage() {
                 </thead>
                 <tbody>
                   {users.map((user) => {
-                    const role = (user.role ?? "store_employee") as keyof typeof roleConfig
+                    const role = (user.role ?? "store_employee") as UserRole
                     const cfg = roleConfig[role] ?? roleConfig.store_employee
                     const Icon = cfg.icon
                     const chain = (user.chains as unknown as { name: string; color: string } | null)
@@ -84,9 +93,9 @@ export default async function UsersPage() {
                           </div>
                         </td>
                         <td className="px-4 py-3.5">
-                          <div className="flex items-center gap-1">
-                            <Button variant="ghost" size="icon" className="h-7 w-7"><Pencil className="w-3.5 h-3.5" /></Button>
-                            <Button variant="ghost" size="icon" className="h-7 w-7 text-red-500 hover:bg-red-50"><Trash2 className="w-3.5 h-3.5" /></Button>
+                          <div className="flex items-center gap-2">
+                            <UserRoleSelect userId={user.id} currentRole={role} />
+                            <UserDeleteButton userId={user.id} />
                           </div>
                         </td>
                       </tr>
