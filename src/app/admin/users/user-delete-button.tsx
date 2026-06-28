@@ -4,6 +4,7 @@ import { useState } from "react"
 import { Trash2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { deleteUser } from "./actions"
+import { toast } from "sonner"
 
 export function UserDeleteButton({ userId }: { userId: string }) {
   const [loading, setLoading] = useState(false)
@@ -13,8 +14,10 @@ export function UserDeleteButton({ userId }: { userId: string }) {
     setLoading(true)
     const result = await deleteUser(userId)
     if (!result.ok) {
-      alert("Kunne ikke slette: " + result.error)
+      toast.error("Kunne ikke slette: " + result.error)
       setLoading(false)
+    } else {
+      toast.success("Bruker slettet")
     }
   }
 

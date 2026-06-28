@@ -4,6 +4,7 @@ import { useState } from "react"
 import { Trash2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { deleteTag } from "./actions"
+import { toast } from "sonner"
 
 export function TagDeleteButton({ tagId }: { tagId: string }) {
   const [loading, setLoading] = useState(false)
@@ -13,8 +14,10 @@ export function TagDeleteButton({ tagId }: { tagId: string }) {
     setLoading(true)
     const result = await deleteTag(tagId)
     if (!result.ok) {
-      alert("Kunne ikke slette: " + result.error)
+      toast.error("Kunne ikke slette: " + result.error)
       setLoading(false)
+    } else {
+      toast.success("Tag slettet")
     }
   }
 

@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react"
 import { X } from "lucide-react"
 import { createTag, updateTag } from "./actions"
+import { toast } from "sonner"
 
 interface TagFormDialogProps {
   mode: "create" | "edit"
@@ -47,6 +48,7 @@ export function TagFormDialog({ mode, tagId, initialName = "", initialColor = "#
 
     setLoading(false)
     if (!result.ok) { setError(result.error ?? "Ukjent feil"); return }
+    toast.success(mode === 'create' ? 'Tag opprettet' : 'Tag oppdatert')
     setOpen(false)
   }
 

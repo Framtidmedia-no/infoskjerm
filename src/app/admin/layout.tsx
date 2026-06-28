@@ -2,6 +2,7 @@ import { Sidebar } from "@/components/admin/sidebar"
 import { ChainThemeProvider } from "@/components/admin/chain-theme-provider"
 import { createClient } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
+import { Toaster } from "sonner"
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient()
@@ -40,6 +41,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           {children}
         </main>
       </div>
+      <Toaster richColors position="bottom-right" />
     </ChainThemeProvider>
   )
 }

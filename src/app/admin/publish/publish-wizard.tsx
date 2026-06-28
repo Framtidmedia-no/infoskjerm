@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Globe, Tag, Store, Building2, Monitor, ChevronRight, CheckCircle2, Clock, CheckCircle, Calendar } from "lucide-react"
 import { publishContent } from "./actions"
+import { toast } from "sonner"
 
 interface ChainItem { id: string; name: string; color: string }
 interface TagItem { id: string; name: string; color: string }
@@ -72,8 +73,9 @@ export function PublishWizard({ chains, tags, stores, pendingContent }: PublishW
       scheduledAt || null
     )
     setPublishing(false)
-    if (!result.ok) { setPublishError(result.error ?? "Feil ved publisering"); return }
+    if (!result.ok) { setPublishError(result.error ?? "Feil ved publisering"); toast.error(result.error ?? "Feil ved publisering"); return }
     setPublished(true)
+    toast.success(scheduledAt ? 'Innhold planlagt' : '🚀 Innhold er nå live!')
   }
 
   if (published) {

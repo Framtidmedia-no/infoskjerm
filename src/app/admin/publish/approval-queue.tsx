@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { CheckCircle2, XCircle, Clock, ChevronDown, ChevronUp } from "lucide-react"
 import { approveContent, rejectContent, rollbackContent } from "./actions"
+import { toast } from "sonner"
 
 interface ContentItem {
   id: string
@@ -49,22 +50,28 @@ export function ApprovalQueue({ pendingItems, publishLog, canApprove }: Approval
 
   async function handleApprove(id: string) {
     setLoadingId(id)
-    await approveContent(id)
+    const result = await approveContent(id)
     setLoadingId(null)
+    if (result.ok) toast.success('Innhold godkjent')
+    else toast.error(result.error ?? 'Feil')
   }
 
   async function handleReject(id: string) {
     const reason = prompt("Årsak til avvisning (valgfritt):")
     setLoadingId(id)
-    await rejectContent(id, reason ?? undefined)
+    const result = await rejectContent(id, reason ?? undefined)
     setLoadingId(null)
+    if (result.ok) toast.success('Innhold avvist')
+    else toast.error(result.error ?? 'Feil')
   }
 
   async function handleRollback(logId: string) {
     if (!confirm("Tilbakestille innholdet til dette punktet?")) return
     setLoadingId(logId)
-    await rollbackContent(logId)
+    const result = await rollbackContent(logId)
     setLoadingId(null)
+    if (result.ok) toast.success('Innhold tilbakestilt')
+    else toast.error(result.error ?? 'Feil')
   }
 
   const actionLabels: Record<string, string> = {

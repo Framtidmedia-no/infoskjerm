@@ -1,8 +1,9 @@
 "use client"
-import { useState } from "react"
 import { Trash2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { deleteContentItem } from "../actions"
+import { useState } from "react"
+import { toast } from "sonner"
 
 export function ContentDeleteButton({ itemId }: { itemId: string }) {
   const [loading, setLoading] = useState(false)
@@ -12,6 +13,7 @@ export function ContentDeleteButton({ itemId }: { itemId: string }) {
     setLoading(true)
     await deleteContentItem(itemId)
     setLoading(false)
+    toast.success("Innhold slettet")
   }
 
   return (

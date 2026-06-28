@@ -22,6 +22,7 @@ import type { Json } from "@/types/database"
 import type { ModuleRow } from "@/lib/admin/modules"
 import { Save, CheckCircle, AlertCircle, Loader2, Eye, Send } from "lucide-react"
 import { submitForApproval } from "@/app/admin/publish/actions"
+import { toast } from "sonner"
 
 interface BuilderRootProps {
   modules: ModuleRow[]
@@ -170,8 +171,10 @@ export function BuilderRoot({ modules, tenantId, userId, initialName = 'Nytt inn
         if (data) handleSaved(data.id)
       }
       handleStatus('saved')
+      toast.success('Utkast lagret')
     } catch {
       handleStatus('error')
+      toast.error('Feil ved lagring')
     }
   }
 
@@ -179,8 +182,13 @@ export function BuilderRoot({ modules, tenantId, userId, initialName = 'Nytt inn
     if (!state.contentItemId) return
     await handleManualSave()
     setSubmitting(true)
-    await submitForApproval(state.contentItemId)
+    const result = await submitForApproval(state.contentItemId)
     setSubmitting(false)
+    if (result.ok) {
+      toast.success('Sendt til godkjenning')
+    } else {
+      toast.error(result.error ?? 'Feil ved innsending')
+    }
   }
 
   return (
@@ -194,6 +202,9 @@ export function BuilderRoot({ modules, tenantId, userId, initialName = 'Nytt inn
           className="text-sm font-semibold text-zinc-900 bg-transparent border-none focus:outline-none focus:ring-1 focus:ring-zinc-200 rounded px-2 py-1 min-w-[200px]"
           placeholder="Navn på innholdet..."
         />
+        {initialContentItemId && (
+          <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full font-medium">Redigerer</span>
+        )}
         <div className="ml-auto flex items-center gap-3">
           <SaveStatusIndicator status={state.saveStatus} />
           {state.contentItemId && (

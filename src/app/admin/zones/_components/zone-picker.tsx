@@ -5,6 +5,7 @@ import { CheckCircle2 } from "lucide-react"
 import { PREDEFINED_LAYOUTS, type PredefinedLayout } from "@/lib/zones/predefined-layouts"
 import { saveZoneLayout } from "../actions"
 import type { Json } from "@/types/database"
+import { toast } from "sonner"
 
 interface ZonePickerProps {
   currentLayoutId: string | null
@@ -47,10 +48,11 @@ export function ZonePicker({ currentLayoutId }: ZonePickerProps) {
     setError(null)
     const res = await saveZoneLayout(selected, layout as unknown as Json)
     setSaving(false)
-    if (!res.ok) { setError(res.error ?? "Feil"); return }
+    if (!res.ok) { setError(res.error ?? "Feil"); toast.error(res.error ?? "Feil ved lagring"); return }
     setSavedId(selected)
     setSaved(true)
     setTimeout(() => setSaved(false), 2500)
+    toast.success("Sone-layout lagret")
   }
 
   return (

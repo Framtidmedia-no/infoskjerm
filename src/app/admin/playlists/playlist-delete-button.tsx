@@ -4,6 +4,7 @@ import { useState } from "react"
 import { Trash2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { deletePlaylist } from "./actions"
+import { toast } from "sonner"
 
 export function PlaylistDeleteButton({ playlistId }: { playlistId: string }) {
   const [loading, setLoading] = useState(false)
@@ -13,8 +14,10 @@ export function PlaylistDeleteButton({ playlistId }: { playlistId: string }) {
     setLoading(true)
     const result = await deletePlaylist(playlistId)
     if (!result.ok) {
-      alert("Kunne ikke slette: " + result.error)
+      toast.error("Kunne ikke slette: " + result.error)
       setLoading(false)
+    } else {
+      toast.success("Spilleliste slettet")
     }
   }
 
