@@ -136,8 +136,9 @@ export interface XiboDisplay {
 }
 
 export async function listDisplayGroups(): Promise<XiboDisplayGroup[]> {
-  // isDisplaySpecific=0 → only real groups, not the auto per-display groups
-  return xiboFetch<XiboDisplayGroup[]>("/displaygroup", { query: { isDisplaySpecific: 0 } })
+  // isDisplaySpecific=0 → only real groups, not the auto per-display groups.
+  // length=1000 → Xibo paginates to 10 by default; ask for all.
+  return xiboFetch<XiboDisplayGroup[]>("/displaygroup", { query: { isDisplaySpecific: 0, length: 1000 } })
 }
 
 export async function createDisplayGroup(name: string, description?: string): Promise<XiboDisplayGroup> {
@@ -148,7 +149,7 @@ export async function createDisplayGroup(name: string, description?: string): Pr
 }
 
 export async function listDisplays(): Promise<XiboDisplay[]> {
-  return xiboFetch<XiboDisplay[]>("/display")
+  return xiboFetch<XiboDisplay[]>("/display", { query: { length: 1000 } })
 }
 
 export interface XiboAbout {
