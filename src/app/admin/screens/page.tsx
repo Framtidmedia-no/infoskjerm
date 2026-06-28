@@ -1,29 +1,50 @@
 import { Topbar } from "@/components/admin/topbar"
-import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { ScreenStatusDot } from "@/components/admin/screen-status-dot"
-import { Monitor, Plus, CheckCircle2, XCircle } from "lucide-react"
+import { Plus, Monitor, CheckCircle2, XCircle, Settings2 } from "lucide-react"
 import Link from "next/link"
 import { createClient } from "@/lib/supabase/server"
-import { getScreensWithStore, formatLastSeen, getScreenStatusColor } from "@/lib/admin/queries"
-import { CopyTokenButton } from "./_components/copy-token-button"
-import { ScreenActionButton } from "./_components/screen-action-button"
+import { getScreensWithStore, getScreenStatusColor } from "@/lib/admin/queries"
+import { ScreenMapClient } from "./_components/screen-map-client"
 
 export const dynamic = "force-dynamic"
 
 export default async function ScreensPage() {
   const supabase = await createClient()
-  const screens = await getScreensWithStore(supabase)
+  const rawScreens = await getScreensWithStore(supabase)
 
-  const online = screens.filter((s) => getScreenStatusColor(s.status, s.last_heartbeat) !== "red").length
+  const online = rawScreens.filter(
+    (s) => getScreenStatusColor(s.status, s.last_heartbeat) === "green"
+  ).length
+  const offline = rawScreens.filter(
+    (s) => getScreenStatusColor(s.status, s.last_heartbeat) === "red"
+  ).length
+  const maintenance = rawScreens.filter((s) => s.status === "maintenance").length
+
+  // Map to the shape ScreenMapClient expects, casting nested Supabase relation
+  type StoreWithChain = {
+    name: string
+    chains: { name: string; color: string } | null
+  } | null
+
+  const screens = rawScreens.map((s) => ({
+    id: s.id,
+    name: s.name,
+    status: s.status ?? null,
+    last_heartbeat: s.last_heartbeat,
+    last_seen_at: s.last_seen_at,
+    pending_command: s.pending_command,
+    power_state: s.power_state,
+    app_info: s.app_info,
+    stores: s.stores as unknown as StoreWithChain,
+  }))
 
   return (
     <div className="flex flex-col flex-1">
       <Topbar
         title="Skjermer"
-        subtitle={`${online} av ${screens.length} online`}
+        subtitle={`${online} online · ${offline} offline · ${maintenance} vedlikehold`}
         actions={
-          <Button size="sm" style={{ backgroundColor: "var(--brand-primary)", color: "var(--brand-fg)" }} asChild>
+          <Button size="sm" asChild>
             <Link href="/admin/settings">
               <Plus className="w-4 h-4" />
               Ny skjerm
@@ -33,95 +54,28 @@ export default async function ScreensPage() {
       />
 
       <div className="flex-1 p-6">
-        <div className="grid grid-cols-3 gap-4 mb-6">
-          <Card>
-            <CardContent className="p-4 flex items-center gap-3">
-              <div className="w-9 h-9 rounded-lg bg-emerald-50 flex items-center justify-center">
-                <CheckCircle2 className="w-5 h-5 text-emerald-600" />
+        {/* Stats row */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+          {[
+            { icon: CheckCircle2, label: "Online", count: online, color: "text-emerald-600", bg: "bg-emerald-50" },
+            { icon: XCircle, label: "Offline", count: offline, color: "text-red-600", bg: "bg-red-50" },
+            { icon: Settings2, label: "Vedlikehold", count: maintenance, color: "text-zinc-500", bg: "bg-zinc-100" },
+            { icon: Monitor, label: "Totalt", count: rawScreens.length, color: "text-blue-600", bg: "bg-blue-50" },
+          ].map(({ icon: Icon, label, count, color, bg }) => (
+            <div key={label} className="bg-white rounded-xl border border-zinc-100 p-4 flex items-center gap-3">
+              <div className={`w-9 h-9 rounded-lg ${bg} flex items-center justify-center`}>
+                <Icon className={`w-5 h-5 ${color}`} />
               </div>
               <div>
-                <p className="text-2xl font-bold text-zinc-900">{online}</p>
-                <p className="text-xs text-zinc-500">Online</p>
+                <p className="text-2xl font-bold text-zinc-900">{count}</p>
+                <p className="text-xs text-zinc-500">{label}</p>
               </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4 flex items-center gap-3">
-              <div className="w-9 h-9 rounded-lg bg-red-50 flex items-center justify-center">
-                <XCircle className="w-5 h-5 text-red-600" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-zinc-900">{screens.length - online}</p>
-                <p className="text-xs text-zinc-500">Offline</p>
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4 flex items-center gap-3">
-              <div className="w-9 h-9 rounded-lg bg-blue-50 flex items-center justify-center">
-                <Monitor className="w-5 h-5 text-blue-600" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-zinc-900">{screens.length}</p>
-                <p className="text-xs text-zinc-500">Totalt</p>
-              </div>
-            </CardContent>
-          </Card>
+            </div>
+          ))}
         </div>
 
-        <Card>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-zinc-100">
-                  <th className="text-left p-4 text-xs font-semibold text-zinc-500 uppercase tracking-wider">Status</th>
-                  <th className="text-left p-4 text-xs font-semibold text-zinc-500 uppercase tracking-wider">Butikk</th>
-                  <th className="text-left p-4 text-xs font-semibold text-zinc-500 uppercase tracking-wider">Navn</th>
-                  <th className="text-left p-4 text-xs font-semibold text-zinc-500 uppercase tracking-wider hidden lg:table-cell">Sist sett</th>
-                  <th className="text-left p-4 text-xs font-semibold text-zinc-500 uppercase tracking-wider hidden xl:table-cell">Token</th>
-                  <th className="text-right p-4 text-xs font-semibold text-zinc-500 uppercase tracking-wider">Handlinger</th>
-                </tr>
-              </thead>
-              <tbody>
-                {screens.length === 0 && (
-                  <tr>
-                    <td colSpan={6} className="text-center py-12 text-zinc-400">
-                      <Monitor className="w-8 h-8 mx-auto mb-2 text-zinc-200" />
-                      <p>Ingen skjermer registrert ennå</p>
-                    </td>
-                  </tr>
-                )}
-                {screens.map((screen) => {
-                  type StoreWithChain = { name: string; chains: { name: string; color: string } | null } | null
-                  const store = screen.stores as unknown as StoreWithChain
-                  return (
-                    <tr key={screen.id} className="border-b border-zinc-50 hover:bg-zinc-50/50 transition-colors">
-                      <td className="p-4">
-                        <ScreenStatusDot status={screen.status} lastHeartbeat={screen.last_heartbeat} showLabel size="md" />
-                      </td>
-                      <td className="p-4">
-                        <div className="flex items-center gap-2">
-                          {store?.chains && (
-                            <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: store.chains.color }} />
-                          )}
-                          <span className="font-medium text-zinc-900">{store?.name ?? "—"}</span>
-                        </div>
-                      </td>
-                      <td className="p-4 text-zinc-600">{screen.name}</td>
-                      <td className="p-4 text-zinc-500 hidden lg:table-cell">{formatLastSeen(screen.last_heartbeat)}</td>
-                      <td className="p-4 hidden xl:table-cell">
-                        <CopyTokenButton token={screen.token} />
-                      </td>
-                      <td className="p-4 text-right">
-                        <ScreenActionButton screenId={screen.id} action="reload" />
-                      </td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          </div>
-        </Card>
+        {/* Live map */}
+        <ScreenMapClient screens={screens} />
       </div>
     </div>
   )

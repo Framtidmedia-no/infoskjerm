@@ -91,7 +91,7 @@ export async function getScreensWithStore(supabase: AdminSupabase) {
   const { data, error } = await supabase
     .from('screens')
     .select(`
-      id, name, token, status, last_heartbeat, last_seen_at, app_info, pending_command,
+      id, name, token, status, last_heartbeat, last_seen_at, app_info, pending_command, power_state,
       stores(
         id, name,
         chains(id, name, color)
