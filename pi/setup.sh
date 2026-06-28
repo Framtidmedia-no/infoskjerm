@@ -11,7 +11,7 @@
 #   - skriver konfig til /etc/infoskjerm/config.env
 #   - setter opp to systemd-tjenester:
 #       infoskjerm-kiosk : viser skjerm-URL i fullskjerm, starter automatisk
-#       infoskjerm-agent : puls + fjernstyring (av/på/reload/omstart) hvert 30. sek
+#       infoskjerm-agent : puls + fjernstyring (av/på/reload/omstart) hvert 15. sek
 #
 set -euo pipefail
 
@@ -79,7 +79,7 @@ chmod 755 /usr/local/bin/infoskjerm-kiosk
 echo ">> Skriver /usr/local/bin/infoskjerm-agent ..."
 cat > /usr/local/bin/infoskjerm-agent <<'AGENT'
 #!/usr/bin/env bash
-# Puls + fjernstyring. Poller Supabase hvert 30. sek.
+# Puls + fjernstyring. Poller Supabase hvert 15. sek.
 set -uo pipefail
 source /etc/infoskjerm/config.env
 
@@ -111,7 +111,7 @@ while true; do
     [[ "$CMD" == "reboot" ]] && sleep 2 && /sbin/reboot
   fi
 
-  sleep 30
+  sleep 15
 done
 AGENT
 chmod 755 /usr/local/bin/infoskjerm-agent
