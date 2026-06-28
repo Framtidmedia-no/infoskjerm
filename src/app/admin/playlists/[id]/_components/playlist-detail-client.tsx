@@ -1,6 +1,7 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
 import { Trash2, Plus, GripVertical, Clock, ChevronDown } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
@@ -133,10 +134,16 @@ function SortableRow({
 }
 
 export function PlaylistDetailClient({ playlistId, items: initialItems, availableContent }: Props) {
+  const router = useRouter()
   const [items, setItems] = useState<PlaylistItem[]>(initialItems)
   const [showAddPanel, setShowAddPanel] = useState(false)
   const [addingId, setAddingId] = useState<string | null>(null)
   const [removingId, setRemovingId] = useState<string | null>(null)
+
+  // Sync local state when server-side data refreshes (e.g., after add)
+  useEffect(() => {
+    setItems(initialItems)
+  }, [initialItems])
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
@@ -166,8 +173,12 @@ export function PlaylistDetailClient({ playlistId, items: initialItems, availabl
     setAddingId(contentItemId)
     const result = await addToPlaylist(playlistId, contentItemId)
     setAddingId(null)
-    if (result.ok) toast.success("Lagt til i spilleliste")
-    else toast.error(result.error ?? "Feil")
+    if (result.ok) {
+      toast.success("Lagt til i spilleliste")
+      router.refresh()
+    } else {
+      toast.error(result.error ?? "Feil")
+    }
   }
 
   async function handleRemove(playlistItemId: string) {
