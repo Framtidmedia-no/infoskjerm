@@ -1,91 +1,126 @@
 import { xiboFetch } from "./client"
 
 /**
- * Pushes authored content into Xibo as a published layout.
+ * The DYNAMIC content model.
  *
- * Proven Xibo 4.4 recipe (see memory xibo-server):
- *  1. POST /layout            → published parent (auto-creates a draft child)
- *  2. GET  /layout?parentId   → find the editable draft layoutId
- *  3. POST /region/{draft}    → region + regionPlaylist.playlistId
- *  4. POST /playlist/widget/text/{playlist} → widgetId
- *  5. PUT  /playlist/widget/{widgetId}      → set HTML text
- *  6. PUT  /layout/publish/{parent}         → publish
+ * Publishing a news item does NOT create a Xibo layout. Instead it upserts a
+ * single ROW in the Xibo DataSet "Nyheter" (dataSetId 1). The base template
+ * (layout 12 / campaign 8) has a DataSet View widget that rotates through these
+ * rows. Add a news item → a row appears → it joins the rotation. Unpublish →
+ * the row is removed.
+ *
+ * DataSet 1 columns (verified live):
+ *   1 tittel  2 tekst  3 bilde  4 type  5 butikker  6 fra  7 til  8 contentId
+ *
+ * Row API (Xibo 4.4, verified):
+ *   GET    /dataset/data/{id}              → rows: { id, tittel, tekst, ... }
+ *   POST   /dataset/data/{id}              → { id: rowId }, fields dataSetColumnId_N
+ *   PUT    /dataset/data/{id}/{rowId}      → same fields
+ *   DELETE /dataset/data/{id}/{rowId}
+ *
+ * Note: Xibo String columns strip HTML tags, so `tekst` is stored as plain text.
  */
 
-const RESOLUTION_1080P = 1
-const DEFAULT_DURATION = 15
+const NEWS_DATASET_ID = Number(process.env.XIBO_NEWS_DATASET_ID ?? 1)
 
-function esc(s: string): string {
-  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+/** Column ids in DataSet "Nyheter" (stable, verified live). */
+const COL = {
+  tittel: 1,
+  tekst: 2,
+  bilde: 3,
+  type: 4,
+  butikker: 5,
+  fra: 6,
+  til: 7,
+  contentId: 8,
+} as const
+
+export interface NewsRow {
+  /** Supabase content_items.id — the stable key we match rows on. */
+  contentId: string
+  title: string
+  /** Body as HTML; stored as plain text in the DataSet (Xibo strips tags). */
+  bodyHtml: string
+  imageUrl: string | null
+  type: string
+  /** Comma-separated Xibo display-group names, or "ALLE" for all stores. */
+  stores: string
+  validFrom: string | null
+  validTo: string | null
 }
 
-/** Full-screen styled HTML for a single content item (title + body + image). */
-export function buildContentHtml(title: string, bodyHtml: string, imageUrl: string | null): string {
-  const image = imageUrl
-    ? `<div style="position:absolute;inset:0;background:url('${imageUrl}') center/cover;opacity:0.25;"></div>`
-    : ""
-  return `<!doctype html><html><body style="margin:0;">
-<div style="position:relative;width:1920px;height:1080px;overflow:hidden;background:linear-gradient(135deg,#0a0a0a,#161616);color:#fff;font-family:Arial,Helvetica,sans-serif;box-sizing:border-box;">
-${image}
-<div style="position:relative;padding:80px;">
-<p style="color:#16a34a;font-weight:bold;letter-spacing:4px;font-size:26px;margin:0 0 24px;">INTERN NYHET</p>
-<h1 style="font-size:84px;font-weight:900;margin:0 0 36px;line-height:1.02;">${esc(title)}</h1>
-<div style="font-size:36px;line-height:1.5;color:rgba(255,255,255,0.85);max-width:1500px;">${bodyHtml}</div>
-</div></div></body></html>`
+interface XiboDataRow {
+  id: number
+  contentId?: string | null
 }
 
-export interface XiboLayoutRef {
-  layoutId: number
-  campaignId: number | null
+/** Strips HTML to plain text suitable for a DataSet string column. */
+function htmlToText(html: string): string {
+  return html
+    .replace(/<\s*br\s*\/?\s*>/gi, "\n")
+    .replace(/<\/(p|div|h[1-6]|li)\s*>/gi, "\n")
+    .replace(/<[^>]+>/g, "")
+    .replace(/&nbsp;/gi, " ")
+    .replace(/&amp;/gi, "&")
+    .replace(/&lt;/gi, "<")
+    .replace(/&gt;/gi, ">")
+    .replace(/&quot;/gi, '"')
+    .replace(/[ \t]+/g, " ")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim()
 }
 
-interface CreatedLayout { layoutId: number }
-interface DraftLayout { layoutId: number }
-interface RegionResult { regionPlaylist: { playlistId: number } }
-interface WidgetResult { widgetId: number }
-interface LayoutWithCampaign { layoutId: number; campaignId?: number }
+/** Xibo DataSet date columns expect `Y-m-d H:i:s`. */
+function toXiboDate(iso: string | null): string {
+  if (!iso) return ""
+  const d = new Date(iso)
+  if (Number.isNaN(d.getTime())) return ""
+  const p = (n: number) => String(n).padStart(2, "0")
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`
+}
 
-/** Creates a published Xibo layout rendering the given HTML. Returns layout + campaign id. */
-export async function createXiboLayout(name: string, html: string): Promise<XiboLayoutRef> {
-  const created = await xiboFetch<CreatedLayout>("/layout", {
-    method: "POST",
-    form: { name: name.slice(0, 50), resolutionId: RESOLUTION_1080P },
-  })
-  const parentId = created.layoutId
-
-  const drafts = await xiboFetch<DraftLayout[]>("/layout", {
-    query: { parentId, embed: "regions,playlists" },
-  })
-  const draftId = drafts[0]?.layoutId
-  if (!draftId) throw new Error("Fant ikke draft-layout etter opprettelse")
-
-  const region = await xiboFetch<RegionResult>(`/region/${draftId}`, {
-    method: "POST",
-    form: { type: "frame", width: 1920, height: 1080, top: 0, left: 0 },
-  })
-  const playlistId = region.regionPlaylist.playlistId
-
-  const widget = await xiboFetch<WidgetResult>(`/playlist/widget/text/${playlistId}`, { method: "POST" })
-  await xiboFetch(`/playlist/widget/${widget.widgetId}`, {
-    method: "PUT",
-    form: { text: html, duration: DEFAULT_DURATION, useDuration: 1 },
-  })
-
-  await xiboFetch(`/layout/publish/${parentId}`, { method: "PUT", form: { publishNow: 1 } })
-
-  // Resolve campaign id for preview/scheduling (best-effort).
-  let campaignId: number | null = null
-  try {
-    const campaigns = await xiboFetch<{ campaignId: number }[]>("/campaign", { query: { layoutId: parentId } })
-    campaignId = campaigns[0]?.campaignId ?? null
-  } catch {
-    const layouts = await xiboFetch<LayoutWithCampaign[]>("/layout", { query: { layoutId: parentId } })
-    campaignId = layouts[0]?.campaignId ?? null
+function rowForm(row: NewsRow): Record<string, string> {
+  return {
+    [`dataSetColumnId_${COL.tittel}`]: row.title,
+    [`dataSetColumnId_${COL.tekst}`]: htmlToText(row.bodyHtml),
+    [`dataSetColumnId_${COL.bilde}`]: row.imageUrl ?? "",
+    [`dataSetColumnId_${COL.type}`]: row.type,
+    [`dataSetColumnId_${COL.butikker}`]: row.stores,
+    [`dataSetColumnId_${COL.fra}`]: toXiboDate(row.validFrom),
+    [`dataSetColumnId_${COL.til}`]: toXiboDate(row.validTo),
+    [`dataSetColumnId_${COL.contentId}`]: row.contentId,
   }
-
-  return { layoutId: parentId, campaignId }
 }
 
-export async function deleteXiboLayout(layoutId: number): Promise<void> {
-  await xiboFetch(`/layout/${layoutId}`, { method: "DELETE" }).catch(() => {})
+/** Finds the existing DataSet row whose contentId matches (or null). */
+async function findRowId(contentId: string): Promise<number | null> {
+  const rows = await xiboFetch<XiboDataRow[]>(`/dataset/data/${NEWS_DATASET_ID}`)
+  const match = rows.find((r) => String(r.contentId ?? "") === contentId)
+  return match?.id ?? null
 }
+
+/**
+ * Upserts the news item as a single DataSet row. Matches on contentId, so
+ * re-publishing the same item updates its row instead of duplicating it.
+ * Returns the Xibo rowId.
+ */
+export async function upsertNewsRow(row: NewsRow): Promise<number> {
+  const form = rowForm(row)
+  const existingId = await findRowId(row.contentId)
+  if (existingId) {
+    await xiboFetch(`/dataset/data/${NEWS_DATASET_ID}/${existingId}`, { method: "PUT", form })
+    return existingId
+  }
+  const created = await xiboFetch<{ id: number }>(`/dataset/data/${NEWS_DATASET_ID}`, { method: "POST", form })
+  return created.id
+}
+
+/** Removes the news item's DataSet row (on unpublish/delete). No-op if absent. */
+export async function deleteNewsRow(contentId: string): Promise<void> {
+  const id = await findRowId(contentId)
+  if (id) {
+    await xiboFetch(`/dataset/data/${NEWS_DATASET_ID}/${id}`, { method: "DELETE" }).catch(() => {})
+  }
+}
+
+export const newsDatasetId = NEWS_DATASET_ID

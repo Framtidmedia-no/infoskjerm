@@ -2,8 +2,10 @@
 
 import { requireRole } from "@/lib/admin/require-role"
 import { revalidatePath } from "next/cache"
-import { createXiboLayout, buildContentHtml, deleteXiboLayout } from "@/lib/xibo/sync"
+import { upsertNewsRow, deleteNewsRow } from "@/lib/xibo/sync"
 import type { Json } from "@/types/database"
+
+type AdminSupabase = Awaited<ReturnType<typeof requireRole>>["supabase"]
 
 const AUTHOR_ROLES = ["super_admin", "chain_manager", "area_manager", "store_manager", "store_employee"] as const
 
@@ -29,10 +31,34 @@ export interface SaveResult {
   error?: string
 }
 
-async function effectiveTenant(supabase: Awaited<ReturnType<typeof requireRole>>["supabase"], tenantId: string): Promise<string> {
+async function effectiveTenant(supabase: AdminSupabase, tenantId: string): Promise<string> {
   if (tenantId) return tenantId
   const { data } = await supabase.from("tenants").select("id").limit(1).single()
   return data?.id ?? ""
+}
+
+/**
+ * Resolves targeting into the DataSet "butikker" field: a comma-separated list
+ * of Xibo display-group names (= store names), or "ALLE" for every store.
+ */
+async function resolveStoresField(supabase: AdminSupabase, input: ContentInput): Promise<string> {
+  if (input.targetMode === "all") return "ALLE"
+
+  if (input.targetMode === "stores") {
+    if (input.storeIds.length === 0) return "ALLE"
+    const { data } = await supabase.from("stores").select("name").in("id", input.storeIds)
+    const names = (data ?? []).map((s) => s.name).filter(Boolean)
+    return names.length > 0 ? names.join(",") : "ALLE"
+  }
+
+  // tags → the stores carrying any of the selected tags
+  if (input.tagIds.length === 0) return "ALLE"
+  const { data: links } = await supabase.from("store_tags").select("store_id").in("tag_id", input.tagIds)
+  const storeIds = Array.from(new Set((links ?? []).map((l) => l.store_id).filter(Boolean)))
+  if (storeIds.length === 0) return "ALLE"
+  const { data } = await supabase.from("stores").select("name").in("id", storeIds as string[])
+  const names = (data ?? []).map((s) => s.name).filter(Boolean)
+  return names.length > 0 ? names.join(",") : "ALLE"
 }
 
 export async function saveContent(input: ContentInput, id?: string): Promise<SaveResult> {
@@ -95,25 +121,34 @@ export async function saveContent(input: ContentInput, id?: string): Promise<Sav
     if (error) return { ok: false, error: error.message }
   }
 
-  // Best-effort: speil publisert innhold som en ekte Xibo-layout.
-  // Feiler dette, er innholdet likevel publisert i Supabase — vi blokkerer aldri.
-  if (input.publish) {
-    try {
-      const { data: existing } = await supabase.from("content_items").select("body").eq("id", contentId!).single()
-      const prevXibo = (existing?.body as { xibo?: { layoutId?: number } } | null)?.xibo
-      if (prevXibo?.layoutId) await deleteXiboLayout(prevXibo.layoutId)
-
-      const html = buildContentHtml(input.title.trim(), input.bodyHtml, input.imageUrl)
-      const ref = await createXiboLayout(input.title.trim(), html)
+  // DYNAMISK modell: publisering = upsert én RAD i Xibo DataSet «Nyheter».
+  // Base-malen (layout 12) roterer gjennom radene. Avpublisering = slett raden.
+  // Best-effort: feiler Xibo, er innholdet likevel lagret i Supabase — vi blokkerer aldri.
+  try {
+    if (input.publish) {
+      const stores = await resolveStoresField(supabase, input)
+      const rowId = await upsertNewsRow({
+        contentId: contentId!,
+        title: input.title.trim(),
+        bodyHtml: input.bodyHtml,
+        imageUrl: input.imageUrl ?? null,
+        type: input.type,
+        stores,
+        validFrom: input.validFrom || null,
+        validTo: input.validTo || null,
+      })
       const newBody = JSON.parse(JSON.stringify({
         html: input.bodyHtml,
         imageUrl: input.imageUrl ?? null,
-        xibo: ref,
+        xibo: { rowId },
       })) as Json
       await supabase.from("content_items").update({ body: newBody }).eq("id", contentId!)
-    } catch (e) {
-      console.error("Xibo-synk feilet (innhold publisert likevel):", e instanceof Error ? e.message : e)
+    } else {
+      // Lagret som utkast → fjern eventuell publisert rad fra rulleringen.
+      await deleteNewsRow(contentId!)
     }
+  } catch (e) {
+    console.error("Xibo-synk feilet (innhold lagret likevel):", e instanceof Error ? e.message : e)
   }
 
   revalidatePath("/admin/innhold")
@@ -122,6 +157,10 @@ export async function saveContent(input: ContentInput, id?: string): Promise<Sav
 
 export async function deleteContent(id: string): Promise<SaveResult> {
   const { supabase } = await requireRole([...AUTHOR_ROLES])
+  // Best-effort: ta raden ut av Xibo-rulleringen før vi sletter i Supabase.
+  await deleteNewsRow(id).catch((e) =>
+    console.error("Xibo-rad-sletting feilet (sletter i Supabase likevel):", e instanceof Error ? e.message : e)
+  )
   await supabase.from("content_targets").delete().eq("content_item_id", id)
   const { error } = await supabase.from("content_items").delete().eq("id", id)
   if (error) return { ok: false, error: error.message }

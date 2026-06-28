@@ -22,7 +22,6 @@ export interface ContentRow {
   target: { mode: "all" | "stores" | "tags" | "none"; count: number; names: string[] }
   storeIds: string[]
   tagIds: string[]
-  xiboCampaignId: number | null
 }
 
 interface Option { id: string; name: string }
@@ -60,7 +59,7 @@ const PAGE_SIZE = 12
 
 const selectCls = "text-xs bg-white border border-zinc-200 rounded-lg px-2.5 py-2 text-zinc-600 focus:outline-none focus:ring-1 focus:ring-zinc-300"
 
-export function ContentListClient({ items, stores, tags, xiboBaseUrl }: { items: ContentRow[]; stores: Option[]; tags: Option[]; xiboBaseUrl: string }) {
+export function ContentListClient({ items, stores, tags, previewUrl }: { items: ContentRow[]; stores: Option[]; tags: Option[]; previewUrl: string | null }) {
   const router = useRouter()
   const [busyId, setBusyId] = useState<string | null>(null)
   const [menuId, setMenuId] = useState<string | null>(null)
@@ -199,8 +198,8 @@ export function ContentListClient({ items, stores, tags, xiboBaseUrl }: { items:
                       <div className="fixed inset-0 z-10" onClick={closeMenu} />
                       <div className="absolute right-0 bottom-9 z-20 w-44 rounded-xl border border-zinc-200 bg-white shadow-lg py-1">
                         <Link href={`/admin/innhold/${item.id}`} className="flex items-center gap-2 px-3 py-2 text-xs text-zinc-700 hover:bg-zinc-50"><Pencil className="w-3.5 h-3.5" /> Rediger</Link>
-                        {item.xiboCampaignId && (
-                          <a href={`${xiboBaseUrl}/campaign/${item.xiboCampaignId}/preview`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 px-3 py-2 text-xs text-zinc-700 hover:bg-zinc-50"><Monitor className="w-3.5 h-3.5" /> Se på skjerm</a>
+                        {item.status === "live" && previewUrl && (
+                          <a href={previewUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 px-3 py-2 text-xs text-zinc-700 hover:bg-zinc-50"><Monitor className="w-3.5 h-3.5" /> Se på skjerm</a>
                         )}
                         <button onClick={() => handleDuplicate(item.id)} className="w-full flex items-center gap-2 px-3 py-2 text-xs text-zinc-700 hover:bg-zinc-50"><Copy className="w-3.5 h-3.5" /> Dupliser</button>
                         {confirmId === item.id ? (
