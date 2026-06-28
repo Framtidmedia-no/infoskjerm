@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(printenv)",
+      "mcp__claude_ai_Vercel__get_project",
+      "Bash(python3 -c \"import json; d=json.load\\(open\\('/Users/frlund3/Library/Application Support/com.vercel.cli/auth.json'\\)\\); print\\('token found:', bool\\(d.get\\('token'\\)\\)\\); print\\('token length:', len\\(d.get\\('token',''\\)\\)\\)\")",
+      "Bash(printenv VERCEL_TOKEN)",
+      "Bash(python3 -c \"import json; d=json.load\\(open\\('/Users/frlund3/.local/share/opencode/auth.json'\\)\\); print\\(list\\(d.keys\\(\\)\\)\\)\")",
+      "Bash(bash /Users/frlund3/.claude/plugins/cache/claude-plugins-official/superpowers/5.1.0/skills/brainstorming/scripts/start-server.sh --project-dir /Users/frlund3/Documents/GitHub/infoskjerm)"
+    ]
+  }
+}

@@ -3,7 +3,8 @@ import { getTagsWithStores } from "@/lib/admin/queries"
 import { Topbar } from "@/components/admin/topbar"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Tag, Plus, Pencil, Trash2 } from "lucide-react"
+import { Tag, Plus, Pencil } from "lucide-react"
+import { TagDeleteButton } from "./tag-delete-button"
 
 export const dynamic = "force-dynamic"
 
@@ -73,9 +74,7 @@ export default async function TagsPage() {
                         <Button variant="ghost" size="icon" className="h-7 w-7">
                           <Pencil className="w-3.5 h-3.5" />
                         </Button>
-                        <Button variant="ghost" size="icon" className="h-7 w-7 text-red-500 hover:bg-red-50">
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </Button>
+                        <TagDeleteButton tagId={tag.id} />
                       </div>
                     </div>
 

@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils"
 import {
   LayoutDashboard, Store, Monitor, Newspaper, Trophy,
   BarChart3, CloudSun, Images, ListVideo, Send, Users,
-  Settings, Tag, ChevronRight, LogOut, Layers,
+  Settings, Tag, ChevronRight, LogOut, Layers, PenSquare,
 } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 
@@ -43,6 +43,7 @@ const navGroups: NavGroup[] = [
     label: "Innhold",
     items: [
       { href: "/admin/modules", label: "Moduler", icon: Layers, roles: ["super_admin", "chain_manager"] },
+      { href: "/admin/builder", label: "Bygg innhold", icon: PenSquare, roles: ["super_admin", "chain_manager", "store_manager"] as UserRole[] },
       { href: "/admin/content/news", label: "Nyheter", icon: Newspaper, roles: ["super_admin", "chain_manager", "store_manager", "store_employee"] },
       { href: "/admin/content/competitions", label: "Konkurranser", icon: Trophy, roles: ["super_admin", "chain_manager", "store_manager"] },
       { href: "/admin/content/stats", label: "Salgstall", icon: BarChart3, roles: ["super_admin", "chain_manager", "store_manager"] },
