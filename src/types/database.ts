@@ -54,6 +54,8 @@ export type Database = {
           created_by: string
           id: string
           module_key: string | null
+          published_at: string | null
+          scheduled_at: string | null
           status: Database["public"]["Enums"]["content_status"] | null
           tenant_id: string
           title: string
@@ -71,6 +73,8 @@ export type Database = {
           created_by: string
           id?: string
           module_key?: string | null
+          published_at?: string | null
+          scheduled_at?: string | null
           status?: Database["public"]["Enums"]["content_status"] | null
           tenant_id: string
           title: string
@@ -88,6 +92,8 @@ export type Database = {
           created_by?: string
           id?: string
           module_key?: string | null
+          published_at?: string | null
+          scheduled_at?: string | null
           status?: Database["public"]["Enums"]["content_status"] | null
           tenant_id?: string
           title?: string
@@ -812,6 +818,8 @@ export type Database = {
         | "approved"
         | "rejected"
         | "archived"
+        | "live"
+        | "scheduled"
       content_type: "news" | "competition" | "stats" | "weather" | "slide"
       screen_status: "active" | "inactive" | "maintenance"
       user_role:
@@ -953,6 +961,8 @@ export const Constants = {
         "approved",
         "rejected",
         "archived",
+        "live",
+        "scheduled",
       ],
       content_type: ["news", "competition", "stats", "weather", "slide"],
       screen_status: ["active", "inactive", "maintenance"],

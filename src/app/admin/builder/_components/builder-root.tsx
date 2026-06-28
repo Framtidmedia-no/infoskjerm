@@ -20,7 +20,8 @@ import { createClient } from "@/lib/supabase/client"
 import type { ModulePlacement, BuilderState, ModuleSchema } from "@/lib/builder/types"
 import type { Json } from "@/types/database"
 import type { ModuleRow } from "@/lib/admin/modules"
-import { Save, CheckCircle, AlertCircle, Loader2 } from "lucide-react"
+import { Save, CheckCircle, AlertCircle, Loader2, Eye, Send } from "lucide-react"
+import { submitForApproval } from "@/app/admin/publish/actions"
 
 interface BuilderRootProps {
   modules: ModuleRow[]
@@ -56,6 +57,8 @@ export function BuilderRoot({ modules, tenantId, userId, initialName = 'Nytt inn
     selectedId: null,
     saveStatus: 'idle',
   })
+
+  const [submitting, setSubmitting] = useState(false)
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } })
@@ -172,6 +175,14 @@ export function BuilderRoot({ modules, tenantId, userId, initialName = 'Nytt inn
     }
   }
 
+  const handleSubmitForApproval = async () => {
+    if (!state.contentItemId) return
+    await handleManualSave()
+    setSubmitting(true)
+    await submitForApproval(state.contentItemId)
+    setSubmitting(false)
+  }
+
   return (
     <div className="flex flex-col h-screen overflow-hidden">
       {/* Builder toolbar */}
@@ -185,6 +196,27 @@ export function BuilderRoot({ modules, tenantId, userId, initialName = 'Nytt inn
         />
         <div className="ml-auto flex items-center gap-3">
           <SaveStatusIndicator status={state.saveStatus} />
+          {state.contentItemId && (
+            <a
+              href={`/preview/${state.contentItemId}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1.5 text-sm font-medium px-3 py-1.5 rounded-lg border border-zinc-200 text-zinc-700 hover:bg-zinc-50 transition-colors"
+            >
+              <Eye className="w-3.5 h-3.5" />
+              Forhåndsvis
+            </a>
+          )}
+          {state.contentItemId && (
+            <button
+              onClick={handleSubmitForApproval}
+              disabled={submitting}
+              className="flex items-center gap-1.5 text-sm font-medium px-3 py-1.5 rounded-lg border border-zinc-300 text-zinc-700 hover:bg-zinc-50 transition-colors disabled:opacity-50"
+            >
+              <Send className="w-3.5 h-3.5" />
+              {submitting ? "Sender..." : "Send til godkjenning"}
+            </button>
+          )}
           <button
             onClick={handleManualSave}
             className="flex items-center gap-1.5 text-sm font-medium px-3 py-1.5 rounded-lg text-white transition-colors"
