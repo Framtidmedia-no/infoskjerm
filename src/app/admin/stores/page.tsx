@@ -20,20 +20,43 @@ interface Store {
   screens: unknown[]
 }
 
-export default async function StoresPage() {
+export default async function StoresPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ tag?: string }>
+}) {
   const supabase = await createClient()
+  const params = await searchParams
+  const tagFilter = params.tag ?? null
+
   const chains = await getStoresGroupedByChain(supabase)
+
+  // If tag filter: fetch store_ids for this tag
+  let filteredStoreIds: Set<string> | null = null
+  let tagName: string | null = null
+  if (tagFilter) {
+    const { data: storeTags } = await supabase
+      .from("store_tags")
+      .select("store_id, tags(name)")
+      .eq("tag_id", tagFilter)
+    if (storeTags) {
+      filteredStoreIds = new Set(storeTags.map(st => st.store_id).filter(Boolean) as string[])
+      const firstTag = storeTags[0]?.tags as { name: string } | null
+      tagName = firstTag?.name ?? null
+    }
+  }
 
   const totalStores = chains.reduce((s, c) => {
     const stores = (c.stores as unknown as Store[]) ?? []
-    return s + stores.length
+    const visible = filteredStoreIds ? stores.filter(st => filteredStoreIds!.has(st.id)) : stores
+    return s + visible.length
   }, 0)
 
   return (
     <div className="flex flex-col flex-1">
       <Topbar
         title="Butikker"
-        subtitle={`${totalStores} butikker`}
+        subtitle={tagName ? `Viser ${totalStores} butikker med tag: ${tagName}` : `${totalStores} butikker`}
         actions={
           <div className="flex gap-2">
             <Button size="sm" asChild>
@@ -43,6 +66,15 @@ export default async function StoresPage() {
         }
       />
 
+      {tagName && (
+        <div className="px-6 pt-4">
+          <div className="flex items-center gap-3 text-sm bg-blue-50 border border-blue-200 rounded-xl px-4 py-2.5">
+            <span className="text-blue-700">Filtrert på tag: <strong>{tagName}</strong></span>
+            <Link href="/admin/stores" className="text-blue-500 hover:text-blue-700 underline ml-auto">Vis alle</Link>
+          </div>
+        </div>
+      )}
+
       {chains.length === 0 ? (
         <div className="flex-1 p-6 flex items-center justify-center">
           <p className="text-zinc-400 text-sm">Ingen kjeder eller butikker er lagt til ennå.</p>
@@ -50,7 +82,11 @@ export default async function StoresPage() {
       ) : (
         <div className="flex-1 p-6 space-y-6">
           {chains.map((chain) => {
-            const stores = (chain.stores as unknown as Store[]) ?? []
+            const allStores = (chain.stores as unknown as Store[]) ?? []
+            const stores = filteredStoreIds
+              ? allStores.filter(st => filteredStoreIds!.has(st.id))
+              : allStores
+            if (stores.length === 0) return null
             return (
               <div key={chain.id}>
                 <div className="flex items-center gap-3 mb-3">

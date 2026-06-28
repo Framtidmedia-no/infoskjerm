@@ -7,6 +7,7 @@ import { Plus, Pencil, Eye, Image as ImageIcon, GripVertical } from "lucide-reac
 import Link from "next/link"
 import { ContentDeleteButton } from "../_components/content-delete-button"
 import { ContentDuplicateButton } from "../_components/content-duplicate-button"
+import { ContentSearchList } from "../_components/content-search-list"
 
 export const dynamic = "force-dynamic"
 
@@ -45,18 +46,16 @@ export default async function SlidesPage() {
         }
       />
       <div className="flex-1 p-6 space-y-3">
-        {slides.length === 0 ? (
-          <div className="flex items-center justify-center h-48">
-            <p className="text-zinc-400 text-sm">Ingen slides er opprettet ennå.</p>
-          </div>
-        ) : (
-          slides.map((slide) => {
-            const statusKey = (slide.status ?? "draft") as keyof typeof statusColors
+        <ContentSearchList
+          items={slides}
+          emptyMessage="Ingen slides er opprettet ennå."
+          renderItem={(item) => {
+            const statusKey = (item.status ?? "draft") as keyof typeof statusColors
             const colorClass = statusColors[statusKey] ?? statusColors.draft
             const label = statusLabels[statusKey] ?? statusLabels.draft
 
             return (
-              <Card key={slide.id} className="hover:shadow-sm transition-shadow">
+              <Card key={item.id} className="hover:shadow-sm transition-shadow">
                 <CardContent className="p-4">
                   <div className="flex items-center gap-4">
                     <button className="text-zinc-300 hover:text-zinc-500 cursor-grab active:cursor-grabbing">
@@ -68,7 +67,7 @@ export default async function SlidesPage() {
                     </div>
 
                     <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-zinc-900 text-sm">{slide.title}</p>
+                      <p className="font-semibold text-zinc-900 text-sm">{item.title}</p>
                     </div>
 
                     <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${colorClass}`}>
@@ -77,24 +76,24 @@ export default async function SlidesPage() {
 
                     <div className="flex items-center gap-1">
                       <Button variant="ghost" size="icon" className="h-8 w-8" asChild>
-                        <Link href={`/preview/${slide.id}`} target="_blank">
+                        <Link href={`/preview/${item.id}`} target="_blank">
                           <Eye className="w-4 h-4" />
                         </Link>
                       </Button>
                       <Button variant="ghost" size="icon" className="h-8 w-8" asChild>
-                        <Link href={`/admin/builder?id=${slide.id}`}>
+                        <Link href={`/admin/builder?id=${item.id}`}>
                           <Pencil className="w-4 h-4" />
                         </Link>
                       </Button>
-                      <ContentDuplicateButton itemId={slide.id} />
-                      <ContentDeleteButton itemId={slide.id} />
+                      <ContentDuplicateButton itemId={item.id} />
+                      <ContentDeleteButton itemId={item.id} />
                     </div>
                   </div>
                 </CardContent>
               </Card>
             )
-          })
-        )}
+          }}
+        />
       </div>
     </div>
   )

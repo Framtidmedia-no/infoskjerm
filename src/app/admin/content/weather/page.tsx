@@ -8,6 +8,7 @@ import { CloudSun, Plus, Pencil, Eye, Clock, Store } from "lucide-react"
 import Link from "next/link"
 import { ContentDeleteButton } from "../_components/content-delete-button"
 import { ContentDuplicateButton } from "../_components/content-duplicate-button"
+import { ContentSearchList } from "../_components/content-search-list"
 
 export const dynamic = "force-dynamic"
 
@@ -45,17 +46,15 @@ export default async function WeatherPage() {
           </div>
         </div>
 
-        {weatherItems.length === 0 ? (
-          <div className="flex items-center justify-center h-48">
-            <p className="text-zinc-400 text-sm">Ingen vær-innhold er opprettet ennå.</p>
-          </div>
-        ) : (
-          weatherItems.map((item) => {
+        <ContentSearchList
+          items={weatherItems}
+          emptyMessage="Ingen vær-innhold er opprettet ennå."
+          renderItem={(item) => {
             const statusKey = (item.status ?? "draft") as keyof typeof statusConfig
             const statusCfg = statusConfig[statusKey] ?? statusConfig.draft
             const author = ((item as unknown as Record<string, unknown>)['users!created_by'] as { full_name: string } | null)?.full_name ?? "Ukjent"
             const created = item.created_at
-              ? new Date(item.created_at).toLocaleDateString("nb-NO", { day: "numeric", month: "short", year: "numeric" })
+              ? new Date(item.created_at as string).toLocaleDateString("nb-NO", { day: "numeric", month: "short", year: "numeric" })
               : "—"
 
             return (
@@ -100,8 +99,8 @@ export default async function WeatherPage() {
                 </CardContent>
               </Card>
             )
-          })
-        )}
+          }}
+        />
       </div>
     </div>
   )

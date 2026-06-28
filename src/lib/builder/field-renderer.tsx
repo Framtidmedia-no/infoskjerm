@@ -32,6 +32,31 @@ export function FieldRenderer({ schema, fields, onChange }: FieldRendererProps) 
           )
         }
 
+        if (field.type === 'image') {
+          return (
+            <div key={field.key}>
+              <label className="block text-xs font-medium text-zinc-600 mb-1">
+                {field.label}{field.required && <span className="text-red-500 ml-1">*</span>}
+              </label>
+              <input
+                type="url"
+                placeholder="https://..."
+                value={value as string}
+                onChange={(e) => onChange(field.key, e.target.value)}
+                className={inputClass}
+              />
+              {(fields[field.key] as string) && (
+                <img
+                  src={fields[field.key] as string}
+                  alt="Preview"
+                  className="mt-2 w-full h-24 object-cover rounded-lg border border-zinc-200"
+                  onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
+                />
+              )}
+            </div>
+          )
+        }
+
         if (field.type === 'textarea' || field.type === 'richtext' || field.type === 'json') {
           return (
             <div key={field.key}>

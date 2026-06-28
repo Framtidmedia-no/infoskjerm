@@ -10,6 +10,7 @@ import { ContentDeleteButton } from "../_components/content-delete-button"
 import { ContentApproveButton } from "../_components/content-approve-button"
 import { ContentRejectButton } from "../_components/content-reject-button"
 import { ContentDuplicateButton } from "../_components/content-duplicate-button"
+import { ContentSearchList } from "../_components/content-search-list"
 
 export const dynamic = "force-dynamic"
 
@@ -40,20 +41,18 @@ export default async function StatsPage() {
       />
 
       <div className="flex-1 p-6 space-y-3">
-        {statsItems.length === 0 ? (
-          <div className="flex items-center justify-center h-48">
-            <p className="text-zinc-400 text-sm">Ingen salgstall-innhold er opprettet ennå.</p>
-          </div>
-        ) : (
-          statsItems.map((item) => {
+        <ContentSearchList
+          items={statsItems}
+          emptyMessage="Ingen salgstall-innhold er opprettet ennå."
+          renderItem={(item) => {
             const statusKey = (item.status ?? "draft") as keyof typeof statusConfig
             const statusCfg = statusConfig[statusKey] ?? statusConfig.draft
             const author = ((item as unknown as Record<string, unknown>)['users!created_by'] as { full_name: string } | null)?.full_name ?? "Ukjent"
             const created = item.created_at
-              ? new Date(item.created_at).toLocaleDateString("nb-NO", { day: "numeric", month: "short", year: "numeric" })
+              ? new Date(item.created_at as string).toLocaleDateString("nb-NO", { day: "numeric", month: "short", year: "numeric" })
               : "—"
-            const validTo = item.valid_to
-              ? new Date(item.valid_to).toLocaleDateString("nb-NO", { day: "numeric", month: "short", year: "numeric" })
+            const validTo = (item as unknown as { valid_to?: string | null }).valid_to
+              ? new Date((item as unknown as { valid_to: string }).valid_to).toLocaleDateString("nb-NO", { day: "numeric", month: "short", year: "numeric" })
               : null
 
             return (
@@ -105,10 +104,10 @@ export default async function StatsPage() {
                     </div>
                   </div>
                 </CardContent>
-                </Card>
+              </Card>
             )
-          })
-        )}
+          }}
+        />
       </div>
     </div>
   )
