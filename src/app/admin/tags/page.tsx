@@ -1,23 +1,24 @@
-"use client"
-
-import { useState } from "react"
+import { createClient } from "@/lib/supabase/server"
+import { getTagsWithStores } from "@/lib/admin/queries"
 import { Topbar } from "@/components/admin/topbar"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
+import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Tag, Plus, Pencil, Trash2 } from "lucide-react"
 
-const defaultTags = [
-  { id: "1", name: "SUNNMØRE", color: "#3b82f6", stores: ["EUROSPAR BLINDHEIM", "EUROSPAR HAREID", "EUROSPAR MOA", "SPAR ELLINGSØY", "JOKER GODØY"] },
-  { id: "2", name: "NORDFJORD", color: "#8b5cf6", stores: ["SPAR RAUDEBERG", "SPAR HORNINDAL"] },
-  { id: "3", name: "STORBY", color: "#f59e0b", stores: ["EUROSPAR MOA", "EUROSPAR ÅLESUND STORSENTER", "EUROSPAR LARSGÅRDEN", "EUROSPAR BLINDHEIM"] },
-  { id: "4", name: "ØYBUTIKK", color: "#10b981", stores: ["JOKER GODØY", "SPAR ELLINGSØY", "SPAR LANGEVÅG"] },
-  { id: "5", name: "PRISTEST", color: "#f43f5e", stores: [] },
-  { id: "6", name: "ØRSTA-VOLDA", color: "#06b6d4", stores: ["EUROSPAR ØRSTA", "SPAR STRAUMANE", "SPAR FISKÅ"] },
-]
+export const dynamic = "force-dynamic"
 
-export default function TagsPage() {
-  const [tags, setTags] = useState(defaultTags)
+interface StoreTagStore {
+  id: string
+  name: string
+}
+
+interface StoreTag {
+  stores: StoreTagStore | null
+}
+
+export default async function TagsPage() {
+  const supabase = await createClient()
+  const tags = await getTagsWithStores(supabase)
 
   return (
     <div className="flex flex-col flex-1">
@@ -39,67 +40,81 @@ export default function TagsPage() {
           </p>
         </div>
 
-        <div className="grid grid-cols-3 gap-4">
-          {tags.map((tag) => (
-            <Card key={tag.id} className="hover:shadow-md transition-shadow">
-              <CardContent className="p-5">
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex items-center gap-3">
-                    <div
-                      className="w-10 h-10 rounded-xl flex items-center justify-center"
-                      style={{ backgroundColor: tag.color + "20" }}
-                    >
-                      <Tag className="w-5 h-5" style={{ color: tag.color }} />
+        {tags.length === 0 ? (
+          <div className="flex items-center justify-center h-48">
+            <p className="text-zinc-400 text-sm">Ingen tags er opprettet ennå.</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-3 gap-4">
+            {tags.map((tag) => {
+              const storeTags = (tag.store_tags as unknown as StoreTag[]) ?? []
+              const storeCount = storeTags.length
+              const storeNames = storeTags
+                .map((st) => st.stores?.name)
+                .filter((n): n is string => Boolean(n))
+
+              return (
+                <Card key={tag.id} className="hover:shadow-md transition-shadow">
+                  <CardContent className="p-5">
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="flex items-center gap-3">
+                        <div
+                          className="w-10 h-10 rounded-xl flex items-center justify-center"
+                          style={{ backgroundColor: tag.color + "20" }}
+                        >
+                          <Tag className="w-5 h-5" style={{ color: tag.color }} />
+                        </div>
+                        <div>
+                          <p className="font-bold text-zinc-900">{tag.name}</p>
+                          <p className="text-xs text-zinc-500">{storeCount} butikker</p>
+                        </div>
+                      </div>
+                      <div className="flex gap-1">
+                        <Button variant="ghost" size="icon" className="h-7 w-7">
+                          <Pencil className="w-3.5 h-3.5" />
+                        </Button>
+                        <Button variant="ghost" size="icon" className="h-7 w-7 text-red-500 hover:bg-red-50">
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </Button>
+                      </div>
                     </div>
-                    <div>
-                      <p className="font-bold text-zinc-900">{tag.name}</p>
-                      <p className="text-xs text-zinc-500">{tag.stores.length} butikker</p>
-                    </div>
-                  </div>
-                  <div className="flex gap-1">
-                    <Button variant="ghost" size="icon" className="h-7 w-7">
-                      <Pencil className="w-3.5 h-3.5" />
+
+                    {storeNames.length > 0 ? (
+                      <div className="flex flex-wrap gap-1.5">
+                        {storeNames.map((storeName) => (
+                          <span
+                            key={storeName}
+                            className="text-[10px] px-2 py-0.5 rounded-full font-medium"
+                            style={{ backgroundColor: tag.color + "15", color: tag.color }}
+                          >
+                            {storeName}
+                          </span>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-xs text-zinc-400 italic">Ingen butikker lagt til ennå</p>
+                    )}
+
+                    <Button variant="outline" size="sm" className="w-full mt-4 text-xs">
+                      Administrer butikker
                     </Button>
-                    <Button variant="ghost" size="icon" className="h-7 w-7 text-red-500 hover:bg-red-50">
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </Button>
-                  </div>
+                  </CardContent>
+                </Card>
+              )
+            })}
+
+            {/* Add new tag card */}
+            <Card className="border-dashed border-2 hover:border-zinc-300 transition-colors cursor-pointer">
+              <CardContent className="p-5 flex flex-col items-center justify-center h-full min-h-40 text-center">
+                <div className="w-10 h-10 rounded-xl bg-zinc-100 flex items-center justify-center mb-3">
+                  <Plus className="w-5 h-5 text-zinc-400" />
                 </div>
-
-                {tag.stores.length > 0 ? (
-                  <div className="flex flex-wrap gap-1.5">
-                    {tag.stores.map((store) => (
-                      <span
-                        key={store}
-                        className="text-[10px] px-2 py-0.5 rounded-full font-medium"
-                        style={{ backgroundColor: tag.color + "15", color: tag.color }}
-                      >
-                        {store}
-                      </span>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-xs text-zinc-400 italic">Ingen butikker lagt til ennå</p>
-                )}
-
-                <Button variant="outline" size="sm" className="w-full mt-4 text-xs">
-                  Administrer butikker
-                </Button>
+                <p className="text-sm font-medium text-zinc-400">Legg til tag</p>
+                <p className="text-xs text-zinc-300 mt-1">F.eks. VESTLAND, KYST, KAMPANJE</p>
               </CardContent>
             </Card>
-          ))}
-
-          {/* Add new tag card */}
-          <Card className="border-dashed border-2 hover:border-zinc-300 transition-colors cursor-pointer">
-            <CardContent className="p-5 flex flex-col items-center justify-center h-full min-h-40 text-center">
-              <div className="w-10 h-10 rounded-xl bg-zinc-100 flex items-center justify-center mb-3">
-                <Plus className="w-5 h-5 text-zinc-400" />
-              </div>
-              <p className="text-sm font-medium text-zinc-400">Legg til tag</p>
-              <p className="text-xs text-zinc-300 mt-1">F.eks. VESTLAND, KYST, KAMPANJE</p>
-            </CardContent>
-          </Card>
-        </div>
+          </div>
+        )}
       </div>
     </div>
   )
