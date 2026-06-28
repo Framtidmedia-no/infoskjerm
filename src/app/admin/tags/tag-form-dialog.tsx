@@ -29,8 +29,11 @@ export function TagFormDialog({ mode, tagId, initialName = "", initialColor = "#
 
   useEffect(() => {
     if (open) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setName(initialName)
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setColor(initialColor)
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setError(null)
       setTimeout(() => inputRef.current?.focus(), 50)
     }

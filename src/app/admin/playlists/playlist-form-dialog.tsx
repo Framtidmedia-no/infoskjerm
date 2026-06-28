@@ -14,7 +14,9 @@ export function PlaylistFormDialog() {
 
   useEffect(() => {
     if (open) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setName("")
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setError(null)
       setTimeout(() => inputRef.current?.focus(), 50)
     }

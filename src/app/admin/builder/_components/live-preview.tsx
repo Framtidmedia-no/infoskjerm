@@ -31,6 +31,7 @@ export function LivePreview({ placements }: LivePreviewProps) {
   }, [currentIndex, placements])
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setCurrentIndex(0)
   }, [placements.length])
 

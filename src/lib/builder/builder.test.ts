@@ -51,7 +51,7 @@ describe('removePlacement', () => {
 
 describe('updatePlacementFields', () => {
   it('merger nye felter med eksisterende', () => {
-    let state = addPlacement(makeState(), { ...makePlacement('a'), fields: { title: 'Gammel' } })
+    const state = addPlacement(makeState(), { ...makePlacement('a'), fields: { title: 'Gammel' } })
     const result = updatePlacementFields(state, 'a', { title: 'Ny', body: 'Tekst' })
     expect(result.placements[0].fields).toEqual({ title: 'Ny', body: 'Tekst' })
   })

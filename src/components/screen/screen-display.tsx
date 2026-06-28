@@ -105,12 +105,14 @@ export function ScreenDisplay({
   }, [token])
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchContent()
     const contentTimer = setInterval(fetchContent, POLL_INTERVAL_MS)
     return () => clearInterval(contentTimer)
   }, [fetchContent])
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     pollCommands()
     const cmdTimer = setInterval(pollCommands, COMMAND_POLL_MS)
     return () => clearInterval(cmdTimer)

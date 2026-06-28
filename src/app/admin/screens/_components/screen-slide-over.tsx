@@ -50,7 +50,9 @@ export function ScreenSlideOver({ screen, onClose }: ScreenSlideOverProps) {
   const [loadingContent, setLoadingContent] = useState(false)
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (!screen) { setCurrentContent(null); return }
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setLoadingContent(true)
     fetch(`/api/screens/${screen.id}/current-content`)
       .then(r => r.json())

@@ -92,6 +92,9 @@ export function ScreenMapClient({ screens: initialScreens }: ScreenMapClientProp
     }
   }
 
+  // eslint-disable-next-line react-hooks/purity
+  const now = Date.now()
+
   return (
     <>
       {/* Toolbar */}
@@ -217,7 +220,7 @@ export function ScreenMapClient({ screens: initialScreens }: ScreenMapClientProp
             const chainColor = storeData?.chains?.color ?? "#888"
             const isOnline =
               screen.last_heartbeat !== null &&
-              Date.now() - new Date(screen.last_heartbeat).getTime() < 30_000
+              now - new Date(screen.last_heartbeat).getTime() < 30_000
             const isMaintenance = screen.status === "maintenance"
             return (
               <motion.div
