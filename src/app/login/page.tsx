@@ -3,8 +3,9 @@
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
-import { Monitor, Eye, EyeOff, Loader2 } from "lucide-react"
+import { Eye, EyeOff, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import Image from "next/image"
 
 export default function LoginPage() {
   const router = useRouter()
@@ -46,10 +47,16 @@ export default function LoginPage() {
       <div className="relative w-full max-w-sm">
         {/* Logo */}
         <div className="text-center mb-8">
-          <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center mx-auto mb-4 shadow-2xl shadow-emerald-900/50">
-            <Monitor className="w-8 h-8 text-white" />
+          <div className="flex justify-center mb-4">
+            <Image
+              src="/framtid-tech-logo-dark.png"
+              alt="Framtid Tech"
+              width={180}
+              height={48}
+              priority
+              className="h-10 w-auto"
+            />
           </div>
-          <h1 className="text-2xl font-bold text-white">Gange-Rolv</h1>
           <p className="text-zinc-500 text-sm mt-1">Infoskjerm Admin</p>
         </div>
 

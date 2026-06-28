@@ -1,4 +1,4 @@
-// Public Supabase connection values for the Gange-Rolv infoskjerm project.
+// Public Supabase connection values for the Framtid Tech Infoskjerm project.
 //
 // These are PUBLIC, non-secret values: the anon key is shipped to every browser
 // and all data access is enforced by Row Level Security. Supabase explicitly

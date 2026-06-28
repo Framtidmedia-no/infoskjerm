@@ -44,7 +44,7 @@ export default async function AdminDashboard() {
     <div className="flex flex-col flex-1">
       <Topbar
         title="Dashboard"
-        subtitle="Gange-Rolv Infoskjerm — oversikt"
+        subtitle="Framtid Tech Infoskjerm — oversikt"
         actions={
           <Button asChild size="sm" style={{ backgroundColor: "var(--brand-primary)", color: "var(--brand-fg)" }}>
             <Link href="/admin/publish">
