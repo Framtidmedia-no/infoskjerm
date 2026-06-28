@@ -55,3 +55,19 @@ export async function rejectContentItem(id: string) {
   revalidatePath("/admin/content/news")
   revalidatePath("/admin/content/stats")
 }
+
+export async function bulkApproveContent(ids: string[]) {
+  const { supabase } = await requireRole(["super_admin", "chain_manager"])
+  if (ids.length === 0) return { ok: false, error: "Ingen valgte" }
+  const { error } = await supabase
+    .from("content_items")
+    .update({ status: "approved" })
+    .in("id", ids)
+    .eq("status", "pending_approval")
+  if (error) return { ok: false, error: error.message }
+  revalidatePath("/admin/content/news")
+  revalidatePath("/admin/content/competitions")
+  revalidatePath("/admin/content/stats")
+  revalidatePath("/admin/publish")
+  return { ok: true, count: ids.length }
+}

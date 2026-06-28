@@ -11,6 +11,7 @@ import { ContentApproveButton } from "../_components/content-approve-button"
 import { ContentRejectButton } from "../_components/content-reject-button"
 import { ContentDuplicateButton } from "../_components/content-duplicate-button"
 import { ContentSearchList } from "../_components/content-search-list"
+import { BulkApproveBar } from "../_components/bulk-approve-bar"
 
 export const dynamic = "force-dynamic"
 
@@ -26,6 +27,7 @@ export default async function NewsPage() {
   const news = await getContentItems(supabase, "news")
 
   const pendingCount = news.filter((n) => n.status === "pending_approval").length
+  const pendingIds = news.filter((n) => n.status === "pending_approval").map((n) => n.id)
 
   return (
     <div className="flex flex-col flex-1">
@@ -43,21 +45,7 @@ export default async function NewsPage() {
       />
 
       <div className="flex-1 p-6 space-y-3">
-        {pendingCount > 0 && (
-          <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center">
-                <Clock className="w-4 h-4 text-amber-600" />
-              </div>
-              <div>
-                <p className="text-sm font-semibold text-amber-900">
-                  {pendingCount} nyhet(er) venter godkjenning
-                </p>
-                <p className="text-xs text-amber-700">Ansatte har sendt inn innhold som trenger din godkjenning</p>
-              </div>
-            </div>
-          </div>
-        )}
+        <BulkApproveBar pendingIds={pendingIds} />
 
         <ContentSearchList
           items={news}
