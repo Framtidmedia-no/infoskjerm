@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { createClient } from "@/lib/supabase/client"
 
 export interface ScreenStatus {
@@ -9,16 +9,20 @@ export interface ScreenStatus {
   last_heartbeat: string | null
 }
 
+let channelCounter = 0
+
 export function useScreenStatuses(initialStatuses: ScreenStatus[]) {
   const [statuses, setStatuses] = useState<Map<string, ScreenStatus>>(
     new Map(initialStatuses.map((s) => [s.id, s]))
   )
+  const channelNameRef = useRef<string>(`screen-statuses-${++channelCounter}`)
 
   useEffect(() => {
     const supabase = createClient()
+    const channelName = channelNameRef.current
 
     const channel = supabase
-      .channel("screen-statuses")
+      .channel(channelName)
       .on(
         "postgres_changes",
         {

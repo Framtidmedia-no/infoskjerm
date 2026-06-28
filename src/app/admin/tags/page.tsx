@@ -5,9 +5,9 @@ import { Topbar } from "@/components/admin/topbar"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Tag, Plus, Pencil } from "lucide-react"
-import Link from "next/link"
 import { TagDeleteButton } from "./tag-delete-button"
 import { TagFormDialog } from "./tag-form-dialog"
+import { TagManageStoresDialog } from "./tag-manage-stores-dialog"
 
 export const dynamic = "force-dynamic"
 
@@ -20,16 +20,33 @@ interface StoreTag {
   stores: StoreTagStore | null
 }
 
+interface StoreRow {
+  id: string
+  name: string
+  chains: { name: string } | null
+}
+
 export default async function TagsPage() {
   await requireRole(["super_admin", "chain_manager"])
   const supabase = await createClient()
   const tags = await getTagsWithStores(supabase)
 
+  const { data: storesData } = await supabase
+    .from("stores")
+    .select("id, name, chains(name)")
+    .order("name")
+
+  const allStores = (storesData as unknown as StoreRow[] ?? []).map((s) => ({
+    id: s.id,
+    name: s.name,
+    chainName: s.chains?.name ?? "Ingen kjede",
+  }))
+
   return (
     <div className="flex flex-col flex-1">
       <Topbar
         title="Tags"
-        subtitle="Grupper butikker for enkel publisering"
+        subtitle="Grupper enheter for enkel publisering"
         actions={
           <TagFormDialog
             mode="create"
@@ -48,7 +65,7 @@ export default async function TagsPage() {
       <div className="flex-1 p-6">
         <div className="mb-4">
           <p className="text-sm text-zinc-500">
-            Tags lar deg publisere innhold til grupper av butikker på tvers av kjeder — f.eks. alle butikker på Sunnmøre, eller alle storby-butikker.
+            Tags lar deg publisere innhold til grupper av enheter på tvers av kjeder — f.eks. alle enheter på Sunnmøre, eller alle storby-enheter.
           </p>
         </div>
 
@@ -64,6 +81,9 @@ export default async function TagsPage() {
               const storeNames = storeTags
                 .map((st) => st.stores?.name)
                 .filter((n): n is string => Boolean(n))
+              const storeIds = storeTags
+                .map((st) => st.stores?.id)
+                .filter((id): id is string => Boolean(id))
 
               return (
                 <Card key={tag.id} className="hover:shadow-md transition-shadow">
@@ -78,7 +98,7 @@ export default async function TagsPage() {
                         </div>
                         <div>
                           <p className="font-bold text-zinc-900">{tag.name}</p>
-                          <p className="text-xs text-zinc-500">{storeCount} butikker</p>
+                          <p className="text-xs text-zinc-500">{storeCount} enheter</p>
                         </div>
                       </div>
                       <div className="flex gap-1">
@@ -110,14 +130,15 @@ export default async function TagsPage() {
                         ))}
                       </div>
                     ) : (
-                      <p className="text-xs text-zinc-400 italic">Ingen butikker lagt til ennå</p>
+                      <p className="text-xs text-zinc-400 italic">Ingen enheter lagt til ennå</p>
                     )}
 
-                    <Button variant="outline" size="sm" className="w-full mt-4 text-xs" asChild>
-                      <Link href={`/admin/stores?tag=${tag.id}`}>
-                        Administrer butikker
-                      </Link>
-                    </Button>
+                    <TagManageStoresDialog
+                      tagId={tag.id}
+                      tagName={tag.name}
+                      initialStoreIds={storeIds}
+                      allStores={allStores}
+                    />
                   </CardContent>
                 </Card>
               )

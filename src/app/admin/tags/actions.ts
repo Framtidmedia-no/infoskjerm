@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache"
 import { createClient } from "@/lib/supabase/server"
+import { requireRole } from "@/lib/admin/require-role"
 
 async function requireUser() {
   const supabase = await createClient()
@@ -49,5 +50,32 @@ export async function updateTag(tagId: string, name: string, color: string) {
     .eq("id", tagId)
   if (error) return { ok: false, error: error.message }
   revalidatePath("/admin/tags")
+  return { ok: true }
+}
+
+export async function setTagStores(tagId: string, storeIds: string[]) {
+  const { supabase } = await requireRole(["super_admin", "chain_manager"])
+
+  const { data: tag } = await supabase
+    .from("tags")
+    .select("tenant_id")
+    .eq("id", tagId)
+    .single()
+
+  if (!tag) return { ok: false, error: "Tag ikke funnet" }
+
+  await supabase.from("store_tags").delete().eq("tag_id", tagId)
+
+  if (storeIds.length > 0) {
+    const rows = storeIds.map((storeId) => ({
+      tag_id: tagId,
+      store_id: storeId,
+    }))
+    const { error } = await supabase.from("store_tags").insert(rows)
+    if (error) return { ok: false, error: error.message }
+  }
+
+  revalidatePath("/admin/tags")
+  revalidatePath("/admin/stores")
   return { ok: true }
 }

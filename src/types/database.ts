@@ -59,8 +59,10 @@ export type Database = {
           created_at: string | null
           created_by: string
           id: string
+          is_priority: boolean
           module_key: string | null
           published_at: string | null
+          schedule_rule: Json | null
           scheduled_at: string | null
           status: Database["public"]["Enums"]["content_status"] | null
           tenant_id: string
@@ -78,8 +80,10 @@ export type Database = {
           created_at?: string | null
           created_by: string
           id?: string
+          is_priority?: boolean
           module_key?: string | null
           published_at?: string | null
+          schedule_rule?: Json | null
           scheduled_at?: string | null
           status?: Database["public"]["Enums"]["content_status"] | null
           tenant_id: string
@@ -97,8 +101,10 @@ export type Database = {
           created_at?: string | null
           created_by?: string
           id?: string
+          is_priority?: boolean
           module_key?: string | null
           published_at?: string | null
+          schedule_rule?: Json | null
           scheduled_at?: string | null
           status?: Database["public"]["Enums"]["content_status"] | null
           tenant_id?: string
@@ -197,6 +203,53 @@ export type Database = {
           },
         ]
       }
+      content_templates: {
+        Row: {
+          body: Json
+          created_at: string
+          description: string | null
+          id: string
+          is_global: boolean
+          name: string
+          sort_order: number
+          tenant_id: string | null
+          thumbnail_url: string | null
+          type: string
+        }
+        Insert: {
+          body?: Json
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_global?: boolean
+          name: string
+          sort_order?: number
+          tenant_id?: string | null
+          thumbnail_url?: string | null
+          type: string
+        }
+        Update: {
+          body?: Json
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_global?: boolean
+          name?: string
+          sort_order?: number
+          tenant_id?: string | null
+          thumbnail_url?: string | null
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "content_templates_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       media_uploads: {
         Row: {
           created_at: string | null
@@ -280,6 +333,61 @@ export type Database = {
           schema?: Json
         }
         Relationships: []
+      }
+      play_log: {
+        Row: {
+          content_item_id: string | null
+          duration_ms: number | null
+          id: string
+          module_key: string
+          played_at: string
+          screen_id: string
+          slide_index: number | null
+          tenant_id: string
+        }
+        Insert: {
+          content_item_id?: string | null
+          duration_ms?: number | null
+          id?: string
+          module_key: string
+          played_at?: string
+          screen_id: string
+          slide_index?: number | null
+          tenant_id: string
+        }
+        Update: {
+          content_item_id?: string | null
+          duration_ms?: number | null
+          id?: string
+          module_key?: string
+          played_at?: string
+          screen_id?: string
+          slide_index?: number | null
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "play_log_content_item_id_fkey"
+            columns: ["content_item_id"]
+            isOneToOne: false
+            referencedRelation: "content_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "play_log_screen_id_fkey"
+            columns: ["screen_id"]
+            isOneToOne: false
+            referencedRelation: "screens"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "play_log_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       playlist_items: {
         Row: {

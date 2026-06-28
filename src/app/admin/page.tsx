@@ -60,7 +60,7 @@ export default async function AdminDashboard() {
             delay={0}
           />
           <AnimatedStatCard
-            label="Butikker"
+            label="Enheter"
             value={stats.totalStores}
             sublabel={`${chains.length} kjeder`}
             icon={<Store className="w-5 h-5 text-blue-600" />}
@@ -100,7 +100,7 @@ export default async function AdminDashboard() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between">
                       <p className="text-sm font-semibold text-zinc-900">{chain.name}</p>
-                      <span className="text-xs text-zinc-400">{chain.storeCount} butikker</span>
+                      <span className="text-xs text-zinc-400">{chain.storeCount} enheter</span>
                     </div>
                     <div className="flex items-center gap-2 mt-1">
                       <div className="flex-1 h-1.5 bg-zinc-100 rounded-full overflow-hidden">
@@ -116,7 +116,7 @@ export default async function AdminDashboard() {
               ))}
               <Button variant="ghost" size="sm" className="w-full mt-2 text-zinc-500" asChild>
                 <Link href="/admin/stores">
-                  Se alle butikker <ArrowRight className="w-3 h-3 ml-1" />
+                  Se alle enheter <ArrowRight className="w-3 h-3 ml-1" />
                 </Link>
               </Button>
             </CardContent>

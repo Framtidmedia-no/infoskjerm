@@ -1,35 +1,36 @@
 import { createClient } from "@/lib/supabase/server"
 import { getContentItems } from "@/lib/admin/queries"
 import { Topbar } from "@/components/admin/topbar"
-import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Plus, Pencil, Eye, Image as ImageIcon, GripVertical } from "lucide-react"
+import { Plus } from "lucide-react"
 import Link from "next/link"
-import { ContentDeleteButton } from "../_components/content-delete-button"
-import { ContentDuplicateButton } from "../_components/content-duplicate-button"
-import { ContentSearchList } from "../_components/content-search-list"
+import { ContentItemListClient } from "../_components/content-item-list-client"
+import type { ContentListItem } from "../_components/content-item-list-client"
 
 export const dynamic = "force-dynamic"
 
-const statusColors = {
-  approved: "bg-emerald-50 text-emerald-700",
-  pending_approval: "bg-amber-50 text-amber-700",
-  draft: "bg-zinc-100 text-zinc-500",
-  rejected: "bg-red-50 text-red-700",
-}
-
-const statusLabels = {
-  approved: "Publisert",
-  pending_approval: "Venter godkjenning",
-  draft: "Utkast",
-  rejected: "Avvist",
+function fmt(date: string | null | undefined): string {
+  if (!date) return "—"
+  return new Date(date).toLocaleDateString("nb-NO", { day: "numeric", month: "short", year: "numeric" })
 }
 
 export default async function SlidesPage() {
   const supabase = await createClient()
-  const slides = await getContentItems(supabase, "slide")
+  const raw = await getContentItems(supabase, "slide")
 
-  const activeCount = slides.filter((s) => s.status === "approved").length
+  const activeCount = raw.filter((s) => s.status === "approved").length
+
+  const items: ContentListItem[] = raw.map((item) => ({
+    id: item.id,
+    title: item.title,
+    status: item.status,
+    author: ((item as unknown as Record<string, unknown>)["users!created_by"] as { full_name: string } | null)?.full_name ?? "Ukjent",
+    created: fmt(item.created_at as string | null),
+    validFrom: null,
+    validTo: null,
+    type: "slide",
+    showApprove: false,
+  }))
 
   return (
     <div className="flex flex-col flex-1">
@@ -38,7 +39,7 @@ export default async function SlidesPage() {
         subtitle={`${activeCount} publiserte slides`}
         actions={
           <Button size="sm" asChild>
-            <Link href="/admin/content/new" className="flex items-center gap-1.5">
+            <Link href="/admin/builder" className="flex items-center gap-1.5">
               <Plus className="w-4 h-4" />
               Ny slide
             </Link>
@@ -46,54 +47,7 @@ export default async function SlidesPage() {
         }
       />
       <div className="flex-1 p-6 space-y-3">
-        <ContentSearchList
-          items={slides}
-          emptyMessage="Ingen slides er opprettet ennå."
-          renderItem={(item) => {
-            const statusKey = (item.status ?? "draft") as keyof typeof statusColors
-            const colorClass = statusColors[statusKey] ?? statusColors.draft
-            const label = statusLabels[statusKey] ?? statusLabels.draft
-
-            return (
-              <Card key={item.id} className="hover:shadow-sm transition-shadow">
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-4">
-                    <button className="text-zinc-300 hover:text-zinc-500 cursor-grab active:cursor-grabbing">
-                      <GripVertical className="w-4 h-4" />
-                    </button>
-
-                    <div className="w-20 h-14 rounded-lg bg-zinc-100 flex items-center justify-center flex-shrink-0 border border-zinc-200">
-                      <ImageIcon className="w-6 h-6 text-zinc-300" />
-                    </div>
-
-                    <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-zinc-900 text-sm">{item.title}</p>
-                    </div>
-
-                    <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${colorClass}`}>
-                      {label}
-                    </span>
-
-                    <div className="flex items-center gap-1">
-                      <Button variant="ghost" size="icon" className="h-8 w-8" asChild>
-                        <Link href={`/preview/${item.id}`} target="_blank">
-                          <Eye className="w-4 h-4" />
-                        </Link>
-                      </Button>
-                      <Button variant="ghost" size="icon" className="h-8 w-8" asChild>
-                        <Link href={`/admin/builder?id=${item.id}`}>
-                          <Pencil className="w-4 h-4" />
-                        </Link>
-                      </Button>
-                      <ContentDuplicateButton itemId={item.id} />
-                      <ContentDeleteButton itemId={item.id} />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            )
-          }}
-        />
+        <ContentItemListClient items={items} emptyMessage="Ingen slides er opprettet ennå." />
       </div>
     </div>
   )

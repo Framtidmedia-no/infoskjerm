@@ -7,7 +7,7 @@ import {
   LayoutDashboard, Store, Monitor, Newspaper, Trophy,
   BarChart3, CloudSun, Images, ListVideo, Send, Users,
   Settings, Tag, ChevronRight, LogOut, Layers, PenSquare,
-  Layout, UserPlus, CalendarDays,
+  Layout, UserPlus, CalendarDays, AlertTriangle,
 } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 
@@ -35,7 +35,7 @@ const navGroups: NavGroup[] = [
   {
     label: "Organisasjon",
     items: [
-      { href: "/admin/stores", label: "Butikker", icon: Store, roles: ["super_admin", "chain_manager"] },
+      { href: "/admin/stores", label: "Enheter", icon: Store, roles: ["super_admin", "chain_manager"] },
       { href: "/admin/screens", label: "Skjermer", icon: Monitor, roles: ["super_admin", "chain_manager", "store_manager"] },
       { href: "/admin/tags", label: "Tags", icon: Tag, roles: ["super_admin", "chain_manager"] },
     ],
@@ -58,6 +58,7 @@ const navGroups: NavGroup[] = [
     items: [
       { href: "/admin/playlists", label: "Spillelister", icon: ListVideo, roles: ["super_admin", "chain_manager"] },
       { href: "/admin/publish", label: "Publiser", icon: Send, roles: ["super_admin", "chain_manager", "store_manager"] },
+      { href: "/admin/emergency", label: "Nødkringkasting", icon: AlertTriangle, roles: ["super_admin", "chain_manager"] as UserRole[] },
     ],
   },
   {

@@ -55,12 +55,12 @@ export default async function StoresPage({
   return (
     <div className="flex flex-col flex-1">
       <Topbar
-        title="Butikker"
-        subtitle={tagName ? `Viser ${totalStores} butikker med tag: ${tagName}` : `${totalStores} butikker`}
+        title="Enheter"
+        subtitle={tagName ? `Viser ${totalStores} enheter med tag: ${tagName}` : `${totalStores} enheter`}
         actions={
           <div className="flex gap-2">
             <Button size="sm" asChild>
-              <Link href="/admin/stores/new">Legg til butikk</Link>
+              <Link href="/admin/stores/new">Legg til enhet</Link>
             </Button>
           </div>
         }
@@ -92,7 +92,7 @@ export default async function StoresPage({
                 <div className="flex items-center gap-3 mb-3">
                   <div className="w-1 h-6 rounded-full" style={{ backgroundColor: chain.color }} />
                   <h2 className="font-bold text-zinc-900">{chain.name}</h2>
-                  <span className="text-sm text-zinc-400">{stores.length} butikker</span>
+                  <span className="text-sm text-zinc-400">{stores.length} enheter</span>
                 </div>
 
                 <div className="grid grid-cols-1 gap-2">

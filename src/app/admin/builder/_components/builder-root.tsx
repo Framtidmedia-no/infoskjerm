@@ -20,11 +20,8 @@ import { createClient } from "@/lib/supabase/client"
 import type { ModulePlacement, BuilderState, ModuleSchema } from "@/lib/builder/types"
 import type { Json } from "@/types/database"
 import type { ModuleRow } from "@/lib/admin/modules"
-import { Save, CheckCircle, AlertCircle, Loader2, Eye, Send, Columns, Monitor } from "lucide-react"
-import { submitForApproval } from "@/app/admin/publish/actions"
+import { Save, CheckCircle, AlertCircle, Loader2, Eye, Columns, Monitor } from "lucide-react"
 import { toast } from "sonner"
-import confetti from "canvas-confetti"
-import { SuccessToast } from "@/components/admin/success-toast"
 
 interface BuilderRootProps {
   modules: ModuleRow[]
@@ -61,7 +58,7 @@ export function BuilderRoot({ modules, tenantId, userId, initialName = 'Nytt inn
     saveStatus: 'idle',
   })
 
-  const [submitting, setSubmitting] = useState(false)
+  const [publishing, setPublishing] = useState(false)
   const [previewMode, setPreviewMode] = useState<"panel" | "embedded">("panel")
 
   const sensors = useSensors(
@@ -181,22 +178,22 @@ export function BuilderRoot({ modules, tenantId, userId, initialName = 'Nytt inn
     }
   }
 
-  const handleSubmitForApproval = async () => {
-    if (!state.contentItemId) return
-    await handleManualSave()
-    setSubmitting(true)
-    const result = await submitForApproval(state.contentItemId)
-    setSubmitting(false)
-    if (result.ok) {
-      toast(<SuccessToast message="Sendt til godkjenning!" />, { duration: 4000 })
-      confetti({
-        particleCount: 120,
-        spread: 80,
-        origin: { y: 0.7 },
-        colors: ["#22c55e", "#3b82f6", "#f59e0b", "#8b5cf6"],
-      })
-    } else {
-      toast.error(result.error ?? 'Feil ved innsending')
+  const handlePublish = async () => {
+    if (!state.contentItemId) {
+      await handleManualSave()
+      return
+    }
+    setPublishing(true)
+    try {
+      await supabase
+        .from('content_items')
+        .update({ status: 'live', updated_at: new Date().toISOString() })
+        .eq('id', state.contentItemId)
+      toast.success('Innholdet er nå live!')
+    } catch {
+      toast.error('Feil ved publisering')
+    } finally {
+      setPublishing(false)
     }
   }
 
@@ -244,16 +241,13 @@ export function BuilderRoot({ modules, tenantId, userId, initialName = 'Nytt inn
               Fullskjerm
             </a>
           )}
-          {state.contentItemId && (
-            <button
-              onClick={handleSubmitForApproval}
-              disabled={submitting}
-              className="flex items-center gap-1.5 text-sm font-medium px-3 py-1.5 rounded-lg border border-zinc-300 text-zinc-700 hover:bg-zinc-50 transition-colors disabled:opacity-50"
-            >
-              <Send className="w-3.5 h-3.5" />
-              {submitting ? "Sender..." : "Send til godkjenning"}
-            </button>
-          )}
+          <button
+            onClick={handlePublish}
+            disabled={publishing}
+            className="flex items-center gap-1.5 text-sm font-medium px-3 py-1.5 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 transition-colors disabled:opacity-50"
+          >
+            {publishing ? "Publiserer..." : "Publiser"}
+          </button>
           <button
             onClick={handleManualSave}
             className="flex items-center gap-1.5 text-sm font-medium px-3 py-1.5 rounded-lg text-white transition-colors"
