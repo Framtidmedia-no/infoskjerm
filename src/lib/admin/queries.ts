@@ -71,7 +71,7 @@ export async function getChainOverview(supabase: AdminSupabase): Promise<ChainOv
   if (!chains) return []
 
   return chains.map((chain) => {
-    const stores = (chain.stores as Array<{ id: string; screens: Array<{ id: string; status: string | null; last_heartbeat: string | null }> }>) ?? []
+    const stores = (chain.stores as unknown as Array<{ id: string; screens: Array<{ id: string; status: string | null; last_heartbeat: string | null }> }>) ?? []
     const screens = stores.flatMap((s) => s.screens ?? [])
     const onlineScreens = screens.filter(
       (s) => getScreenStatusColor(s.status, s.last_heartbeat) !== 'red'

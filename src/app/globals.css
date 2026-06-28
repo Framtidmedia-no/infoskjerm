@@ -1,7 +1,17 @@
 @import "tailwindcss";
 
+@theme {
+  --color-brand: var(--brand-primary);
+  --color-brand-light: var(--brand-light);
+  --color-brand-fg: var(--brand-fg);
+}
+
 :root {
-  --background: #ffffff;
+  --brand-primary: #007B40;
+  --brand-light: #f0faf4;
+  --brand-fg: #ffffff;
+
+  --background: #f8f8f6;
   --foreground: #0a0a0a;
   --card: #ffffff;
   --card-foreground: #0a0a0a;
@@ -18,6 +28,30 @@
   --input: #e4e4e7;
   --ring: #18181b;
   --radius: 0.5rem;
+}
+
+[data-chain="SPAR"] {
+  --brand-primary: #007B40;
+  --brand-light: #f0faf4;
+  --brand-fg: #ffffff;
+}
+
+[data-chain="EUROSPAR"] {
+  --brand-primary: #E30613;
+  --brand-light: #fff1f2;
+  --brand-fg: #ffffff;
+}
+
+[data-chain="JOKER"] {
+  --brand-primary: #F7A600;
+  --brand-light: #fffbeb;
+  --brand-fg: #1a1a1a;
+}
+
+[data-chain="super_admin"] {
+  --brand-primary: #6366f1;
+  --brand-light: #eef2ff;
+  --brand-fg: #ffffff;
 }
 
 * {
