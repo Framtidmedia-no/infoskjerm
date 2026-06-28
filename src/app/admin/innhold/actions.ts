@@ -2,6 +2,7 @@
 
 import { requireRole } from "@/lib/admin/require-role"
 import { revalidatePath } from "next/cache"
+import { createXiboLayout, buildContentHtml, deleteXiboLayout } from "@/lib/xibo/sync"
 import type { Json } from "@/types/database"
 
 const AUTHOR_ROLES = ["super_admin", "chain_manager", "area_manager", "store_manager", "store_employee"] as const
@@ -92,6 +93,27 @@ export async function saveContent(input: ContentInput, id?: string): Promise<Sav
   if (targetRows.length > 0) {
     const { error } = await supabase.from("content_targets").insert(targetRows)
     if (error) return { ok: false, error: error.message }
+  }
+
+  // Best-effort: speil publisert innhold som en ekte Xibo-layout.
+  // Feiler dette, er innholdet likevel publisert i Supabase — vi blokkerer aldri.
+  if (input.publish) {
+    try {
+      const { data: existing } = await supabase.from("content_items").select("body").eq("id", contentId!).single()
+      const prevXibo = (existing?.body as { xibo?: { layoutId?: number } } | null)?.xibo
+      if (prevXibo?.layoutId) await deleteXiboLayout(prevXibo.layoutId)
+
+      const html = buildContentHtml(input.title.trim(), input.bodyHtml, input.imageUrl)
+      const ref = await createXiboLayout(input.title.trim(), html)
+      const newBody = JSON.parse(JSON.stringify({
+        html: input.bodyHtml,
+        imageUrl: input.imageUrl ?? null,
+        xibo: ref,
+      })) as Json
+      await supabase.from("content_items").update({ body: newBody }).eq("id", contentId!)
+    } catch (e) {
+      console.error("Xibo-synk feilet (innhold publisert likevel):", e instanceof Error ? e.message : e)
+    }
   }
 
   revalidatePath("/admin/innhold")

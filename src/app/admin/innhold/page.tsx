@@ -38,7 +38,7 @@ export default async function ContentListPage() {
         ? tagIds.map((id) => tagName.get(id)).filter((x): x is string => !!x)
         : []
 
-    const body = (it.body ?? {}) as { imageUrl?: string | null }
+    const body = (it.body ?? {}) as { imageUrl?: string | null; xibo?: { campaignId?: number | null } }
     return {
       id: it.id,
       title: it.title,
@@ -51,8 +51,11 @@ export default async function ContentListPage() {
       target: { mode, count: mode === "stores" ? storeIds.length : tagIds.length, names },
       storeIds,
       tagIds,
+      xiboCampaignId: body.xibo?.campaignId ?? null,
     }
   })
+
+  const xiboBaseUrl = process.env.XIBO_API_URL ?? ""
 
   return (
     <div className="flex flex-col flex-1">
@@ -66,7 +69,7 @@ export default async function ContentListPage() {
         }
       />
       <div className="flex-1 p-6 max-w-6xl">
-        <ContentListClient items={rows} stores={stores ?? []} tags={tags ?? []} />
+        <ContentListClient items={rows} stores={stores ?? []} tags={tags ?? []} xiboBaseUrl={xiboBaseUrl} />
       </div>
     </div>
   )
