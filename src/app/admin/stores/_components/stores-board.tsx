@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useMemo, useState, useTransition } from "react"
+import { useMemo, useState, useTransition } from "react"
 import { useRouter } from "next/navigation"
 import { Search, Store as StoreIcon, X, SlidersHorizontal } from "lucide-react"
 import { cn } from "@/lib/utils"
@@ -36,9 +36,14 @@ export function StoresBoard({ chains, allTags }: StoresBoardProps) {
   const [tagsByStore, setTagsByStore] = useState<Record<string, BoardTag[]>>(() => buildTagMap(chains))
   const [tags, setTags] = useState<BoardTag[]>(allTags)
 
-  // Resync with server truth after a revalidation/refresh.
-  useEffect(() => setTagsByStore(buildTagMap(chains)), [chains])
-  useEffect(() => setTags(allTags), [allTags])
+  // Resync with server truth after a revalidation/refresh — the recommended
+  // "adjust state while rendering" pattern instead of an effect.
+  const [serverSnapshot, setServerSnapshot] = useState({ chains, allTags })
+  if (serverSnapshot.chains !== chains || serverSnapshot.allTags !== allTags) {
+    setServerSnapshot({ chains, allTags })
+    setTagsByStore(buildTagMap(chains))
+    setTags(allTags)
+  }
 
   function handleToggleTag(storeId: string, tag: BoardTag, assign: boolean) {
     setTagsByStore((prev) => {
