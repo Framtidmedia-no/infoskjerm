@@ -1,33 +1,60 @@
-import { Trophy } from 'lucide-react'
 interface Props { fields: Record<string, unknown> }
+
 export function CompetitionModule({ fields }: Props) {
   const title = (fields.title as string) || 'Konkurranse'
   const description = (fields.description as string) || ''
   const prize = (fields.prize as string) || ''
   const deadline = (fields.deadline as string) || ''
   const imageUrl = (fields.image_url as string) || null
+
   return (
-    <div className="flex flex-col justify-center h-full px-20 text-white">
-      <div className="flex items-center gap-4 mb-8">
-        <div className="w-14 h-14 rounded-2xl bg-amber-500/20 border border-amber-500/30 flex items-center justify-center">
-          <Trophy className="w-7 h-7 text-amber-400" />
+    <div className="flex h-full text-white" style={{ background: 'linear-gradient(135deg, #0f0f0f 0%, #1c1208 100%)' }}>
+      {/* Left: content */}
+      <div className="flex flex-col justify-between flex-1 px-16 py-12">
+        <div>
+          <div className="flex items-center gap-4 mb-10">
+            <div className="w-2 h-12 rounded-full bg-amber-400" />
+            <p className="text-sm font-bold uppercase tracking-[0.25em] text-amber-400">
+              Konkurranse
+            </p>
+          </div>
+          <h1 className="text-6xl font-black leading-[1.05] text-white max-w-2xl mb-6">
+            {title}
+          </h1>
+          {description && (
+            <p className="text-xl text-white/65 leading-relaxed max-w-xl">
+              {description}
+            </p>
+          )}
         </div>
-        <span className="text-amber-400 font-semibold text-lg uppercase tracking-widest">Konkurranse</span>
-        {deadline && <span className="ml-auto text-zinc-500 text-sm">Frist: {deadline}</span>}
-      </div>
-      <div className="flex gap-12">
-        <div className="flex-1">
-          <h2 className="text-5xl font-black leading-tight mb-6">{title}</h2>
-          <p className="text-xl text-zinc-300 leading-relaxed mb-8">{description}</p>
+
+        <div className="flex items-end gap-12">
           {prize && (
-            <div className="bg-amber-500/10 border border-amber-500/30 rounded-2xl px-6 py-4">
-              <p className="text-zinc-400 text-sm uppercase tracking-wide mb-1">Premie</p>
-              <p className="text-2xl font-bold text-amber-300">{prize}</p>
+            <div>
+              <p className="text-xs font-bold uppercase tracking-widest text-amber-400/70 mb-2">Premie</p>
+              <p className="text-4xl font-black text-amber-300">{prize}</p>
+            </div>
+          )}
+          {deadline && (
+            <div>
+              <p className="text-xs font-bold uppercase tracking-widest text-white/40 mb-2">Frist</p>
+              <p className="text-2xl font-bold text-white/70">{deadline}</p>
             </div>
           )}
         </div>
-        {imageUrl && <img src={imageUrl} alt={title} className="w-64 h-64 rounded-3xl object-cover border border-white/10 flex-shrink-0" />}
       </div>
+
+      {/* Right: image */}
+      {imageUrl && (
+        <div className="w-96 h-full flex-shrink-0">
+          <img
+            src={imageUrl}
+            alt={title}
+            className="w-full h-full object-cover opacity-80"
+            style={{ maskImage: 'linear-gradient(to right, transparent, black 30%)' }}
+          />
+        </div>
+      )}
     </div>
   )
 }

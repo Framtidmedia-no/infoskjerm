@@ -28,7 +28,7 @@ const DAY_NO = ["Søn", "Man", "Tir", "Ons", "Tor", "Fre", "Lør"]
 interface Props { fields: Record<string, unknown> }
 
 export function WeatherModule({ fields }: Props) {
-  const locationName = (fields.location_name as string) || "Stedet"
+  const locationName = (fields.location_name as string) || "Lokalt"
   const lat = (fields.lat as number) ?? 62.47
   const lon = (fields.lon as number) ?? 6.15
   const [weather, setWeather] = useState<WeatherData | null>(null)
@@ -40,52 +40,69 @@ export function WeatherModule({ fields }: Props) {
       .catch(() => {})
   }, [lat, lon])
 
-  if (!weather) {
-    return (
-      <div className="flex flex-col justify-center h-full px-20 text-white">
-        <div className="flex items-center gap-4 mb-8">
-          <div className="w-14 h-14 rounded-2xl bg-sky-500/20 border border-sky-500/30 flex items-center justify-center">
-            <CloudSun className="w-7 h-7 text-sky-400 animate-pulse" />
-          </div>
-          <span className="text-sky-400 font-semibold text-lg uppercase tracking-widest">Vær — {locationName}</span>
-        </div>
-        <p className="text-9xl font-black">--°</p>
-      </div>
-    )
-  }
-
   return (
-    <div className="flex flex-col justify-center h-full px-20 text-white">
-      <div className="flex items-center gap-4 mb-8">
-        <div className="w-14 h-14 rounded-2xl bg-sky-500/20 border border-sky-500/30 flex items-center justify-center">
-          <WeatherIcon code={weather.current.symbolCode} className="w-7 h-7 text-sky-400" />
+    <div
+      className="flex flex-col h-full text-white"
+      style={{ background: 'linear-gradient(160deg, #050d1a 0%, #091525 60%, #0c1e30 100%)' }}
+    >
+      <div className="h-2 w-full bg-sky-500" />
+
+      <div className="flex flex-col justify-between flex-1 px-16 py-12">
+        {/* Header */}
+        <div>
+          <p className="text-sm font-bold uppercase tracking-[0.25em] text-sky-400 mb-1">Vær</p>
+          <p className="text-base text-white/40 font-medium">{locationName}</p>
         </div>
-        <span className="text-sky-400 font-semibold text-lg uppercase tracking-widest">Vær — {locationName}</span>
-      </div>
-      <div className="flex items-end gap-8 mb-8">
-        <p className="text-9xl font-black">{weather.current.temperature}°</p>
-        <div className="pb-4">
-          <div className="flex gap-6 text-zinc-400">
-            <div className="flex items-center gap-2"><Wind className="w-4 h-4" /><span>{weather.current.windSpeed} m/s</span></div>
-            <div className="flex items-center gap-2"><Droplets className="w-4 h-4" /><span>{weather.current.humidity}%</span></div>
+
+        {/* Current temp */}
+        <div className="flex items-end gap-8">
+          {weather ? (
+            <>
+              <div>
+                <WeatherIcon code={weather.current.symbolCode} className="w-24 h-24 text-sky-300 mb-4" />
+                <p className="text-[10rem] font-black leading-none tabular-nums">
+                  {weather.current.temperature}°
+                </p>
+              </div>
+              <div className="pb-6 space-y-3">
+                <div className="flex items-center gap-3 text-white/50 text-lg">
+                  <Wind className="w-5 h-5" />
+                  <span>{weather.current.windSpeed} m/s</span>
+                </div>
+                <div className="flex items-center gap-3 text-white/50 text-lg">
+                  <Droplets className="w-5 h-5" />
+                  <span>{weather.current.humidity}%</span>
+                </div>
+              </div>
+            </>
+          ) : (
+            <p className="text-[10rem] font-black leading-none text-white/30">--°</p>
+          )}
+        </div>
+
+        {/* Forecast */}
+        {weather && (
+          <div className="flex gap-4">
+            {weather.forecast.map((day) => {
+              const d = new Date(day.date)
+              return (
+                <div
+                  key={day.date}
+                  className="flex flex-col items-center gap-2 rounded-2xl px-6 py-4"
+                  style={{ background: 'rgba(255,255,255,0.06)' }}
+                >
+                  <span className="text-white/40 text-sm font-medium">{DAY_NO[d.getDay()]}</span>
+                  <WeatherIcon code={day.symbolCode} className="w-8 h-8 text-sky-300" />
+                  <span className="text-white font-bold text-lg">{day.high}°</span>
+                  <span className="text-white/40 text-sm">{day.low}°</span>
+                  {day.precipitation > 0 && (
+                    <span className="text-sky-400 text-xs">{day.precipitation}mm</span>
+                  )}
+                </div>
+              )
+            })}
           </div>
-        </div>
-      </div>
-      <div className="flex gap-6">
-        {weather.forecast.map((day) => {
-          const d = new Date(day.date)
-          return (
-            <div key={day.date} className="flex flex-col items-center gap-2 bg-white/5 rounded-2xl px-5 py-4">
-              <span className="text-zinc-400 text-sm">{DAY_NO[d.getDay()]}</span>
-              <WeatherIcon code={day.symbolCode} className="w-8 h-8 text-sky-300" />
-              <span className="text-white font-bold">{day.high}°</span>
-              <span className="text-zinc-500 text-sm">{day.low}°</span>
-              {day.precipitation > 0 && (
-                <span className="text-sky-400 text-xs">{day.precipitation}mm</span>
-              )}
-            </div>
-          )
-        })}
+        )}
       </div>
     </div>
   )

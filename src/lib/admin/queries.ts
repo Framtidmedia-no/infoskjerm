@@ -141,10 +141,22 @@ export async function getContentItems(
   const { data } = await supabase
     .from('content_items')
     .select(`
-      id, title, status, created_at, valid_from, valid_to,
+      id, title, status, type, created_at, valid_from, valid_to,
       users!created_by(full_name)
     `)
     .eq('type', type)
+    .order('created_at', { ascending: false })
+
+  return data ?? []
+}
+
+export async function getAllContentItems(supabase: AdminSupabase) {
+  const { data } = await supabase
+    .from('content_items')
+    .select(`
+      id, title, status, type, created_at, valid_from, valid_to,
+      users!created_by(full_name)
+    `)
     .order('created_at', { ascending: false })
 
   return data ?? []

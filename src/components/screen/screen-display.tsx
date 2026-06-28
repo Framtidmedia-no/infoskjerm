@@ -7,7 +7,7 @@ import type { Slide } from "@/app/api/screens/[id]/current-content/route"
 const POLL_INTERVAL_MS = 30_000
 const COMMAND_POLL_MS = 15_000
 
-function ClockSlide({ chainShortName = "GR", chainName = "Gange-Rolv" }: { chainShortName?: string; chainName?: string }) {
+function ClockSlide({ chainName = "Infoskjerm", storeName }: { chainName?: string; chainShortName?: string; storeName?: string }) {
   const [time, setTime] = useState(new Date())
   useEffect(() => {
     const t = setInterval(() => setTime(new Date()), 1000)
@@ -15,36 +15,79 @@ function ClockSlide({ chainShortName = "GR", chainName = "Gange-Rolv" }: { chain
   }, [])
   const days = ["Søndag", "Mandag", "Tirsdag", "Onsdag", "Torsdag", "Fredag", "Lørdag"]
   const months = ["januar", "februar", "mars", "april", "mai", "juni", "juli", "august", "september", "oktober", "november", "desember"]
+
   return (
-    <div className="flex flex-col items-center justify-center h-full text-white">
-      <div className="mb-8">
-        <div className="w-24 h-24 rounded-2xl bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center mx-auto mb-6 shadow-2xl shadow-emerald-900/50">
-          <span className="text-4xl font-bold text-white">{chainShortName}</span>
-        </div>
-        <p className="text-center text-zinc-400 text-lg font-medium tracking-wide">{chainName}</p>
+    <div
+      className="flex flex-col items-start justify-between h-full px-16 py-14 text-white"
+      style={{ background: 'linear-gradient(160deg, #050505 0%, #101010 100%)' }}
+    >
+      <div>
+        <p
+          className="text-sm font-bold uppercase tracking-[0.25em] mb-1"
+          style={{ color: 'var(--brand-primary, #16a34a)' }}
+        >
+          {chainName}
+        </p>
+        {storeName && (
+          <p className="text-base text-white/40 font-medium">{storeName}</p>
+        )}
       </div>
-      <p className="text-9xl font-black tabular-nums tracking-tighter text-white">
-        {time.getHours().toString().padStart(2, "0")}
-        <span className="animate-pulse">:</span>
-        {time.getMinutes().toString().padStart(2, "0")}
-      </p>
-      <p className="text-2xl text-zinc-400 mt-4 font-light">
-        {days[time.getDay()]}, {time.getDate()}. {months[time.getMonth()]} {time.getFullYear()}
-      </p>
+
+      <div>
+        <p className="text-[14rem] font-black tabular-nums leading-none text-white" style={{ letterSpacing: '-0.04em' }}>
+          {time.getHours().toString().padStart(2, "0")}
+          <span className="text-white/30">:</span>
+          {time.getMinutes().toString().padStart(2, "0")}
+        </p>
+        <p className="text-2xl text-white/40 font-medium mt-4">
+          {days[time.getDay()]} {time.getDate()}. {months[time.getMonth()]} {time.getFullYear()}
+        </p>
+      </div>
+
+      <div
+        className="h-1 w-24 rounded-full"
+        style={{ backgroundColor: 'var(--brand-primary, #16a34a)' }}
+      />
     </div>
   )
 }
 
-function ScreenClock() {
+function FooterBar({ slides, currentIndex, chainName }: {
+  slides: Slide[]
+  currentIndex: number
+  chainName: string
+}) {
   const [time, setTime] = useState(new Date())
   useEffect(() => {
     const t = setInterval(() => setTime(new Date()), 1000)
     return () => clearInterval(t)
   }, [])
+
+  const isClockSlide = slides[currentIndex % slides.length]?.moduleKey === "__clock__"
+  if (isClockSlide) return null
+
   return (
-    <span className="text-zinc-400 text-sm tabular-nums">
-      {time.getHours().toString().padStart(2, "0")}:{time.getMinutes().toString().padStart(2, "0")}
-    </span>
+    <div className="absolute bottom-0 left-0 right-0 z-20 flex items-center justify-between px-8 py-3"
+      style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.7) 0%, transparent 100%)' }}
+    >
+      <p className="text-white/40 text-sm font-medium">{chainName}</p>
+      <div className="flex items-center gap-1.5">
+        {slides.map((_, i) => (
+          <div
+            key={i}
+            className="rounded-full transition-all duration-300"
+            style={{
+              width: i === currentIndex % slides.length ? 20 : 6,
+              height: 4,
+              backgroundColor: i === currentIndex % slides.length ? 'var(--brand-primary, white)' : 'rgba(255,255,255,0.2)',
+            }}
+          />
+        ))}
+      </div>
+      <p className="text-white/40 text-sm tabular-nums font-medium">
+        {time.getHours().toString().padStart(2, "0")}:{time.getMinutes().toString().padStart(2, "0")}
+      </p>
+    </div>
   )
 }
 
@@ -59,14 +102,16 @@ const CLOCK_SLIDE: Slide = {
 export function ScreenDisplay({
   token,
   screenId,
-  chainName = "Gange-Rolv",
-  chainShortName = "GR",
+  chainName = "Infoskjerm",
+  chainShortName = "IS",
+  storeName,
 }: {
   token: string
   screenId?: string
   storeId?: string
   chainName?: string
   chainShortName?: string
+  storeName?: string
 }) {
   const [slides, setSlides] = useState<Slide[]>([CLOCK_SLIDE])
   const [currentIndex, setCurrentIndex] = useState(0)
@@ -84,26 +129,19 @@ export function ScreenDisplay({
       if (!res.ok) return
       const json = await res.json() as { slides?: Slide[] }
       if (json.slides && json.slides.length > 0) {
-        // Cache slides for offline fallback
         try {
           localStorage.setItem(`slides_cache_${screenId}`, JSON.stringify(json.slides))
-          localStorage.setItem(`slides_cache_${screenId}_ts`, Date.now().toString())
-        } catch { /* localStorage might be unavailable */ }
+        } catch { /* ignore */ }
         setSlides([CLOCK_SLIDE, ...json.slides])
       }
     } catch {
-      // Try to use cached slides
       try {
         const cached = localStorage.getItem(`slides_cache_${screenId}`)
         if (cached) {
           const parsed = JSON.parse(cached) as Slide[]
-          if (parsed.length > 0) {
-            setSlides([CLOCK_SLIDE, ...parsed])
-            return // keep showing last known content
-          }
+          if (parsed.length > 0) setSlides([CLOCK_SLIDE, ...parsed])
         }
       } catch { /* ignore */ }
-      // Only keep existing slides if no cache available
     }
   }, [screenId, token])
 
@@ -113,30 +151,22 @@ export function ScreenDisplay({
       const res = await fetch(`/api/screens/poll?token=${encodeURIComponent(token)}`)
       if (!res.ok) return
       const json = await res.json() as { command?: string | null }
-      if (json.command === "reload" || json.command === "reboot") {
-        window.location.reload()
-      } else if (json.command === "power_off") {
-        setIsPoweredOff(true)
-      } else if (json.command === "power_on") {
-        setIsPoweredOff(false)
-      }
-    } catch {
-      // ignore network errors
-    }
+      if (json.command === "reload" || json.command === "reboot") window.location.reload()
+      else if (json.command === "power_off") setIsPoweredOff(true)
+      else if (json.command === "power_on") setIsPoweredOff(false)
+    } catch { /* ignore */ }
   }, [token])
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchContent()
-    const contentTimer = setInterval(fetchContent, POLL_INTERVAL_MS)
-    return () => clearInterval(contentTimer)
+    const t = setInterval(fetchContent, POLL_INTERVAL_MS)
+    return () => clearInterval(t)
   }, [fetchContent])
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     pollCommands()
-    const cmdTimer = setInterval(pollCommands, COMMAND_POLL_MS)
-    return () => clearInterval(cmdTimer)
+    const t = setInterval(pollCommands, COMMAND_POLL_MS)
+    return () => clearInterval(t)
   }, [pollCommands])
 
   useEffect(() => {
@@ -147,7 +177,6 @@ export function ScreenDisplay({
     const outer = setTimeout(() => {
       setIsTransitioning(true)
       transitionTimerRef.current = setTimeout(() => {
-        // Fire play-log before advancing (skip clock slide)
         if (slide.moduleKey !== "__clock__" && screenId) {
           const durationMs = Date.now() - slideStartTimeRef.current
           fetch(`/api/screens/${screenId}/play-log`, {
@@ -160,12 +189,12 @@ export function ScreenDisplay({
               slideIndex: currentIndex,
             }),
             keepalive: true,
-          }).catch(() => {}) // fire and forget
+          }).catch(() => {})
         }
         slideStartTimeRef.current = Date.now()
         setCurrentIndex((prev) => (prev + 1) % slides.length)
         setIsTransitioning(false)
-      }, 500)
+      }, 400)
     }, duration)
     return () => {
       clearTimeout(outer)
@@ -173,46 +202,26 @@ export function ScreenDisplay({
     }
   }, [currentIndex, slides, screenId])
 
-  if (isPoweredOff) {
-    return <div className="w-screen h-screen bg-black" />
-  }
+  if (isPoweredOff) return <div className="w-screen h-screen bg-black" />
 
   const slide = slides[currentIndex % slides.length]
 
   return (
-    <div className="w-screen h-screen bg-zinc-950 overflow-hidden relative" style={{ fontFamily: "system-ui, sans-serif" }}>
-      <div className="absolute inset-0 bg-gradient-to-br from-zinc-950 via-zinc-900 to-zinc-950" />
+    <div className="w-screen h-screen overflow-hidden relative bg-black">
+      {/* Slide content */}
       <div
-        className="absolute inset-0 opacity-5"
-        style={{
-          backgroundImage: "linear-gradient(rgba(255,255,255,.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.1) 1px, transparent 1px)",
-          backgroundSize: "60px 60px",
-        }}
-      />
-      <div className="relative z-10 h-full transition-opacity duration-500" style={{ opacity: isTransitioning ? 0 : 1 }}>
+        className="absolute inset-0 transition-opacity"
+        style={{ opacity: isTransitioning ? 0 : 1, transitionDuration: '400ms' }}
+      >
         {slide.moduleKey === "__clock__" ? (
-          <ClockSlide chainShortName={chainShortName} chainName={chainName} />
+          <ClockSlide chainName={chainName} chainShortName={chainShortName} storeName={storeName} />
         ) : (
           <ModuleRenderer moduleKey={slide.moduleKey} fields={slide.fields} />
         )}
       </div>
-      <div className="absolute bottom-0 left-0 right-0 z-20 flex items-center justify-between px-10 py-4 bg-gradient-to-t from-black/60 to-transparent">
-        <div className="flex items-center gap-3">
-          <div className="w-6 h-6 rounded-md bg-emerald-500 flex items-center justify-center">
-            <span className="text-white text-[10px] font-black">{chainShortName}</span>
-          </div>
-          <span className="text-zinc-400 text-sm font-medium">{chainName}</span>
-        </div>
-        <div className="flex items-center gap-2">
-          {slides.map((_, i) => (
-            <div
-              key={i}
-              className={`rounded-full transition-all ${i === currentIndex % slides.length ? "w-6 h-2 bg-white" : "w-2 h-2 bg-zinc-600"}`}
-            />
-          ))}
-        </div>
-        <ScreenClock />
-      </div>
+
+      {/* Footer */}
+      <FooterBar slides={slides} currentIndex={currentIndex} chainName={chainName} />
     </div>
   )
 }

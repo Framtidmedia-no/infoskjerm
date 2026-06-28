@@ -4,10 +4,9 @@ import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import { cn } from "@/lib/utils"
 import {
-  LayoutDashboard, Store, Monitor, Newspaper, Trophy,
-  BarChart3, CloudSun, Images, ListVideo, Send, Users,
-  Settings, Tag, ChevronRight, LogOut, Layers, PenSquare,
-  Layout, UserPlus, CalendarDays, AlertTriangle,
+  LayoutDashboard, Store, Monitor, ListVideo, Send, Users,
+  Settings, ChevronRight, LogOut, Layers, Layout,
+  UserPlus, AlertTriangle, FileStack,
 } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 
@@ -18,6 +17,7 @@ interface NavItem {
   label: string
   icon: React.ElementType
   roles: UserRole[]
+  matchPrefix?: boolean
 }
 
 interface NavGroup {
@@ -33,40 +33,33 @@ const navGroups: NavGroup[] = [
     ],
   },
   {
-    label: "Organisasjon",
+    label: "Skjermer",
     items: [
+      { href: "/admin/screens", label: "Mine skjermer", icon: Monitor, roles: ["super_admin", "chain_manager", "store_manager"], matchPrefix: true },
       { href: "/admin/stores", label: "Enheter", icon: Store, roles: ["super_admin", "chain_manager"] },
-      { href: "/admin/screens", label: "Skjermer", icon: Monitor, roles: ["super_admin", "chain_manager", "store_manager"] },
-      { href: "/admin/tags", label: "Tags", icon: Tag, roles: ["super_admin", "chain_manager"] },
     ],
   },
   {
     label: "Innhold",
     items: [
-      { href: "/admin/modules", label: "Moduler", icon: Layers, roles: ["super_admin", "chain_manager"] },
-      { href: "/admin/builder", label: "Bygg innhold", icon: PenSquare, roles: ["super_admin", "chain_manager", "store_manager"] as UserRole[] },
-      { href: "/admin/content/news", label: "Nyheter", icon: Newspaper, roles: ["super_admin", "chain_manager", "store_manager", "store_employee"] },
-      { href: "/admin/content/competitions", label: "Konkurranser", icon: Trophy, roles: ["super_admin", "chain_manager", "store_manager"] },
-      { href: "/admin/content/stats", label: "Salgstall", icon: BarChart3, roles: ["super_admin", "chain_manager", "store_manager"] },
-      { href: "/admin/content/weather", label: "Vær", icon: CloudSun, roles: ["super_admin", "chain_manager"] },
-      { href: "/admin/content/slides", label: "Slides", icon: Images, roles: ["super_admin", "chain_manager", "store_manager"] },
-      { href: "/admin/content/calendar", label: "Kalender", icon: CalendarDays, roles: ["super_admin", "chain_manager", "store_manager"] as UserRole[] },
+      { href: "/admin/content", label: "Alt innhold", icon: FileStack, roles: ["super_admin", "chain_manager", "store_manager", "store_employee"], matchPrefix: true },
+      { href: "/admin/playlists", label: "Skjermoppsett", icon: ListVideo, roles: ["super_admin", "chain_manager"], matchPrefix: true },
+      { href: "/admin/emergency", label: "Nødkringkasting", icon: AlertTriangle, roles: ["super_admin", "chain_manager"] },
     ],
   },
   {
-    label: "Distribusjon",
+    label: "Publisering",
     items: [
-      { href: "/admin/playlists", label: "Spillelister", icon: ListVideo, roles: ["super_admin", "chain_manager"] },
-      { href: "/admin/publish", label: "Publiser", icon: Send, roles: ["super_admin", "chain_manager", "store_manager"] },
-      { href: "/admin/emergency", label: "Nødkringkasting", icon: AlertTriangle, roles: ["super_admin", "chain_manager"] as UserRole[] },
+      { href: "/admin/publish", label: "Publiser til skjermer", icon: Send, roles: ["super_admin", "chain_manager", "store_manager"] },
     ],
   },
   {
-    label: "Administrasjon",
+    label: "Admin",
     items: [
       { href: "/admin/users", label: "Brukere", icon: Users, roles: ["super_admin", "chain_manager"] },
-      { href: "/admin/zones", label: "Sone-oppsett", icon: Layout, roles: ["super_admin", "chain_manager"] as UserRole[] },
-      { href: "/admin/onboarding", label: "Ny tenant", icon: UserPlus, roles: ["super_admin"] as UserRole[] },
+      { href: "/admin/modules", label: "Moduler", icon: Layers, roles: ["super_admin"] },
+      { href: "/admin/zones", label: "Soner", icon: Layout, roles: ["super_admin", "chain_manager"] },
+      { href: "/admin/onboarding", label: "Ny tenant", icon: UserPlus, roles: ["super_admin"] },
       { href: "/admin/settings", label: "Innstillinger", icon: Settings, roles: ["super_admin", "chain_manager", "store_manager"] },
     ],
   },
@@ -101,36 +94,40 @@ export function Sidebar({ user }: SidebarProps) {
   }
 
   return (
-    <aside className="fixed left-0 top-0 h-screen w-64 bg-white border-r border-zinc-200 flex flex-col z-40 shadow-sm">
+    <aside className="fixed left-0 top-0 h-screen w-60 bg-white border-r border-zinc-100 flex flex-col z-40">
+      {/* Logo/brand */}
       <div className="flex items-center gap-3 px-5 py-4 border-b border-zinc-100">
         <div
           className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
           style={{ backgroundColor: "var(--brand-primary)" }}
         >
-          <Layers className="w-4 h-4" style={{ color: "var(--brand-fg)" }} />
+          <Monitor className="w-4 h-4" style={{ color: "var(--brand-fg)" }} />
         </div>
-        <div>
-          <p className="text-zinc-900 font-bold text-sm leading-tight">
+        <div className="min-w-0">
+          <p className="text-zinc-900 font-bold text-sm leading-tight truncate">
             {user.chainName ?? "Infoskjerm"}
           </p>
-          <p className="text-zinc-400 text-xs">Admin</p>
+          <p className="text-zinc-400 text-xs">Administrasjon</p>
         </div>
       </div>
 
-      <nav className="flex-1 overflow-y-auto py-4 px-3">
+      <nav className="flex-1 overflow-y-auto py-3 px-2">
         {navGroups.map((group) => {
           const visibleItems = group.items.filter((item) => item.roles.includes(role))
           if (visibleItems.length === 0) return null
 
           return (
-            <div key={group.label} className="mb-5">
-              <p className="text-zinc-400 text-[10px] font-semibold uppercase tracking-widest px-2 mb-1.5">
+            <div key={group.label} className="mb-4">
+              <p className="text-zinc-400 text-[10px] font-semibold uppercase tracking-widest px-3 mb-1">
                 {group.label}
               </p>
               <ul className="space-y-0.5">
                 {visibleItems.map((item) => {
                   const Icon = item.icon
-                  const active = pathname === item.href || (item.href !== "/admin" && pathname.startsWith(item.href))
+                  const active = item.matchPrefix
+                    ? (pathname === item.href || pathname.startsWith(item.href + "/"))
+                    : pathname === item.href
+
                   return (
                     <li key={item.href}>
                       <Link
@@ -138,14 +135,14 @@ export function Sidebar({ user }: SidebarProps) {
                         className={cn(
                           "flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all",
                           active
-                            ? "font-medium text-white"
-                            : "text-zinc-600 hover:text-zinc-900 hover:bg-zinc-50"
+                            ? "font-semibold text-white"
+                            : "text-zinc-500 hover:text-zinc-900 hover:bg-zinc-50"
                         )}
                         style={active ? { backgroundColor: "var(--brand-primary)" } : undefined}
                       >
                         <Icon className="w-4 h-4 flex-shrink-0" />
-                        {item.label}
-                        {active && <ChevronRight className="w-3 h-3 ml-auto opacity-60" />}
+                        <span className="flex-1 truncate">{item.label}</span>
+                        {active && <ChevronRight className="w-3 h-3 opacity-60 flex-shrink-0" />}
                       </Link>
                     </li>
                   )
@@ -156,8 +153,9 @@ export function Sidebar({ user }: SidebarProps) {
         })}
       </nav>
 
-      <div className="px-4 py-4 border-t border-zinc-100">
-        <div className="flex items-center gap-3">
+      {/* User footer */}
+      <div className="px-3 py-3 border-t border-zinc-100">
+        <div className="flex items-center gap-3 px-2">
           <div
             className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0"
             style={{ backgroundColor: "var(--brand-primary)", color: "var(--brand-fg)" }}
@@ -170,10 +168,10 @@ export function Sidebar({ user }: SidebarProps) {
           </div>
           <button
             onClick={handleLogout}
-            className="text-zinc-400 hover:text-zinc-700 transition-colors flex-shrink-0 p-2.5 -m-2.5 rounded-lg hover:bg-zinc-50"
+            className="text-zinc-400 hover:text-zinc-700 transition-colors flex-shrink-0 p-1.5 rounded-lg hover:bg-zinc-50"
             title="Logg ut"
           >
-            <LogOut className="w-4 h-4" />
+            <LogOut className="w-3.5 h-3.5" />
           </button>
         </div>
       </div>

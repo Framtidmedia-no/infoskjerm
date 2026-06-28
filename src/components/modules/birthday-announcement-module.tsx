@@ -1,30 +1,77 @@
-import { Cake } from 'lucide-react'
 interface Props { fields: Record<string, unknown> }
+
 export function BirthdayAnnouncementModule({ fields }: Props) {
   const name = (fields.name as string) || 'Ola Nordmann'
-  const message = (fields.message as string) || 'Gratulerer med dagen! 🎉'
+  const message = (fields.message as string) || 'Gratulerer med dagen!'
+  const age = fields.age ? Number(fields.age) : null
   const imageUrl = (fields.image_url as string) || null
+
   return (
-    <div className="flex flex-col items-center justify-center h-full bg-gradient-to-b from-zinc-950 to-zinc-900 text-center px-16">
-      <div className="relative mb-8">
-        {imageUrl ? (
-          <img src={imageUrl} alt={name} className="w-40 h-40 rounded-full object-cover border-4 border-amber-400/50" />
-        ) : (
-          <div className="w-40 h-40 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center">
-            <span className="text-white text-5xl font-black">{name.charAt(0).toUpperCase()}</span>
-          </div>
-        )}
-        <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 w-12 h-12 bg-amber-500 rounded-full flex items-center justify-center shadow-lg">
-          <Cake className="w-6 h-6 text-white" />
+    <div className="flex flex-col h-full text-white" style={{ background: 'linear-gradient(135deg, #0f0f0f 0%, #1a1a1a 100%)' }}>
+      <div className="h-2 w-full" style={{ backgroundColor: 'var(--brand-primary, #16a34a)' }} />
+
+      <div className="flex flex-col justify-between flex-1 px-16 py-12">
+        <div>
+          <span
+            className="text-sm font-bold uppercase tracking-[0.25em]"
+            style={{ color: 'var(--brand-primary, #16a34a)' }}
+          >
+            Gratulerer med dagen
+          </span>
         </div>
-      </div>
-      <div className="mt-6">
-        <p className="text-zinc-400 text-lg uppercase tracking-widest mb-3">Gratulerer med dagen</p>
-        <h2 className="text-5xl font-black text-white mb-6">{name}</h2>
-        <p className="text-xl text-zinc-300 leading-relaxed max-w-2xl">{message}</p>
-      </div>
-      <div className="flex gap-3 mt-8 text-4xl">
-        {'🎂 🎉 🎈 🎁'.split(' ').map((e, i) => <span key={i}>{e}</span>)}
+
+        <div className="flex items-center gap-16">
+          {imageUrl && (
+            <div
+              className="flex-shrink-0 w-48 h-48 rounded-full overflow-hidden"
+              style={{ outline: '3px solid var(--brand-primary, #16a34a)', outlineOffset: '4px' }}
+            >
+              <img
+                src={imageUrl}
+                alt={name}
+                className="w-full h-full object-cover"
+              />
+            </div>
+          )}
+
+          {!imageUrl && (
+            <div
+              className="flex-shrink-0 w-48 h-48 rounded-full flex items-center justify-center"
+              style={{
+                background: 'linear-gradient(135deg, var(--brand-primary, #16a34a) 0%, #15803d 100%)',
+                outline: '3px solid var(--brand-primary, #16a34a)',
+                outlineOffset: '4px',
+              }}
+            >
+              <span className="text-white text-6xl font-black">
+                {name.charAt(0).toUpperCase()}
+              </span>
+            </div>
+          )}
+
+          <div>
+            {age !== null && (
+              <div className="mb-4">
+                <span className="text-8xl font-black leading-none" style={{ color: 'var(--brand-primary, #16a34a)' }}>
+                  {age}
+                </span>
+                <span className="text-4xl font-bold text-white/40 ml-3">år</span>
+              </div>
+            )}
+            <h2 className="text-7xl font-black leading-[1.05] text-white max-w-4xl">
+              {name}
+            </h2>
+          </div>
+        </div>
+
+        <div>
+          <p className="text-2xl text-white/70 leading-relaxed max-w-3xl">
+            {message}
+          </p>
+          <p className="text-base text-white/40 font-medium mt-6">
+            Fra hele teamet
+          </p>
+        </div>
       </div>
     </div>
   )
