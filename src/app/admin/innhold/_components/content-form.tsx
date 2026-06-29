@@ -5,11 +5,11 @@ import { useRouter } from "next/navigation"
 import { RichTextEditor } from "@/components/admin/rich-text-editor"
 import { MediaUploader } from "@/components/admin/media-uploader"
 import { Button } from "@/components/ui/button"
-import { saveContent, type ContentType, type TargetMode } from "../actions"
+import { saveContent, type ContentType, type TargetMode, type ImageMode } from "../actions"
 import { toast } from "sonner"
 import {
-  Newspaper, Trophy, ImageIcon, Briefcase, Cake,
-  Store as StoreIcon, Tag, Globe, X, Calendar, Save, Send, ChevronLeft,
+  Newspaper, Trophy, ImageIcon, Briefcase, PartyPopper, BarChart3, Megaphone,
+  Store as StoreIcon, Tag, Globe, X, Calendar, Save, Send, ChevronLeft, Image as ImageLucide, Maximize2,
 } from "lucide-react"
 import Link from "next/link"
 
@@ -22,6 +22,7 @@ export interface ContentInitial {
   type: ContentType
   bodyHtml: string
   imageUrl: string | null
+  imageMode?: ImageMode
   targetMode: TargetMode
   storeIds: string[]
   tagIds: string[]
@@ -29,17 +30,21 @@ export interface ContentInitial {
   validTo: string | null
   contactPerson?: string | null
   applyUrl?: string | null
+  statsValue?: string | null
+  statsChange?: string | null
 }
 
-// Bare AUTHORED innhold her. Vær/klokke/salgstall er per-enhet-widgets
-// i Xibo-malen, ikke noe man «publiserer».
 const TYPES: { key: ContentType; label: string; icon: React.ElementType }[] = [
   { key: "news", label: "Nyhet", icon: Newspaper },
   { key: "competition", label: "Konkurranse", icon: Trophy },
   { key: "slide", label: "Tilbud / annet", icon: ImageIcon },
   { key: "job", label: "Stilling", icon: Briefcase },
-  { key: "birthday", label: "Bursdag", icon: Cake },
+  { key: "birthday", label: "Gratulerer", icon: PartyPopper },
+  { key: "stats", label: "Salgstall", icon: BarChart3 },
+  { key: "ticker", label: "Ticker", icon: Megaphone },
 ]
+
+const IMAGE_TYPES: ContentType[] = ["news", "competition", "slide", "job", "birthday"]
 
 export function ContentForm({ stores, tags, initial }: { stores: StoreOption[]; tags: TagOption[]; initial?: ContentInitial }) {
   const router = useRouter()
@@ -54,7 +59,13 @@ export function ContentForm({ stores, tags, initial }: { stores: StoreOption[]; 
   const [validTo, setValidTo] = useState(initial?.validTo ?? "")
   const [contactPerson, setContactPerson] = useState(initial?.contactPerson ?? "")
   const [applyUrl, setApplyUrl] = useState(initial?.applyUrl ?? "")
+  const [imageMode, setImageMode] = useState<ImageMode>(initial?.imageMode ?? "bakgrunn")
+  const [statsValue, setStatsValue] = useState(initial?.statsValue ?? "")
+  const [statsChange, setStatsChange] = useState(initial?.statsChange ?? "")
   const [saving, setSaving] = useState(false)
+
+  const usesImage = IMAGE_TYPES.includes(type)
+  const usesBody = type !== "ticker" && type !== "stats"
 
   const toggleStore = (id: string) => setStoreIds((p) => (p.includes(id) ? p.filter((x) => x !== id) : [...p, id]))
   const toggleTag = (id: string) => setTagIds((p) => (p.includes(id) ? p.filter((x) => x !== id) : [...p, id]))
@@ -66,10 +77,14 @@ export function ContentForm({ stores, tags, initial }: { stores: StoreOption[]; 
     setSaving(true)
     const res = await saveContent(
       {
-        title, type, bodyHtml, imageUrl, targetMode, storeIds, tagIds,
+        title, type, bodyHtml: usesBody ? bodyHtml : "", imageUrl: usesImage ? imageUrl : null,
+        imageMode: usesImage ? imageMode : "bakgrunn",
+        targetMode, storeIds, tagIds,
         validFrom: validFrom || null, validTo: validTo || null, publish,
         contactPerson: type === "job" ? contactPerson || null : null,
         applyUrl: type === "job" ? applyUrl || null : null,
+        statsValue: type === "stats" ? statsValue || null : null,
+        statsChange: type === "stats" ? statsChange || null : null,
       },
       initial?.id
     )
@@ -111,25 +126,66 @@ export function ContentForm({ stores, tags, initial }: { stores: StoreOption[]; 
             />
           </div>
 
-          <div>
-            <label className="block text-xs font-semibold text-zinc-600 mb-1.5">Innhold</label>
-            <RichTextEditor value={bodyHtml} onChange={setBodyHtml} />
-          </div>
+          {type === "ticker" && (
+            <p className="text-xs text-zinc-500 bg-amber-50 border border-amber-100 rounded-lg px-3 py-2">
+              Tittelen er <strong>ticker-meldingen</strong> som ruller nederst på skjermen. Stripen vises kun når det finnes aktive ticker-meldinger.
+            </p>
+          )}
 
-          <div>
-            <label className="block text-xs font-semibold text-zinc-600 mb-1.5">Bilde</label>
-            {imageUrl ? (
-              <div className="relative rounded-xl overflow-hidden border border-zinc-200 group w-full max-w-sm">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={imageUrl} alt="" className="w-full h-44 object-cover" />
-                <button onClick={() => setImageUrl(null)} className="absolute top-2 right-2 w-7 h-7 rounded-full bg-black/60 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                  <X className="w-4 h-4" />
-                </button>
+          {usesBody && (
+            <div>
+              <label className="block text-xs font-semibold text-zinc-600 mb-1.5">Innhold</label>
+              <RichTextEditor value={bodyHtml} onChange={setBodyHtml} />
+            </div>
+          )}
+
+          {type === "stats" && (
+            <div className="rounded-xl border border-zinc-200 bg-white p-4 space-y-3">
+              <h3 className="flex items-center gap-1.5 text-xs font-semibold text-zinc-600"><BarChart3 className="w-3.5 h-3.5" /> Nøkkeltall</h3>
+              <div>
+                <label className="block text-[10px] text-zinc-400 mb-1">Tall / verdi</label>
+                <input type="text" value={statsValue} onChange={(e) => setStatsValue(e.target.value)} placeholder="f.eks. 142 000 kr"
+                  className="w-full text-sm border border-zinc-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-zinc-300" />
               </div>
-            ) : (
-              <MediaUploader maxFiles={1} onUpload={(files) => { if (files[0]) setImageUrl(files[0].url) }} />
-            )}
-          </div>
+              <div>
+                <label className="block text-[10px] text-zinc-400 mb-1">Endring (valgfritt)</label>
+                <input type="text" value={statsChange} onChange={(e) => setStatsChange(e.target.value)} placeholder="f.eks. +12% mot i fjor"
+                  className="w-full text-sm border border-zinc-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-zinc-300" />
+                <p className="text-[10px] text-zinc-400 mt-1">Start med + (grønn ▲) eller − (rød ▼) for fargekode.</p>
+              </div>
+            </div>
+          )}
+
+          {usesImage && (
+            <div>
+              <label className="block text-xs font-semibold text-zinc-600 mb-1.5">Bilde</label>
+              {imageUrl ? (
+                <div className="space-y-3">
+                  <div className="relative rounded-xl overflow-hidden border border-zinc-200 group w-full max-w-sm">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={imageUrl} alt="" className={`w-full h-44 ${imageMode === "plakat" ? "object-contain bg-zinc-900" : "object-cover"}`} />
+                    <button onClick={() => setImageUrl(null)} className="absolute top-2 right-2 w-7 h-7 rounded-full bg-black/60 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                  <div>
+                    <label className="block text-[10px] text-zinc-400 mb-1">Bildevisning</label>
+                    <div className="flex gap-1.5">
+                      {([["bakgrunn", "Bakgrunn", ImageLucide], ["plakat", "Plakat (vis hele)", Maximize2]] as const).map(([mode, label, Icon]) => (
+                        <button key={mode} type="button" onClick={() => setImageMode(mode)}
+                          className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-medium border transition-all ${imageMode === mode ? "border-zinc-900 bg-zinc-900 text-white" : "border-zinc-200 text-zinc-600 hover:border-zinc-300"}`}>
+                          <Icon className="w-3 h-3" /> {label}
+                        </button>
+                      ))}
+                    </div>
+                    <p className="text-[10px] text-zinc-400 mt-1">{imageMode === "plakat" ? "Hele bildet vises uten klipp — for ferdige plakater." : "Bildet fyller kortet som dempet bakgrunn med tekst oppå."}</p>
+                  </div>
+                </div>
+              ) : (
+                <MediaUploader maxFiles={1} onUpload={(files) => { if (files[0]) setImageUrl(files[0].url) }} />
+              )}
+            </div>
+          )}
 
           {type === "job" && (
             <div className="rounded-xl border border-zinc-200 bg-white p-4 space-y-3">

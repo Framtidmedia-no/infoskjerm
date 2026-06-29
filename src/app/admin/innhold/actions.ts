@@ -2,21 +2,22 @@
 
 import { requireRole } from "@/lib/admin/require-role"
 import { revalidatePath } from "next/cache"
-import { upsertNewsRow, deleteNewsRow } from "@/lib/xibo/sync"
 import type { Json } from "@/types/database"
 
 type AdminSupabase = Awaited<ReturnType<typeof requireRole>>["supabase"]
 
 const AUTHOR_ROLES = ["super_admin", "chain_manager", "area_manager", "store_manager", "store_employee"] as const
 
-export type ContentType = "news" | "competition" | "stats" | "weather" | "slide" | "job" | "birthday"
+export type ContentType = "news" | "competition" | "stats" | "weather" | "slide" | "job" | "birthday" | "ticker"
 export type TargetMode = "all" | "stores" | "tags"
+export type ImageMode = "plakat" | "bakgrunn"
 
 export interface ContentInput {
   title: string
   type: ContentType
   bodyHtml: string
   imageUrl: string | null
+  imageMode?: ImageMode
   targetMode: TargetMode
   storeIds: string[]
   tagIds: string[]
@@ -26,27 +27,9 @@ export interface ContentInput {
   /** Job ads only: contact person + application link, shown on the card. */
   contactPerson?: string | null
   applyUrl?: string | null
-}
-
-/** Kicker label shown on the signage card, per content type. */
-const TYPE_LABEL: Record<ContentType, string> = {
-  news: "GANGE-ROLV",
-  competition: "KONKURRANSE",
-  slide: "TILBUD",
-  stats: "SALGSTALL",
-  weather: "VÆR",
-  job: "STILLING LEDIG",
-  birthday: "GRATULERER",
-}
-
-/** Builds the card body, appending job contact/apply lines for job ads. */
-function buildCardBody(input: ContentInput): string {
-  if (input.type !== "job") return input.bodyHtml
-  const lines: string[] = []
-  if (input.contactPerson?.trim()) lines.push(`Kontakt: ${input.contactPerson.trim()}`)
-  if (input.applyUrl?.trim()) lines.push(`Søk: ${input.applyUrl.trim()}`)
-  if (lines.length === 0) return input.bodyHtml
-  return `${input.bodyHtml}<p>${lines.join("<br>")}</p>`
+  /** Sales (stats) only: the KPI value + change indicator. */
+  statsValue?: string | null
+  statsChange?: string | null
 }
 
 export interface SaveResult {
@@ -55,57 +38,21 @@ export interface SaveResult {
   error?: string
 }
 
-/** "28. juni 2026" — Norwegian long date for the news card. */
-function formatNorwegianDate(iso: string): string {
-  const d = new Date(iso)
-  if (Number.isNaN(d.getTime())) return ""
-  return d.toLocaleDateString("nb-NO", { day: "numeric", month: "long", year: "numeric" })
-}
-
-/** Resolves the content author's display name + a formatted publish date for the card. */
-async function resolveByline(supabase: AdminSupabase, contentId: string): Promise<{ author: string; displayDate: string }> {
-  const { data: meta } = await supabase
-    .from("content_items")
-    .select("created_by, created_at, published_at")
-    .eq("id", contentId)
-    .single()
-  let author = ""
-  if (meta?.created_by) {
-    const { data: u } = await supabase.from("users").select("full_name, email").eq("id", meta.created_by).single()
-    author = u?.full_name || u?.email || ""
-  }
-  const dateIso = meta?.published_at || meta?.created_at || new Date().toISOString()
-  return { author, displayDate: formatNorwegianDate(dateIso) }
-}
-
 async function effectiveTenant(supabase: AdminSupabase, tenantId: string): Promise<string> {
   if (tenantId) return tenantId
   const { data } = await supabase.from("tenants").select("id").limit(1).single()
   return data?.id ?? ""
 }
 
-/**
- * Resolves targeting into the DataSet "butikker" field: a comma-separated list
- * of Xibo display-group names (= store names), or "ALLE" for every store.
- */
-async function resolveStoresField(supabase: AdminSupabase, input: ContentInput): Promise<string> {
-  if (input.targetMode === "all") return "ALLE"
-
-  if (input.targetMode === "stores") {
-    if (input.storeIds.length === 0) return "ALLE"
-    const { data } = await supabase.from("stores").select("name").in("id", input.storeIds)
-    const names = (data ?? []).map((s) => s.name).filter(Boolean)
-    return names.length > 0 ? names.join(",") : "ALLE"
-  }
-
-  // tags → the stores carrying any of the selected tags
-  if (input.tagIds.length === 0) return "ALLE"
-  const { data: links } = await supabase.from("store_tags").select("store_id").in("tag_id", input.tagIds)
-  const storeIds = Array.from(new Set((links ?? []).map((l) => l.store_id).filter(Boolean)))
-  if (storeIds.length === 0) return "ALLE"
-  const { data } = await supabase.from("stores").select("name").in("id", storeIds as string[])
-  const names = (data ?? []).map((s) => s.name).filter(Boolean)
-  return names.length > 0 ? names.join(",") : "ALLE"
+/** Builds the content_items.body payload, including type-specific fields. */
+function buildBody(input: ContentInput): Json {
+  return JSON.parse(JSON.stringify({
+    html: input.bodyHtml,
+    imageUrl: input.imageUrl ?? null,
+    imageMode: input.imageMode ?? "bakgrunn",
+    ...(input.type === "job" ? { contactPerson: input.contactPerson ?? null, applyUrl: input.applyUrl ?? null } : {}),
+    ...(input.type === "stats" ? { statsValue: input.statsValue ?? null, statsChange: input.statsChange ?? null } : {}),
+  })) as Json
 }
 
 export async function saveContent(input: ContentInput, id?: string): Promise<SaveResult> {
@@ -114,11 +61,7 @@ export async function saveContent(input: ContentInput, id?: string): Promise<Sav
 
   if (!input.title.trim()) return { ok: false, error: "Tittel er påkrevd" }
 
-  const body = JSON.parse(JSON.stringify({
-    html: input.bodyHtml,
-    imageUrl: input.imageUrl ?? null,
-    ...(input.type === "job" ? { contactPerson: input.contactPerson ?? null, applyUrl: input.applyUrl ?? null } : {}),
-  })) as Json
+  const body = buildBody(input)
   const status = input.publish ? "live" : "draft"
 
   let contentId = id
@@ -172,50 +115,14 @@ export async function saveContent(input: ContentInput, id?: string): Promise<Sav
     if (error) return { ok: false, error: error.message }
   }
 
-  // DYNAMISK modell: publisering = upsert én RAD i Xibo DataSet «Nyheter».
-  // Base-malen (layout 12) roterer gjennom radene. Avpublisering = slett raden.
-  // Best-effort: feiler Xibo, er innholdet likevel lagret i Supabase — vi blokkerer aldri.
-  try {
-    if (input.publish) {
-      const stores = await resolveStoresField(supabase, input)
-      const { author, displayDate } = await resolveByline(supabase, contentId!)
-      const rowId = await upsertNewsRow({
-        contentId: contentId!,
-        title: input.title.trim(),
-        bodyHtml: buildCardBody(input),
-        imageUrl: input.imageUrl ?? null,
-        type: input.type,
-        stores,
-        validFrom: input.validFrom || null,
-        validTo: input.validTo || null,
-        displayDate,
-        author,
-        label: TYPE_LABEL[input.type] ?? "GANGE-ROLV",
-      })
-      const newBody = JSON.parse(JSON.stringify({
-        html: input.bodyHtml,
-        imageUrl: input.imageUrl ?? null,
-        xibo: { rowId },
-      })) as Json
-      await supabase.from("content_items").update({ body: newBody }).eq("id", contentId!)
-    } else {
-      // Lagret som utkast → fjern eventuell publisert rad fra rulleringen.
-      await deleteNewsRow(contentId!)
-    }
-  } catch (e) {
-    console.error("Xibo-synk feilet (innhold lagret likevel):", e instanceof Error ? e.message : e)
-  }
-
+  // Skjermene leser publisert innhold live fra Supabase via /widget/nyheter, så
+  // selve publiseringen er bare denne lagringen — ingen ekstern synk.
   revalidatePath("/admin/innhold")
   return { ok: true, id: contentId }
 }
 
 export async function deleteContent(id: string): Promise<SaveResult> {
   const { supabase } = await requireRole([...AUTHOR_ROLES])
-  // Best-effort: ta raden ut av Xibo-rulleringen før vi sletter i Supabase.
-  await deleteNewsRow(id).catch((e) =>
-    console.error("Xibo-rad-sletting feilet (sletter i Supabase likevel):", e instanceof Error ? e.message : e)
-  )
   await supabase.from("content_targets").delete().eq("content_item_id", id)
   const { error } = await supabase.from("content_items").delete().eq("id", id)
   if (error) return { ok: false, error: error.message }

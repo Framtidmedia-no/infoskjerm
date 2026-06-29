@@ -13,10 +13,9 @@
  * Reads XIBO_*, NEXT_PUBLIC_APP_URL, NEXT_PUBLIC_SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY.
  */
 
-import { loadEnv, getToken, makeApi, weatherUri, tickerUri, buildLayout, storeNewsFilter } from "./lib.mjs"
+import { loadEnv, getToken, makeApi, newsUri, weatherUri, tickerUri, buildLayout } from "./lib.mjs"
 
 const ALWAYS_DAYPART_ID = 2
-const TICKER_TEXT = "Velkommen til Gange-Rolv · Husk medlemsfordeler i kassen · God handel!"
 const NAME_PREFIX = "Gange-Rolv – "
 
 const env = loadEnv()
@@ -26,7 +25,7 @@ const api = makeApi(env, token)
 
 // ---------- stores from Supabase ----------
 async function fetchStores() {
-  const url = `${env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/stores?select=name,latitude,longitude,city&order=name`
+  const url = `${env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/stores?select=id,name,latitude,longitude,city&order=name`
   const r = await fetch(url, {
     headers: {
       apikey: env.SUPABASE_SERVICE_ROLE_KEY,
@@ -90,9 +89,9 @@ for (const store of stores) {
 
   const { layoutId, campaignId } = await findOrCreateLayout(name)
   await buildLayout(api, layoutId, {
+    newsUri: newsUri(APP_URL, store.id),
     weatherUri: weatherUri(APP_URL, { lat, lon, navn: store.city || store.name }),
-    tickerUri: tickerUri(APP_URL, TICKER_TEXT),
-    newsFilter: storeNewsFilter(store.name),
+    tickerUri: tickerUri(APP_URL, store.id),
   })
   built++
 

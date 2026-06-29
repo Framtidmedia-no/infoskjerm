@@ -20,7 +20,10 @@ export default async function EditContentPage({ params }: { params: Promise<{ id
 
   if (!item) notFound()
 
-  const body = (item.body ?? {}) as { html?: string; imageUrl?: string | null; contactPerson?: string | null; applyUrl?: string | null }
+  const body = (item.body ?? {}) as {
+    html?: string; imageUrl?: string | null; imageMode?: "plakat" | "bakgrunn"
+    contactPerson?: string | null; applyUrl?: string | null; statsValue?: string | null; statsChange?: string | null
+  }
   const targetRows = targets ?? []
   let targetMode: TargetMode = "all"
   if (targetRows.some((t) => t.store_id)) targetMode = "stores"
@@ -38,8 +41,11 @@ export default async function EditContentPage({ params }: { params: Promise<{ id
     tagIds: targetRows.filter((t) => t.tag_id).map((t) => t.tag_id as string),
     validFrom: item.valid_from ? item.valid_from.slice(0, 10) : null,
     validTo: item.valid_to ? item.valid_to.slice(0, 10) : null,
+    imageMode: body.imageMode ?? "bakgrunn",
     contactPerson: body.contactPerson ?? null,
     applyUrl: body.applyUrl ?? null,
+    statsValue: body.statsValue ?? null,
+    statsChange: body.statsChange ?? null,
   }
 
   const storeOptions: StoreOption[] = (stores ?? []).map((s) => ({
