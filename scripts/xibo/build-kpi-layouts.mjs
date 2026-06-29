@@ -58,11 +58,13 @@ const existingEvents = (await api(`/schedule?length=2000`)) || []
 console.log(`→ Bygger ${stores.length} KPI-layouts + bakrom-grupper mot ${env.XIBO_API_URL}`)
 let built = 0
 let scheduled = 0
+const bakromGroupIds = []
 
 for (const store of stores) {
   const layoutName = `${LAYOUT_PREFIX}${store.name}`.slice(0, 50)
   const groupName = `${store.name}${GROUP_SUFFIX}`
   const groupId = await findOrCreateGroup(groupName)
+  bakromGroupIds.push(groupId)
   const { layoutId, campaignId } = await findOrCreateLayout(layoutName)
   await buildFullscreenWebpage(api, layoutId, kpiUri(APP_URL, store.id))
   built++
@@ -71,4 +73,26 @@ for (const store of stores) {
   console.log(`  ✓ ${store.name} — KPI-layout (campaign ${campaignId}) → gruppe «${groupName}» (${groupId}) ${did ? "planlagt" : "alt planlagt"}`)
 }
 
-console.log(`\n✅ ${built} KPI-layouts, ${scheduled} nye planlegginger. Bakroms-Pi i «{butikk} – Bakrom» viser KPI-dashbordet.`)
+// All-stores overview — two periods (siste uke + hittil i år). Both roterer på
+// HK/ledelse-skjermen OG på hver butikks bakrom, så alle butikksjefer ser hvordan
+// egen butikk ligger an mot resten av kjeden.
+const ledelseGroupId = await findOrCreateGroup("Ledelse – Oversikt")
+const overviewTargets = [...bakromGroupIds, ledelseGroupId]
+const OVERVIEWS = [
+  { name: "Gange-Rolv KPI – Alle butikker (uke)", uri: `${APP_URL}/widget/kpi-oversikt` },
+  { name: "Gange-Rolv KPI – Alle butikker (år)", uri: `${APP_URL}/widget/kpi-oversikt?periode=ar` },
+]
+for (const ov of OVERVIEWS) {
+  const { layoutId, campaignId } = await findOrCreateLayout(ov.name)
+  await buildFullscreenWebpage(api, layoutId, ov.uri)
+  let n = 0
+  for (const gid of overviewTargets) {
+    if (await ensureSchedule(campaignId, gid, existingEvents)) {
+      n++
+      scheduled++
+    }
+  }
+  console.log(`  ✓ OVERSIKT «${ov.name}» (campaign ${campaignId}) → ${overviewTargets.length} grupper (alle bakrom + ledelse), ${n} nye`)
+}
+
+console.log(`\n✅ ${built} KPI-layouts + 2 oversikter (uke + år), ${scheduled} nye planlegginger.\n   Bakroms-Pi i «{butikk} – Bakrom» roterer: egen KPI → alle butikker (uke) → alle butikker (år).`)

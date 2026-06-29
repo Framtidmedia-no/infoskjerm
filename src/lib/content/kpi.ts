@@ -86,13 +86,20 @@ export async function fetchStoreKpi(storeId: string): Promise<StoreKpi | null> {
 export interface StoreKpiRow {
   storeName: string
   uke: number
+  // Latest week
   omsetning: number | null
   budsjett: number | null
   fjor: number | null
   bruttoPct: number | null
   lonnPct: number | null
   svinnPct: number | null
+  // Year to date
   ytdOmsetning: number
+  ytdBudsjett: number
+  ytdFjor: number
+  ytdBruttoPct: number | null
+  ytdLonnPct: number | null
+  ytdSvinnPct: number | null
 }
 
 export interface AllStoresKpi {
@@ -139,9 +146,12 @@ export async function fetchAllStoresKpi(): Promise<AllStoresKpi | null> {
         a.oms += w.netto_omsetning ?? 0
         a.bud += w.budsjett_omsetning ?? 0
         a.fjor += w.netto_omsetning_fjoraaret ?? 0
+        a.brutto += w.brutto_kr ?? 0
+        a.lonn += w.lonn_kr ?? 0
+        a.svinn += w.svinn_total ?? 0
         return a
       },
-      { oms: 0, bud: 0, fjor: 0 }
+      { oms: 0, bud: 0, fjor: 0, brutto: 0, lonn: 0, svinn: 0 }
     )
     out.push({
       storeName: name,
@@ -153,6 +163,11 @@ export async function fetchAllStoresKpi(): Promise<AllStoresKpi | null> {
       lonnPct: ratio(last.lonn_kr, last.netto_omsetning),
       svinnPct: ratio(last.svinn_total, last.netto_omsetning),
       ytdOmsetning: ytd.oms,
+      ytdBudsjett: ytd.bud,
+      ytdFjor: ytd.fjor,
+      ytdBruttoPct: ratio(ytd.brutto, ytd.oms),
+      ytdLonnPct: ratio(ytd.lonn, ytd.oms),
+      ytdSvinnPct: ratio(ytd.svinn, ytd.oms),
     })
     total.omsetning += last.netto_omsetning ?? 0
     total.budsjett += last.budsjett_omsetning ?? 0

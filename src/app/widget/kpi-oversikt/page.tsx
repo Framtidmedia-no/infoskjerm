@@ -4,7 +4,9 @@ import { fetchAllStoresKpi, kr, pct, diffPct, type StoreKpiRow } from "@/lib/con
  * Staff/HQ overview: all stores' key figures side by side, ranked by performance
  * vs budget. Operational/confidential — staff & management screens only.
  *
- * Usage: /widget/kpi-oversikt
+ * Usage:
+ *   /widget/kpi-oversikt            → siste innleste uke
+ *   /widget/kpi-oversikt?periode=ar → hittil i år (akkumulert)
  */
 
 export const dynamic = "force-dynamic"
@@ -12,6 +14,40 @@ export const dynamic = "force-dynamic"
 const GREEN = "#16a34a"
 const RED = "#ef4444"
 const MUTED = "rgba(255,255,255,.5)"
+
+/** The figures shown for a store, resolved for the chosen period (week or YTD). */
+interface RowView {
+  storeName: string
+  omsetning: number | null
+  budsjett: number | null
+  fjor: number | null
+  bruttoPct: number | null
+  lonnPct: number | null
+  svinnPct: number | null
+}
+
+function viewFor(row: StoreKpiRow, ytd: boolean): RowView {
+  if (ytd) {
+    return {
+      storeName: row.storeName,
+      omsetning: row.ytdOmsetning,
+      budsjett: row.ytdBudsjett,
+      fjor: row.ytdFjor,
+      bruttoPct: row.ytdBruttoPct,
+      lonnPct: row.ytdLonnPct,
+      svinnPct: row.ytdSvinnPct,
+    }
+  }
+  return {
+    storeName: row.storeName,
+    omsetning: row.omsetning,
+    budsjett: row.budsjett,
+    fjor: row.fjor,
+    bruttoPct: row.bruttoPct,
+    lonnPct: row.lonnPct,
+    svinnPct: row.svinnPct,
+  }
+}
 
 function Delta({ value, digits = 1 }: { value: number | null; digits?: number }) {
   if (value === null) return <span style={{ color: MUTED }}>–</span>
@@ -27,7 +63,7 @@ function HeadCell({ children, width }: { children: React.ReactNode; width: numbe
   return <div style={{ width, flex: width ? "0 0 auto" : "1 1 auto", textAlign: "right", fontSize: 18, letterSpacing: 1, textTransform: "uppercase", color: MUTED }}>{children}</div>
 }
 
-function Row({ row, rank }: { row: StoreKpiRow; rank: number }) {
+function Row({ row, rank }: { row: RowView; rank: number }) {
   const dBud = diffPct(row.omsetning, row.budsjett)
   const dFjor = diffPct(row.omsetning, row.fjor)
   const medal = rank === 1 ? "🥇" : rank === 2 ? "🥈" : rank === 3 ? "🥉" : null
@@ -45,7 +81,9 @@ function Row({ row, rank }: { row: StoreKpiRow; rank: number }) {
   )
 }
 
-export default async function KpiOverviewPage() {
+export default async function KpiOverviewPage({ searchParams }: { searchParams: Promise<{ periode?: string }> }) {
+  const { periode } = await searchParams
+  const ytd = periode === "ar"
   const data = await fetchAllStoresKpi()
 
   const frame: React.CSSProperties = {
@@ -71,21 +109,30 @@ export default async function KpiOverviewPage() {
     )
   }
 
+  // Resolve figures for the chosen period and rank by omsetning vs budsjett.
+  const rows = data.stores
+    .map((r) => viewFor(r, ytd))
+    .sort((a, b) => (diffPct(b.omsetning, b.budsjett) ?? -999) - (diffPct(a.omsetning, a.budsjett) ?? -999))
+
   const t = data.total
+  const heroOms = ytd ? t.ytdOmsetning : t.omsetning
+  const heroBud = ytd ? t.ytdBudsjett : t.budsjett
+  const heroFjor = ytd ? t.ytdFjor : t.fjor
+
   return (
     <main style={frame}>
       {/* Header + chain total */}
       <header style={{ display: "flex", alignItems: "flex-end", gap: 28 }}>
         <div>
           <div style={{ fontSize: 22, letterSpacing: 4, textTransform: "uppercase", color: GREEN, fontWeight: 800 }}>Gange-Rolv · alle butikker</div>
-          <h1 style={{ fontSize: 46, fontWeight: 900, margin: "4px 0 0" }}>Uke {data.latestWeek} · {data.year}</h1>
+          <h1 style={{ fontSize: 46, fontWeight: 900, margin: "4px 0 0" }}>{ytd ? `Hittil i år · ${data.year}` : `Uke ${data.latestWeek} · ${data.year}`}</h1>
         </div>
         <div style={{ marginLeft: "auto", textAlign: "right" }}>
-          <div style={{ fontSize: 20, letterSpacing: 2, textTransform: "uppercase", color: MUTED }}>Total omsetning · siste uke</div>
-          <div style={{ fontSize: 52, fontWeight: 900, lineHeight: 1 }}>{kr(t.omsetning)} <span style={{ fontSize: 26, color: MUTED }}>kr</span></div>
+          <div style={{ fontSize: 20, letterSpacing: 2, textTransform: "uppercase", color: MUTED }}>Total omsetning · {ytd ? "hittil i år" : "siste uke"}</div>
+          <div style={{ fontSize: 52, fontWeight: 900, lineHeight: 1 }}>{kr(heroOms)} <span style={{ fontSize: 26, color: MUTED }}>kr</span></div>
           <div style={{ fontSize: 24, marginTop: 4 }}>
-            <span style={{ color: MUTED }}>vs budsjett </span><Delta value={diffPct(t.omsetning, t.budsjett)} />
-            <span style={{ color: MUTED }}>  ·  vs i fjor </span><Delta value={diffPct(t.omsetning, t.fjor)} />
+            <span style={{ color: MUTED }}>vs budsjett </span><Delta value={diffPct(heroOms, heroBud)} />
+            <span style={{ color: MUTED }}>  ·  vs i fjor </span><Delta value={diffPct(heroOms, heroFjor)} />
           </div>
         </div>
       </header>
@@ -104,17 +151,17 @@ export default async function KpiOverviewPage() {
 
       {/* Store rows */}
       <section style={{ flex: "1 1 auto", minHeight: 0, display: "flex", flexDirection: "column", gap: 2, justifyContent: "space-between" }}>
-        {data.stores.map((row, i) => (
+        {rows.map((row, i) => (
           <Row key={row.storeName} row={row} rank={i + 1} />
         ))}
       </section>
 
-      {/* YTD footer */}
+      {/* Footer: the complementary period for context */}
       <footer style={{ display: "flex", gap: 40, alignItems: "center", borderTop: "1px solid rgba(255,255,255,.1)", paddingTop: 18, flex: "0 0 auto" }}>
-        <span style={{ fontSize: 24, fontWeight: 700, letterSpacing: 2, textTransform: "uppercase", color: MUTED }}>Hittil i år · kjeden</span>
-        <span style={{ fontSize: 38, fontWeight: 900 }}>{kr(t.ytdOmsetning)} kr</span>
-        <span style={{ fontSize: 26, color: MUTED }}>vs budsjett <Delta value={diffPct(t.ytdOmsetning, t.ytdBudsjett)} /></span>
-        <span style={{ fontSize: 26, color: MUTED }}>vs i fjor <Delta value={diffPct(t.ytdOmsetning, t.ytdFjor)} /></span>
+        <span style={{ fontSize: 24, fontWeight: 700, letterSpacing: 2, textTransform: "uppercase", color: MUTED }}>{ytd ? `Siste uke (${data.latestWeek}) · kjeden` : "Hittil i år · kjeden"}</span>
+        <span style={{ fontSize: 38, fontWeight: 900 }}>{kr(ytd ? t.omsetning : t.ytdOmsetning)} kr</span>
+        <span style={{ fontSize: 26, color: MUTED }}>vs budsjett <Delta value={ytd ? diffPct(t.omsetning, t.budsjett) : diffPct(t.ytdOmsetning, t.ytdBudsjett)} /></span>
+        <span style={{ fontSize: 26, color: MUTED }}>vs i fjor <Delta value={ytd ? diffPct(t.omsetning, t.fjor) : diffPct(t.ytdOmsetning, t.ytdFjor)} /></span>
       </footer>
     </main>
   )

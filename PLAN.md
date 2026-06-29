@@ -67,6 +67,9 @@ De 16 butikk-layoutene er **planlagt** til display-gruppene (5–20). Når en Pi
 ### ✅ Butikk-KPI-dashbord (ansatt-skjermer) — bygget
 Driftstall fra Gange-Rolv Drift, synket daglig (~14:00) til `store_kpi_week` + `store_svinn_kommentert` via `/api/cron/sync-kpi`. Fullskjerm-dashbord `/widget/butikk-kpi?store=` (omsetning vs budsjett/fjorår, bruttomargin, lønn%, svinn, **svinn kommentert/ikke**, SVG-trendgraf, hittil-i-år). 16 KPI-layouts (campaign 28–43) planlagt til egne **bakrom-grupper** «{butikk} – Bakrom» (21–36) — aldri på kundeskjermer. Plan: `docs/superpowers/plans/2026-06-29-butikk-kpi-dashboard.md`.
 
+### ✅ Alle-butikker-oversikt (ansatt-/ledelse-skjermer) — bygget
+Rangert oversikt over alle 16 butikker side om side (omsetning vs budsjett/fjorår, brutto/lønn/svinn, 🥇🥈🥉), i to perioder: `/widget/kpi-oversikt` (**siste uke**) og `/widget/kpi-oversikt?periode=ar` (**hittil i år**). Begge layoutene roterer på HK-skjermen «Ledelse – Oversikt» **og på hver butikks bakrom** — slik at alle butikksjefer ser hvordan egen butikk ligger an mot resten av kjeden (egen KPI → alle butikker uke → alle butikker år). Konfidensielle driftstall — kun ansatt-/bakrom-skjermer, aldri kundeskjermer. Bygg: `node scripts/xibo/build-kpi-layouts.mjs`.
+
 ### 🟡 Resten
 - **DPA Framtid Tech ↔ Gange-Rolv** + org.nr i art.30-protokollen (markert `[FYLL INN]`).
 - Automatisk salgstall fra kassesystem (i dag manuelt KPI-kort) — egen integrasjon.
