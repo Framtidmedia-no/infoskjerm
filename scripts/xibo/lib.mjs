@@ -115,21 +115,13 @@ export async function buildLayout(api, layoutId, opts) {
     await api(`/region/${r.regionId}`, { method: "DELETE" })
   }
 
-  // 1. News + ticker overlay (app-rendered webpage), full height.
-  const newsPl = await addRegion(api, draftId, { width: 1340, height: 1000, top: 40, left: 40 })
+  // 1. Top strip (app webpage): store name + live clock + date + weather, full width.
+  const barPl = await addRegion(api, draftId, { width: 1920, height: 180, top: 0, left: 0 })
+  await addWebpage(api, barPl, opts.topbarUri, { transparency: 0 })
+
+  // 2. News + ticker overlay (app webpage), full width below the strip.
+  const newsPl = await addRegion(api, draftId, { width: 1920, height: 900, top: 180, left: 0 })
   await addWebpage(api, newsPl, opts.newsUri, { transparency: 0 })
-
-  // 2. Digital clock + date.
-  const clockPl = await addRegion(api, draftId, { width: 480, height: 230, top: 40, left: 1400 })
-  const clockWidget = await api(`/playlist/widget/clock-digital/${clockPl}`, { method: "POST" })
-  await api(`/playlist/widget/${clockWidget.widgetId}`, {
-    method: "PUT",
-    form: { format: CLOCK_FORMAT, lang: "nb", duration: PERSIST_SECONDS, useDuration: 1 },
-  })
-
-  // 3. Yr weather (webpage), full height.
-  const weatherPl = await addRegion(api, draftId, { width: 480, height: 740, top: 300, left: 1400 })
-  await addWebpage(api, weatherPl, opts.weatherUri, { transparency: 1 })
 
   await api(`/layout/publish/${layoutId}`, { method: "PUT", form: { publishNow: 1 } })
 }
@@ -155,4 +147,14 @@ export function kpiUri(appUrl, storeId) {
 
 export function tilbudUri(appUrl, storeId) {
   return `${appUrl}/widget/tilbud?store=${storeId}`
+}
+
+export function topbarUri(appUrl, { butikk, lat, lon, navn }) {
+  const p = new URLSearchParams({
+    butikk: butikk ?? "",
+    lat: String(lat ?? ""),
+    lon: String(lon ?? ""),
+    navn: navn ?? "",
+  })
+  return `${appUrl}/widget/topbar?${p.toString()}`
 }

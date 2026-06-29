@@ -13,7 +13,7 @@
  * Reads XIBO_*, NEXT_PUBLIC_APP_URL, NEXT_PUBLIC_SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY.
  */
 
-import { loadEnv, getToken, makeApi, newsUri, weatherUri, buildLayout } from "./lib.mjs"
+import { loadEnv, getToken, makeApi, newsUri, topbarUri, buildLayout } from "./lib.mjs"
 
 const ALWAYS_DAYPART_ID = 2
 const NAME_PREFIX = "Gange-Rolv – "
@@ -89,8 +89,8 @@ for (const store of stores) {
 
   const { layoutId, campaignId } = await findOrCreateLayout(name)
   await buildLayout(api, layoutId, {
+    topbarUri: topbarUri(APP_URL, { butikk: store.name, lat, lon, navn: store.city || store.name }),
     newsUri: newsUri(APP_URL, store.id),
-    weatherUri: weatherUri(APP_URL, { lat, lon, navn: store.city || store.name }),
   })
   built++
 

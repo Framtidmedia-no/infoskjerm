@@ -5,7 +5,7 @@
  * Run from repo root:  node scripts/xibo/build-base-template.mjs
  */
 
-import { loadEnv, getToken, makeApi, newsUri, weatherUri, buildLayout } from "./lib.mjs"
+import { loadEnv, getToken, makeApi, newsUri, topbarUri, buildLayout } from "./lib.mjs"
 
 const BASE_CAMPAIGN_ID = 8
 const WEATHER = { lat: "62.4722", lon: "6.1495", navn: "Ålesund" }
@@ -21,7 +21,7 @@ if (!live) throw new Error(`Fant ingen publisert layout for campaign ${BASE_CAMP
 
 console.log(`→ Bygger base-mal (campaign ${BASE_CAMPAIGN_ID}, layout ${live.layoutId})`)
 await buildLayout(api, live.layoutId, {
+  topbarUri: topbarUri(APP_URL, { butikk: "Gange-Rolv", lat: WEATHER.lat, lon: WEATHER.lon, navn: WEATHER.navn }),
   newsUri: newsUri(APP_URL, null),
-  weatherUri: weatherUri(APP_URL, WEATHER),
 })
 console.log(`✅ Publisert. Forhåndsvis: ${env.XIBO_API_URL}/campaign/${BASE_CAMPAIGN_ID}/preview`)
