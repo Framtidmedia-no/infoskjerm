@@ -58,6 +58,7 @@ export function ScreenPreview({
   const [avdeling, setAvdeling] = useState("felles")
   const [view, setView] = useState<View>("intern-innhold")
   const [oversiktPeriode, setOversiktPeriode] = useState<"uke" | "ar">("uke")
+  const [kundeView, setKundeView] = useState<"tilbud" | "klubb">("tilbud")
   const wrapRef = useRef<HTMLDivElement>(null)
   const [scale, setScale] = useState(0.5)
   const flate = view.startsWith("kunde") ? "kunde" : "intern"
@@ -85,6 +86,8 @@ export function ScreenPreview({
   const kpiSrc = `/widget/butikk-kpi?store=${store.id}`
   const oversiktSrc = `/widget/kpi-oversikt`
   const internInnholdSrc = `/widget/nyheter?store=${store.id}&flate=intern`
+  const kundeklubbSrc = `/widget/kundeklubb?store=${store.id}`
+  const kundeSrc = kundeView === "klubb" ? kundeklubbSrc : tilbudSrc
   const topbarSrc = `/widget/topbar?butikk=${encodeURIComponent(store.name)}&lat=${store.lat ?? ""}&lon=${store.lon ?? ""}&navn=${encodeURIComponent(store.city ?? "")}`
   // Internal "innhold" screen carries the top strip (store name + clock + date +
   // weather) above the rotating news + ticker — like the real bakrom layout.
@@ -134,6 +137,14 @@ export function ScreenPreview({
         ))}
         {flate === "kunde" && (
           <>
+            <div className="inline-flex rounded-lg border border-zinc-200 p-0.5 bg-zinc-50">
+              {([["tilbud", "Tilbud / avis"], ["klubb", "Kundeklubb"]] as const).map(([key, label]) => (
+                <button key={key} onClick={() => setKundeView(key)}
+                  className={`px-2.5 py-1.5 rounded-md text-[11px] font-semibold transition-all ${kundeView === key ? "bg-zinc-900 text-white" : "text-zinc-600"}`}>
+                  {label}
+                </button>
+              ))}
+            </div>
             <div className="relative">
               <select value={avdeling} onChange={(e) => setAvdeling(e.target.value)}
                 className="appearance-none text-xs font-medium text-zinc-700 bg-white border border-zinc-200 rounded-lg pl-2.5 pr-7 py-1.5 focus:outline-none focus:ring-1 focus:ring-zinc-300">
@@ -175,7 +186,7 @@ export function ScreenPreview({
           )}
           <iframe
             title={view}
-            src={flate === "kunde" ? tilbudSrc : internContentSrc}
+            src={flate === "kunde" ? kundeSrc : internContentSrc}
             scrolling="no"
             style={{ position: "absolute", top: flate === "intern" && showStrip ? STRIP_H : 0, left: 0, width: STAGE_W, height: flate === "intern" && showStrip ? STAGE_H - STRIP_H : STAGE_H, border: "none" }}
           />

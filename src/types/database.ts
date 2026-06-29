@@ -75,6 +75,39 @@ export type Database = {
         }
         Relationships: []
       }
+      kundeklubb_members: {
+        Row: {
+          consent: boolean
+          created_at: string
+          email: string | null
+          id: string
+          name: string
+          phone: string | null
+          store_id: string | null
+          tenant_id: string | null
+        }
+        Insert: {
+          consent?: boolean
+          created_at?: string
+          email?: string | null
+          id?: string
+          name: string
+          phone?: string | null
+          store_id?: string | null
+          tenant_id?: string | null
+        }
+        Update: {
+          consent?: boolean
+          created_at?: string
+          email?: string | null
+          id?: string
+          name?: string
+          phone?: string | null
+          store_id?: string | null
+          tenant_id?: string | null
+        }
+        Relationships: []
+      }
       chains: {
         Row: {
           brand_fg: string | null
