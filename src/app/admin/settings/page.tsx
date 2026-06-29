@@ -14,7 +14,7 @@ export default async function SettingsPage() {
 
   const { data: chains } = await supabase
     .from("chains")
-    .select("id, name, color, brand_light, brand_fg")
+    .select("id, name, color, brand_light, brand_fg, logo_url")
     .order("name")
 
   return (
@@ -30,6 +30,7 @@ export default async function SettingsPage() {
               color: c.color,
               brand_light: c.brand_light,
               brand_fg: c.brand_fg,
+              logo_url: c.logo_url,
             }))}
           />
         )}
