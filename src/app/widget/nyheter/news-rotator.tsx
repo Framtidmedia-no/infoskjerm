@@ -147,7 +147,7 @@ function MediaFull({ item }: { item: LiveItem }) {
 }
 
 function bgImage(url: string): CSSProperties {
-  return { position: "absolute", inset: 0, backgroundImage: `url('${url}')`, backgroundSize: "cover", backgroundPosition: "center", opacity: 0.22 }
+  return { position: "absolute", inset: 0, backgroundImage: `url('${url}')`, backgroundSize: "cover", backgroundPosition: "center", opacity: 0.22, animation: "grKenBurns 26s ease-in-out infinite alternate", transformOrigin: "center" }
 }
 
 function StandardCard({ item }: { item: LiveItem }) {
@@ -382,7 +382,7 @@ export function NewsRotator({ items, qr, ticker }: { items: LiveItem[]; qr: Reco
 
   return (
     <main style={frame}>
-      <style>{"@keyframes grFade{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}"}</style>
+      <style>{"@keyframes grFade{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}@keyframes grKenBurns{from{transform:scale(1)}to{transform:scale(1.1)}}"}</style>
       {!item ? (
         <div style={{ ...contentInset, display: "flex", alignItems: "center", justifyContent: "center", color: "rgba(255,255,255,.4)", fontSize: 34 }}>
           Ingen publiserte nyheter
