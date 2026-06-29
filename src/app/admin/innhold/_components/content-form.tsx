@@ -7,8 +7,8 @@ import { MediaUploader } from "@/components/admin/media-uploader"
 import { Button } from "@/components/ui/button"
 import { saveContent, type ContentType, type TargetMode, type ImageMode, type Audience } from "../actions"
 import { lookupSparProduct } from "../spar-actions"
-import type { OfferFields, LiveItem } from "@/lib/content/live"
-import { OfferCard } from "@/app/widget/tilbud/offer-card"
+import type { OfferFields } from "@/lib/content/live"
+import { LivePreview } from "./live-preview"
 import { toast } from "sonner"
 import {
   Dialog, DialogContent, DialogHeader, DialogFooter, DialogTitle, DialogDescription,
@@ -299,7 +299,7 @@ export function ContentForm({ stores, tags, initial, audience = "intern" }: { st
         type, audience, bodyHtml: usesBody ? bodyHtml : "", imageUrl: usesImage ? imageUrls[0] ?? null : null,
         imageUrls: usesImage ? imageUrls : [],
         offer: isOfferStruktur ? offer : null,
-        avdeling: type === "slide" ? avdeling : null,
+        avdeling: (type === "slide" || type === "competition") ? avdeling : null,
         // 2+ images always render full-page (side by side), so force plakat-style.
         imageMode: usesImage ? (type === "slide" || isMulti ? "plakat" : imageMode) : "bakgrunn",
         targetMode, storeIds, tagIds,
@@ -321,13 +321,22 @@ export function ContentForm({ stores, tags, initial, audience = "intern" }: { st
     }
   }
 
-  // Live preview model for the structured offer card (chain logo added per store).
-  const previewItem: LiveItem = {
-    id: "preview", type: "slide", title: offer.varenavn || "", blocks: [],
-    imageUrl: imageUrls[0] ?? null, imageUrls, imageMode: "plakat", isPdf: false, pages: [],
-    validFrom: validFrom || null, validTo: validTo || null,
-    author: "", date: "", contactPerson: null, applyUrl: null,
-    statsValue: null, statsChange: null, offer, avdeling, bgColor: null, textColor: null,
+  // Live preview payload — rendered by the real screen components in an iframe.
+  const previewData = {
+    type, audience,
+    title: isOfferStruktur ? offer.varenavn : title,
+    bodyHtml: usesBody ? bodyHtml : "",
+    imageUrl: imageUrls[0] ?? null,
+    imageUrls,
+    imageMode: (type === "slide" || isMulti ? "plakat" : imageMode) as ImageMode,
+    offer: isOfferStruktur ? offer : null,
+    avdeling,
+    bgColor: usesColors ? bgColor || null : null,
+    textColor: usesColors ? textColor || null : null,
+    validFrom: validFrom || null,
+    validTo: validTo || null,
+    applyUrl: (type === "job" || type === "competition") ? applyUrl || null : null,
+    contactPerson: type === "job" ? contactPerson || null : null,
   }
 
   return (
@@ -536,16 +545,18 @@ export function ContentForm({ stores, tags, initial, audience = "intern" }: { st
 
         {/* Sidebar column */}
         <div className="space-y-5">
-          {/* Live preview of the structured offer card */}
-          {isOfferStruktur && (
-            <section className="rounded-xl border border-zinc-200 bg-white p-4">
-              <h3 className="text-xs font-semibold text-zinc-600 mb-3">Forhåndsvisning</h3>
-              <div className="mx-auto rounded-xl overflow-hidden border border-zinc-200 shadow-sm" style={{ position: "relative", width: "100%", maxWidth: 230, aspectRatio: "9 / 16" }}>
-                <OfferCard item={previewItem} chain={null} />
-              </div>
-              <p className="text-[10px] text-zinc-400 mt-2.5 text-center">Oppdateres live. Kjedelogo legges til automatisk per butikk.</p>
-            </section>
-          )}
+          {/* Universal live preview — exactly as it appears on the screen */}
+          <section className="rounded-xl border border-zinc-200 bg-white p-4">
+            <h3 className="text-xs font-semibold text-zinc-600 mb-3">Forhåndsvisning</h3>
+            {type === "ticker" ? (
+              <p className="text-[11px] text-zinc-400">Ticker vises som en rullende stripe nederst på {audience === "kunde" ? "kundeskjermen" : "internskjermen"}.</p>
+            ) : (
+              <>
+                <LivePreview data={previewData} portrait={audience === "kunde"} />
+                <p className="text-[10px] text-zinc-400 mt-2.5 text-center">Live — slik vises det på {audience === "kunde" ? "kundeskjermen" : "internskjermen"}.{isOfferStruktur ? " Kjedelogo legges til per butikk." : ""}</p>
+              </>
+            )}
+          </section>
 
           {/* Type — only show a selector when the audience has more than one type */}
           {typeOptions.length > 1 && (
@@ -630,8 +641,8 @@ export function ContentForm({ stores, tags, initial, audience = "intern" }: { st
             )}
           </section>
 
-          {/* Avdeling — kun for kundeannonser (tilbud) */}
-          {type === "slide" && (
+          {/* Avdeling — for alt som vises på kundeskjerm (tilbud + konkurranse) */}
+          {(type === "slide" || type === "competition") && (
             <section className="rounded-xl border border-zinc-200 bg-white p-4">
               <h3 className="text-xs font-semibold text-zinc-600 mb-2.5">Avdeling</h3>
               <select value={avdeling} onChange={(e) => setAvdeling(e.target.value)}

@@ -72,7 +72,7 @@ function buildBody(input: ContentInput): Json {
     ...(input.type === "competition" ? { applyUrl: input.applyUrl ?? null } : {}),
     ...(input.type === "stats" ? { statsValue: input.statsValue ?? null, statsChange: input.statsChange ?? null } : {}),
     ...(input.type === "slide" && input.offer ? { offer: input.offer } : {}),
-    ...(input.type === "slide" ? { avdeling: input.avdeling || "felles" } : {}),
+    ...((input.type === "slide" || input.type === "competition") ? { avdeling: input.avdeling || "felles" } : {}),
     ...(input.bgColor ? { bgColor: input.bgColor } : {}),
     ...(input.textColor ? { textColor: input.textColor } : {}),
   })) as Json

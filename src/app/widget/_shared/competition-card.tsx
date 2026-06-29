@@ -56,7 +56,7 @@ export function CompetitionCard({ item, qrUrl, portrait = false }: { item: LiveI
   const image = hasImg && (
     <div style={{ borderRadius: 28, overflow: "hidden", boxShadow: "0 20px 60px rgba(0,0,0,.35)", background: "rgba(255,255,255,.1)", ...(portrait ? { flex: "0 0 42%", width: "100%" } : { flex: "0 0 40%", minWidth: 0 }) }}>
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={item.imageUrl!} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+      <img src={item.imageUrl!} alt="" style={{ width: "100%", height: "100%", objectFit: "contain" }} />
     </div>
   )
 

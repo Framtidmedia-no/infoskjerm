@@ -1,0 +1,97 @@
+import QRCode from "qrcode"
+import { htmlToBlocks, type LiveItem } from "@/lib/content/live"
+import { TilbudRotator } from "@/app/widget/tilbud/tilbud-rotator"
+import { NewsRotator } from "@/app/widget/nyheter/news-rotator"
+import type { ChainBrand } from "@/app/widget/tilbud/offer-card"
+
+/**
+ * Universal live preview: renders an UNSAVED content item exactly as it will
+ * appear on screen, by feeding a single synthetic item into the real customer
+ * (TilbudRotator) or internal (NewsRotator) renderers. The CMS editor embeds
+ * this in a scaled iframe and re-points it on every change, so every content
+ * type (offer, poster, PDF, competition, news, …) previews 1:1 with the screen.
+ *
+ * Usage: /widget/preview?d=<base64url JSON of the form fields>
+ */
+
+export const dynamic = "force-dynamic"
+
+interface PreviewData {
+  type?: string
+  audience?: "kunde" | "intern"
+  title?: string
+  bodyHtml?: string
+  imageUrl?: string | null
+  imageUrls?: string[]
+  imageMode?: "plakat" | "bakgrunn" | "liten"
+  offer?: LiveItem["offer"]
+  avdeling?: string | null
+  bgColor?: string | null
+  textColor?: string | null
+  validFrom?: string | null
+  validTo?: string | null
+  applyUrl?: string | null
+  contactPerson?: string | null
+  statsValue?: string | null
+  statsChange?: string | null
+  chain?: { name: string; logoUrl: string | null; color: string; brandFg: string | null } | null
+}
+
+function normalizeUrl(raw: string): string {
+  const v = raw.trim()
+  if (!v) return ""
+  return /^https?:\/\//i.test(v) ? v : `https://${v}`
+}
+
+export default async function PreviewWidgetPage({ searchParams }: { searchParams: Promise<{ d?: string }> }) {
+  const { d } = await searchParams
+  let data: PreviewData = {}
+  try {
+    if (d) data = JSON.parse(Buffer.from(d, "base64url").toString("utf-8"))
+  } catch { /* malformed → empty preview */ }
+
+  const type = data.type || "slide"
+  const imageUrls = (data.imageUrls?.length ? data.imageUrls : data.imageUrl ? [data.imageUrl] : []).filter(Boolean)
+  const firstImage = imageUrls[0] ?? null
+
+  const item: LiveItem = {
+    id: "preview",
+    type,
+    title: data.title || "",
+    blocks: htmlToBlocks(data.bodyHtml ?? ""),
+    imageUrl: firstImage,
+    imageUrls,
+    imageMode: data.imageMode === "plakat" ? "plakat" : data.imageMode === "liten" ? "liten" : "bakgrunn",
+    isPdf: (firstImage ?? "").toLowerCase().split("?")[0].endsWith(".pdf"),
+    pages: [],
+    validFrom: data.validFrom || null,
+    validTo: data.validTo || null,
+    author: "",
+    date: "",
+    contactPerson: data.contactPerson ?? null,
+    applyUrl: data.applyUrl ?? null,
+    statsValue: data.statsValue ?? null,
+    statsChange: data.statsChange ?? null,
+    offer: data.offer && data.offer.varenavn ? data.offer : null,
+    avdeling: data.avdeling || "felles",
+    bgColor: data.bgColor ?? null,
+    textColor: data.textColor ?? null,
+  }
+
+  // QR for competitions/jobs with a link.
+  const qr: Record<string, string> = {}
+  if ((type === "competition" || type === "job") && data.applyUrl?.trim()) {
+    try {
+      qr.preview = await QRCode.toDataURL(normalizeUrl(data.applyUrl), { margin: 1, width: 360, color: { dark: "#0a0a0a", light: "#ffffff" } })
+    } catch { /* best-effort */ }
+  }
+
+  const chain: ChainBrand | null = data.chain
+    ? { name: data.chain.name, logoUrl: data.chain.logoUrl, color: data.chain.color, brandFg: data.chain.brandFg }
+    : null
+
+  if (data.audience === "intern") {
+    return <NewsRotator items={[item]} qr={qr} ticker={[]} />
+  }
+  return <TilbudRotator items={[item]} ticker={[]} storeName={null} chain={chain} qr={qr} />
+}
