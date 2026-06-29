@@ -20,7 +20,18 @@ interface MediaUploaderProps {
 
 export function MediaUploader({ onUpload, maxFiles = 10, accept = ["image/jpeg", "image/png", "image/webp", "image/gif"] }: MediaUploaderProps) {
   const [dragging, setDragging] = useState(false)
-  const [uploads, setUploads] = useState<{ name: string; progress: number; status: "uploading" | "done" | "error"; url?: string }[]>([])
+  const [uploads, setUploads] = useState<{ name: string; progress: number; status: "uploading" | "done" | "error"; url?: string; message?: string }[]>([])
+
+  const setUpload = (name: string, patch: Partial<{ progress: number; status: "uploading" | "done" | "error"; url?: string; message?: string }>) =>
+    setUploads((prev) => prev.map((u) => (u.name === name ? { ...u, ...patch } : u)))
+
+  // Transient storage hiccups (rate limit / connection spikes / cold service)
+  // surface as 429 or 5xx. Retry a few times with backoff before giving up.
+  const isTransient = (error: unknown): boolean => {
+    const status = (error as { statusCode?: string | number })?.statusCode
+    const code = Number(status)
+    return code === 429 || (code >= 500 && code < 600)
+  }
 
   const uploadFile = async (file: File) => {
     const supabase = createClient()
@@ -29,23 +40,29 @@ export function MediaUploader({ onUpload, maxFiles = 10, accept = ["image/jpeg",
 
     setUploads((prev) => [...prev, { name: file.name, progress: 0, status: "uploading" }])
 
-    const { data, error } = await supabase.storage.from("media").upload(path, file, {
-      cacheControl: "3600",
-      upsert: false,
-    })
+    const MAX_ATTEMPTS = 4
+    for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+      const { data, error } = await supabase.storage.from("media").upload(path, file, {
+        cacheControl: "3600",
+        upsert: false,
+      })
 
-    if (error) {
-      setUploads((prev) => prev.map((u) => u.name === file.name ? { ...u, status: "error" } : u))
+      if (!error) {
+        const { data: { publicUrl } } = supabase.storage.from("media").getPublicUrl(path)
+        setUpload(file.name, { progress: 100, status: "done", url: publicUrl, message: undefined })
+        onUpload?.([{ id: data.id ?? path, url: publicUrl, name: file.name, size: file.size }])
+        return
+      }
+
+      if (isTransient(error) && attempt < MAX_ATTEMPTS) {
+        setUpload(file.name, { message: `Prøver igjen (${attempt}/${MAX_ATTEMPTS - 1})…` })
+        await new Promise((r) => setTimeout(r, attempt * 1500))
+        continue
+      }
+
+      setUpload(file.name, { status: "error", message: error.message || "Ukjent feil ved opplasting" })
       return
     }
-
-    const { data: { publicUrl } } = supabase.storage.from("media").getPublicUrl(path)
-
-    setUploads((prev) =>
-      prev.map((u) => u.name === file.name ? { ...u, progress: 100, status: "done", url: publicUrl } : u)
-    )
-
-    onUpload?.([{ id: data.id ?? path, url: publicUrl, name: file.name, size: file.size }])
   }
 
   const handleFiles = useCallback((files: FileList | File[]) => {
@@ -111,15 +128,18 @@ export function MediaUploader({ onUpload, maxFiles = 10, accept = ["image/jpeg",
               <div className="flex-1 min-w-0">
                 <p className="text-xs font-medium text-zinc-700 truncate">{upload.name}</p>
                 {upload.status === "uploading" && (
-                  <div className="h-1 bg-zinc-100 rounded-full mt-1.5 overflow-hidden">
-                    <div className="h-full bg-zinc-900 rounded-full animate-pulse w-2/3" />
-                  </div>
+                  <>
+                    <div className="h-1 bg-zinc-100 rounded-full mt-1.5 overflow-hidden">
+                      <div className="h-full bg-zinc-900 rounded-full animate-pulse w-2/3" />
+                    </div>
+                    {upload.message && <p className="text-xs text-amber-600 mt-1">{upload.message}</p>}
+                  </>
                 )}
                 {upload.status === "done" && (
                   <p className="text-xs text-emerald-600 mt-0.5">Lastet opp</p>
                 )}
                 {upload.status === "error" && (
-                  <p className="text-xs text-red-500 mt-0.5">Feil ved opplasting</p>
+                  <p className="text-xs text-red-500 mt-0.5">{upload.message || "Feil ved opplasting"}</p>
                 )}
               </div>
               <div className="flex-shrink-0">
