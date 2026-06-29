@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useRef, useState, useTransition } from "react"
-import { Monitor, ImageIcon, ChevronDown, RefreshCw, Camera, Wifi, WifiOff } from "lucide-react"
+import { Monitor, ImageIcon, ChevronDown, RefreshCw, Camera, Wifi, WifiOff, Megaphone } from "lucide-react"
 import type { StoreScreen, ScreenSync } from "@/lib/xibo/screens"
 import { pushToScreen, requestNewScreenshot } from "./actions"
 
@@ -44,9 +44,10 @@ export function ScreenPreview({
   screens: Record<string, StoreScreen[]>
 }) {
   const [storeId, setStoreId] = useState(stores[0]?.id ?? "")
-  const [tab, setTab] = useState<"skjerm" | "tilbud">("skjerm")
+  const [view, setView] = useState<View>("kunde-skjerm")
   const wrapRef = useRef<HTMLDivElement>(null)
   const [scale, setScale] = useState(0.5)
+  const flate = view.startsWith("kunde") ? "kunde" : "intern"
 
   useEffect(() => {
     const el = wrapRef.current
@@ -66,19 +67,17 @@ export function ScreenPreview({
   const topbarSrc = `/widget/topbar?butikk=${encodeURIComponent(store.name)}&lat=${store.lat ?? ""}&lon=${store.lon ?? ""}&navn=${encodeURIComponent(navn)}`
   const newsSrc = `/widget/nyheter?store=${store.id}`
   const tilbudSrc = `/widget/tilbud?store=${store.id}`
+  const kpiSrc = `/widget/butikk-kpi?store=${store.id}`
+  const oversiktSrc = `/widget/kpi-oversikt`
 
-  const tabBtn = (key: "skjerm" | "tilbud", label: string, Icon: React.ElementType) => (
-    <button
-      onClick={() => setTab(key)}
-      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-all ${tab === key ? "border-zinc-900 bg-zinc-900 text-white" : "border-zinc-200 text-zinc-600 hover:border-zinc-300"}`}
-    >
-      <Icon className="w-3.5 h-3.5" /> {label}
-    </button>
-  )
+  const subTabs: { key: View; label: string }[] =
+    flate === "kunde"
+      ? [{ key: "kunde-skjerm", label: "Skjerm" }, { key: "kunde-tilbud", label: store.hasOffers ? "Tilbud (aktivt)" : "Tilbud" }]
+      : [{ key: "intern-kpi", label: "Butikk-KPI" }, { key: "intern-oversikt", label: "Alle butikker" }]
 
   return (
     <div className="space-y-4">
-      {/* Controls */}
+      {/* Store + flate (kunde vs intern) */}
       <div className="flex flex-wrap items-center gap-3">
         <div className="relative">
           <select
@@ -92,38 +91,64 @@ export function ScreenPreview({
           </select>
           <ChevronDown className="w-4 h-4 text-zinc-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
         </div>
-        <div className="flex gap-1.5">
-          {tabBtn("skjerm", "Skjerm", Monitor)}
-          {tabBtn("tilbud", store.hasOffers ? "Tilbud (aktivt)" : "Tilbud", ImageIcon)}
+        <div className="inline-flex rounded-lg border border-zinc-200 p-0.5 bg-zinc-50">
+          <button onClick={() => setView("kunde-skjerm")} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold transition-all ${flate === "kunde" ? "bg-zinc-900 text-white" : "text-zinc-600"}`}>
+            <Megaphone className="w-3.5 h-3.5" /> Kundeskjerm
+          </button>
+          <button onClick={() => setView("intern-kpi")} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold transition-all ${flate === "intern" ? "bg-zinc-900 text-white" : "text-zinc-600"}`}>
+            <Monitor className="w-3.5 h-3.5" /> Internskjerm (bakrom)
+          </button>
         </div>
-        {tab === "tilbud" && !store.hasOffers && (
-          <span className="text-xs text-zinc-400">Vises kun på skjermen når butikken har aktive tilbud.</span>
+      </div>
+
+      {/* Sub-view within the flate */}
+      <div className="flex flex-wrap items-center gap-1.5">
+        {subTabs.map((t) => (
+          <button key={t.key} onClick={() => setView(t.key)}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-all ${view === t.key ? "border-zinc-900 bg-zinc-900 text-white" : "border-zinc-200 text-zinc-600 hover:border-zinc-300"}`}>
+            {t.key === "kunde-tilbud" ? <ImageIcon className="w-3.5 h-3.5" /> : <Monitor className="w-3.5 h-3.5" />} {t.label}
+          </button>
+        ))}
+        {view === "kunde-tilbud" && !store.hasOffers && (
+          <span className="text-xs text-zinc-400">Vises kun når butikken har aktive tilbud.</span>
+        )}
+        {flate === "intern" && (
+          <span className="text-xs text-zinc-400">Bakrom/ansatte — vises aldri til kunder.</span>
         )}
       </div>
 
       {/* Ops panel — live player status, push-now, real screenshot */}
-      <ScreenStatus key={store.id} storeName={store.name} screens={storeScreens} />
+      {flate === "kunde" && <ScreenStatus key={store.id} storeName={store.name} screens={storeScreens} />}
 
       {/* 16:9 stage, scaled to the real 1920×1080 screen */}
       <div ref={wrapRef} className="relative w-full rounded-2xl overflow-hidden border border-zinc-200 bg-black shadow-sm" style={{ aspectRatio: "16 / 9" }}>
         <div style={{ position: "absolute", top: 0, left: 0, width: STAGE_W, height: STAGE_H, transform: `scale(${scale})`, transformOrigin: "top left" }}>
-          {tab === "skjerm" ? (
+          {view === "kunde-skjerm" ? (
             <>
               <iframe title="Toppstripe" src={topbarSrc} scrolling="no" style={{ position: "absolute", top: 0, left: 0, width: STAGE_W, height: STRIP_H, border: "none" }} />
               <iframe title="Innhold" src={newsSrc} scrolling="no" style={{ position: "absolute", top: STRIP_H, left: 0, width: STAGE_W, height: STAGE_H - STRIP_H, border: "none" }} />
             </>
           ) : (
-            <iframe title="Tilbud" src={tilbudSrc} scrolling="no" style={{ position: "absolute", top: 0, left: 0, width: STAGE_W, height: STAGE_H, border: "none" }} />
+            <iframe
+              title={view}
+              src={view === "kunde-tilbud" ? tilbudSrc : view === "intern-kpi" ? kpiSrc : oversiktSrc}
+              scrolling="no"
+              style={{ position: "absolute", top: 0, left: 0, width: STAGE_W, height: STAGE_H, border: "none" }}
+            />
           )}
         </div>
       </div>
 
       <p className="text-xs text-zinc-400">
-        Live forhåndsvisning — nøyaktig de samme elementene som vises på skjermen i butikken. Skjermen veksler automatisk mellom innhold{store.hasOffers ? " og tilbud" : ""}.
+        {flate === "kunde"
+          ? "Kundeskjerm — det kundene ser i butikken (tilbud, plakater). Veksler automatisk mellom innhold og tilbud."
+          : "Internskjerm (bakrom) — KPI og driftstall for de ansatte. Aldri synlig for kunder."}
       </p>
     </div>
   )
 }
+
+type View = "kunde-skjerm" | "kunde-tilbud" | "intern-kpi" | "intern-oversikt"
 
 function ScreenStatus({ storeName, screens }: { storeName: string; screens: StoreScreen[] }) {
   const [pending, startTransition] = useTransition()
