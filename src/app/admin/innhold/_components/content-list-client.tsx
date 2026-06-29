@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation"
 import { deleteContent, duplicateContent } from "../actions"
 import { toast } from "sonner"
 import {
-  Newspaper, Trophy, ImageIcon, Globe, Store as StoreIcon, Tag,
+  Newspaper, Trophy, ImageIcon, Briefcase, Globe, Store as StoreIcon, Tag,
   Copy, Trash2, Pencil, MoreVertical, Calendar, Search, ChevronLeft, ChevronRight, Monitor,
 } from "lucide-react"
 
@@ -30,6 +30,7 @@ const TYPE_META: Record<string, { label: string; icon: React.ElementType; badge:
   news: { label: "Nyhet", icon: Newspaper, badge: "bg-blue-600 text-white", gradient: "from-blue-500 to-blue-700" },
   competition: { label: "Konkurranse", icon: Trophy, badge: "bg-amber-500 text-white", gradient: "from-amber-400 to-amber-600" },
   slide: { label: "Tilbud", icon: ImageIcon, badge: "bg-zinc-700 text-white", gradient: "from-zinc-600 to-zinc-800" },
+  job: { label: "Stilling", icon: Briefcase, badge: "bg-indigo-600 text-white", gradient: "from-indigo-500 to-indigo-700" },
   stats: { label: "Salgstall", icon: ImageIcon, badge: "bg-emerald-600 text-white", gradient: "from-emerald-500 to-emerald-700" },
   weather: { label: "Vær", icon: ImageIcon, badge: "bg-sky-500 text-white", gradient: "from-sky-400 to-sky-600" },
 }

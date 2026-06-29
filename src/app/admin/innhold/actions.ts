@@ -9,7 +9,7 @@ type AdminSupabase = Awaited<ReturnType<typeof requireRole>>["supabase"]
 
 const AUTHOR_ROLES = ["super_admin", "chain_manager", "area_manager", "store_manager", "store_employee"] as const
 
-export type ContentType = "news" | "competition" | "stats" | "weather" | "slide"
+export type ContentType = "news" | "competition" | "stats" | "weather" | "slide" | "job"
 export type TargetMode = "all" | "stores" | "tags"
 
 export interface ContentInput {
@@ -23,6 +23,29 @@ export interface ContentInput {
   validFrom: string | null
   validTo: string | null
   publish: boolean
+  /** Job ads only: contact person + application link, shown on the card. */
+  contactPerson?: string | null
+  applyUrl?: string | null
+}
+
+/** Kicker label shown on the signage card, per content type. */
+const TYPE_LABEL: Record<ContentType, string> = {
+  news: "GANGE-ROLV",
+  competition: "KONKURRANSE",
+  slide: "TILBUD",
+  stats: "SALGSTALL",
+  weather: "VÆR",
+  job: "STILLING LEDIG",
+}
+
+/** Builds the card body, appending job contact/apply lines for job ads. */
+function buildCardBody(input: ContentInput): string {
+  if (input.type !== "job") return input.bodyHtml
+  const lines: string[] = []
+  if (input.contactPerson?.trim()) lines.push(`Kontakt: ${input.contactPerson.trim()}`)
+  if (input.applyUrl?.trim()) lines.push(`Søk: ${input.applyUrl.trim()}`)
+  if (lines.length === 0) return input.bodyHtml
+  return `${input.bodyHtml}<p>${lines.join("<br>")}</p>`
 }
 
 export interface SaveResult {
@@ -90,7 +113,11 @@ export async function saveContent(input: ContentInput, id?: string): Promise<Sav
 
   if (!input.title.trim()) return { ok: false, error: "Tittel er påkrevd" }
 
-  const body = JSON.parse(JSON.stringify({ html: input.bodyHtml, imageUrl: input.imageUrl ?? null })) as Json
+  const body = JSON.parse(JSON.stringify({
+    html: input.bodyHtml,
+    imageUrl: input.imageUrl ?? null,
+    ...(input.type === "job" ? { contactPerson: input.contactPerson ?? null, applyUrl: input.applyUrl ?? null } : {}),
+  })) as Json
   const status = input.publish ? "live" : "draft"
 
   let contentId = id
@@ -154,7 +181,7 @@ export async function saveContent(input: ContentInput, id?: string): Promise<Sav
       const rowId = await upsertNewsRow({
         contentId: contentId!,
         title: input.title.trim(),
-        bodyHtml: input.bodyHtml,
+        bodyHtml: buildCardBody(input),
         imageUrl: input.imageUrl ?? null,
         type: input.type,
         stores,
@@ -162,6 +189,7 @@ export async function saveContent(input: ContentInput, id?: string): Promise<Sav
         validTo: input.validTo || null,
         displayDate,
         author,
+        label: TYPE_LABEL[input.type] ?? "GANGE-ROLV",
       })
       const newBody = JSON.parse(JSON.stringify({
         html: input.bodyHtml,

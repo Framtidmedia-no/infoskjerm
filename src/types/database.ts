@@ -1014,7 +1014,7 @@ export type Database = {
         | "archived"
         | "live"
         | "scheduled"
-      content_type: "news" | "competition" | "stats" | "weather" | "slide"
+      content_type: "news" | "competition" | "stats" | "weather" | "slide" | "job"
       screen_status: "active" | "inactive" | "maintenance"
       user_role:
         | "super_admin"
@@ -1162,7 +1162,7 @@ export const Constants = {
         "live",
         "scheduled",
       ],
-      content_type: ["news", "competition", "stats", "weather", "slide"],
+      content_type: ["news", "competition", "stats", "weather", "slide", "job"],
       screen_status: ["active", "inactive", "maintenance"],
       user_role: [
         "super_admin",

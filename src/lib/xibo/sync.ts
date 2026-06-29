@@ -35,6 +35,7 @@ const COL = {
   contentId: 8,
   dato: 9,
   forfatter: 10,
+  merkelapp: 11,
 } as const
 
 // Sentinel bounds so the template's date-window filter never has to deal with
@@ -58,6 +59,8 @@ export interface NewsRow {
   displayDate: string
   /** Author display name shown on the card. */
   author: string
+  /** Kicker label shown on the card, derived from type (e.g. "STILLING LEDIG"). */
+  label: string
 }
 
 interface XiboDataRow {
@@ -102,6 +105,7 @@ function rowForm(row: NewsRow): Record<string, string> {
     [`dataSetColumnId_${COL.contentId}`]: row.contentId,
     [`dataSetColumnId_${COL.dato}`]: row.displayDate,
     [`dataSetColumnId_${COL.forfatter}`]: row.author,
+    [`dataSetColumnId_${COL.merkelapp}`]: row.label,
   }
 }
 

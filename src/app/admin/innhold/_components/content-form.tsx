@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button"
 import { saveContent, type ContentType, type TargetMode } from "../actions"
 import { toast } from "sonner"
 import {
-  Newspaper, Trophy, ImageIcon,
+  Newspaper, Trophy, ImageIcon, Briefcase,
   Store as StoreIcon, Tag, Globe, X, Calendar, Save, Send, ChevronLeft,
 } from "lucide-react"
 import Link from "next/link"
@@ -27,6 +27,8 @@ export interface ContentInitial {
   tagIds: string[]
   validFrom: string | null
   validTo: string | null
+  contactPerson?: string | null
+  applyUrl?: string | null
 }
 
 // Bare AUTHORED innhold her. Vær/klokke/salgstall er per-enhet-widgets
@@ -35,6 +37,7 @@ const TYPES: { key: ContentType; label: string; icon: React.ElementType }[] = [
   { key: "news", label: "Nyhet", icon: Newspaper },
   { key: "competition", label: "Konkurranse", icon: Trophy },
   { key: "slide", label: "Tilbud / annet", icon: ImageIcon },
+  { key: "job", label: "Stilling", icon: Briefcase },
 ]
 
 export function ContentForm({ stores, tags, initial }: { stores: StoreOption[]; tags: TagOption[]; initial?: ContentInitial }) {
@@ -48,6 +51,8 @@ export function ContentForm({ stores, tags, initial }: { stores: StoreOption[]; 
   const [tagIds, setTagIds] = useState<string[]>(initial?.tagIds ?? [])
   const [validFrom, setValidFrom] = useState(initial?.validFrom ?? "")
   const [validTo, setValidTo] = useState(initial?.validTo ?? "")
+  const [contactPerson, setContactPerson] = useState(initial?.contactPerson ?? "")
+  const [applyUrl, setApplyUrl] = useState(initial?.applyUrl ?? "")
   const [saving, setSaving] = useState(false)
 
   const toggleStore = (id: string) => setStoreIds((p) => (p.includes(id) ? p.filter((x) => x !== id) : [...p, id]))
@@ -59,7 +64,12 @@ export function ContentForm({ stores, tags, initial }: { stores: StoreOption[]; 
     if (targetMode === "tags" && tagIds.length === 0) { toast.error("Velg minst én tagg"); return }
     setSaving(true)
     const res = await saveContent(
-      { title, type, bodyHtml, imageUrl, targetMode, storeIds, tagIds, validFrom: validFrom || null, validTo: validTo || null, publish },
+      {
+        title, type, bodyHtml, imageUrl, targetMode, storeIds, tagIds,
+        validFrom: validFrom || null, validTo: validTo || null, publish,
+        contactPerson: type === "job" ? contactPerson || null : null,
+        applyUrl: type === "job" ? applyUrl || null : null,
+      },
       initial?.id
     )
     setSaving(false)
@@ -119,6 +129,22 @@ export function ContentForm({ stores, tags, initial }: { stores: StoreOption[]; 
               <MediaUploader maxFiles={1} onUpload={(files) => { if (files[0]) setImageUrl(files[0].url) }} />
             )}
           </div>
+
+          {type === "job" && (
+            <div className="rounded-xl border border-zinc-200 bg-white p-4 space-y-3">
+              <h3 className="flex items-center gap-1.5 text-xs font-semibold text-zinc-600"><Briefcase className="w-3.5 h-3.5" /> Stillingsinfo</h3>
+              <div>
+                <label className="block text-[10px] text-zinc-400 mb-1">Kontaktperson</label>
+                <input type="text" value={contactPerson} onChange={(e) => setContactPerson(e.target.value)} placeholder="Navn på kontaktperson"
+                  className="w-full text-sm border border-zinc-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-zinc-300" />
+              </div>
+              <div>
+                <label className="block text-[10px] text-zinc-400 mb-1">Søknadslenke</label>
+                <input type="text" value={applyUrl} onChange={(e) => setApplyUrl(e.target.value)} placeholder="gangerolv.no/stillinger"
+                  className="w-full text-sm border border-zinc-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-zinc-300" />
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Sidebar column */}

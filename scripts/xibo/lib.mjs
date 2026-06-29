@@ -71,7 +71,7 @@ export function makeApi(env, token) {
 }
 
 // ---------- zone content ----------
-const NEWS_TEMPLATE = `<div class="gr-news"><div class="gr-bg" style="background-image:url('[bilde]')"></div><div class="gr-body"><p class="gr-kicker">Gange-Rolv</p><h1 class="gr-title">[tittel]</h1><p class="gr-byline">[dato] · [forfatter]</p><div class="gr-textwrap"><div class="gr-text">[tekst]</div></div></div></div>`
+const NEWS_TEMPLATE = `<div class="gr-news"><div class="gr-bg" style="background-image:url('[bilde]')"></div><div class="gr-body"><p class="gr-kicker">[merkelapp]</p><h1 class="gr-title">[tittel]</h1><p class="gr-byline">[dato] · [forfatter]</p><div class="gr-textwrap"><div class="gr-text">[tekst]</div></div></div></div>`
 
 const NEWS_STYLES = `
 .gr-news{position:relative;width:1340px;height:860px;overflow:hidden;background:linear-gradient(135deg,#0a0a0a,#161616);font-family:Arial,Helvetica,sans-serif;color:#fff;}
