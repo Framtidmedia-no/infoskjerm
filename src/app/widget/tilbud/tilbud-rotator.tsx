@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, type CSSProperties } from "react"
 import type { LiveItem, Block } from "@/lib/content/live"
+import { OfferCard } from "./offer-card"
 
 /**
  * Full-screen offer presentation: a left side panel with the heading, period and
@@ -181,7 +182,13 @@ export function TilbudRotator({ items, ticker, storeName }: { items: LiveItem[];
         <div style={{ ...inset, display: "flex", alignItems: "center", justifyContent: "center", color: "rgba(255,255,255,.4)", fontSize: 34 }}>
           Ingen aktive tilbud
         </div>
+      ) : item.offer ? (
+        // Structured offer → full-bleed price card (no side panel).
+        <div key={item.id} style={{ ...inset, animation: "grFade .6s ease-out" }}>
+          <OfferCard item={item} />
+        </div>
       ) : (
+        // Uploaded poster/PDF → side panel + media.
         <div key={item.id} style={{ ...inset, display: "flex", animation: "grFade .6s ease-out" }}>
           <SidePanel item={item} storeName={storeName} />
           <div style={{ flex: "1 1 auto", minWidth: 0, display: "flex", padding: 48, boxSizing: "border-box" }}>

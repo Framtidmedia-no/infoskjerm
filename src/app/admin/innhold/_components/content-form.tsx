@@ -6,6 +6,7 @@ import { RichTextEditor } from "@/components/admin/rich-text-editor"
 import { MediaUploader } from "@/components/admin/media-uploader"
 import { Button } from "@/components/ui/button"
 import { saveContent, type ContentType, type TargetMode, type ImageMode, type Audience } from "../actions"
+import type { OfferFields } from "@/lib/content/live"
 import { toast } from "sonner"
 import {
   Dialog, DialogContent, DialogHeader, DialogFooter, DialogTitle, DialogDescription,
@@ -36,7 +37,25 @@ export interface ContentInitial {
   applyUrl?: string | null
   statsValue?: string | null
   statsChange?: string | null
+  offer?: OfferFields | null
 }
+
+const EMPTY_OFFER: OfferFields = {
+  varenavn: "", vareinfo: null, badge: null, pris: null, rabatt: null, forpris: null,
+  mengde: null, enhetspris: null, medlemspris: null, maks: null, pant: false,
+}
+
+const BADGES = ["TILBUD", "KNALLPRIS", "NYHET", "SUPERPRIS", "KAMPANJE"]
+
+const OFFER_GRID: { k: keyof OfferFields; label: string; ph: string }[] = [
+  { k: "pris", label: "Pris", ph: "39,90" },
+  { k: "forpris", label: "Førpris", ph: "59,90" },
+  { k: "rabatt", label: "Rabatt", ph: "-30 %" },
+  { k: "mengde", label: "Mengde", ph: "2 for 50" },
+  { k: "enhetspris", label: "Enhetspris", ph: "kr 79,80/kg" },
+  { k: "medlemspris", label: "Medlemspris", ph: "34,90" },
+  { k: "maks", label: "Maks per kunde", ph: "Maks 5" },
+]
 
 const TYPES: { key: ContentType; label: string; icon: React.ElementType }[] = [
   { key: "news", label: "Nyhet", icon: Newspaper },
@@ -72,8 +91,13 @@ export function ContentForm({ stores, tags, initial, audience = "intern" }: { st
   const [contactPerson, setContactPerson] = useState(initial?.contactPerson ?? "")
   const [applyUrl, setApplyUrl] = useState(initial?.applyUrl ?? "")
   const [imageMode, setImageMode] = useState<ImageMode>(initial?.imageMode ?? "bakgrunn")
+  const [offerMode, setOfferMode] = useState<"struktur" | "plakat">(initial?.offer ? "struktur" : "plakat")
+  const [offer, setOffer] = useState<OfferFields>(initial?.offer ?? EMPTY_OFFER)
   const [saving, setSaving] = useState(false)
   const [confirmNoEndDate, setConfirmNoEndDate] = useState(false)
+
+  const isOfferStruktur = type === "slide" && offerMode === "struktur"
+  const setOf = (k: keyof OfferFields, v: string) => setOffer((p) => ({ ...p, [k]: v.trim() || null }))
 
   // Forhåndsutfyll fradato med dagens dato for nytt innhold (ikke ved redigering).
   // Settes på klienten for å unngå SSR/klient-hydration-mismatch på datoen.
@@ -87,7 +111,7 @@ export function ContentForm({ stores, tags, initial, audience = "intern" }: { st
   }, [])
 
   const usesImage = IMAGE_TYPES.includes(type)
-  const usesBody = type !== "ticker"
+  const usesBody = type !== "ticker" && !isOfferStruktur
   // Tilbud/annonser må alltid ha en gyldig periode (fra + til).
   const periodRequired = type === "slide"
   const isPdfUrl = (imageUrls[0] ?? "").toLowerCase().split("?")[0].endsWith(".pdf")
@@ -101,7 +125,9 @@ export function ContentForm({ stores, tags, initial, audience = "intern" }: { st
   const toggleTag = (id: string) => setTagIds((p) => (p.includes(id) ? p.filter((x) => x !== id) : [...p, id]))
 
   function handleSave(publish: boolean) {
-    if (!title.trim()) { toast.error("Skriv en tittel først"); return }
+    if (isOfferStruktur) {
+      if (!offer.varenavn.trim()) { toast.error("Skriv et varenavn"); return }
+    } else if (!title.trim()) { toast.error("Skriv en tittel først"); return }
     if (targetMode === "stores" && storeIds.length === 0) { toast.error("Velg minst én butikk"); return }
     if (targetMode === "tags" && tagIds.length === 0) { toast.error("Velg minst én tagg"); return }
     // Tilbud/annonser MÅ ha både fra- og til-dato — de skal aldri gå evig.
@@ -118,8 +144,10 @@ export function ContentForm({ stores, tags, initial, audience = "intern" }: { st
     setSaving(true)
     const res = await saveContent(
       {
-        title, type, audience, bodyHtml: usesBody ? bodyHtml : "", imageUrl: usesImage ? imageUrls[0] ?? null : null,
+        title: isOfferStruktur ? offer.varenavn.trim() : title,
+        type, audience, bodyHtml: usesBody ? bodyHtml : "", imageUrl: usesImage ? imageUrls[0] ?? null : null,
         imageUrls: usesImage ? imageUrls : [],
+        offer: isOfferStruktur ? offer : null,
         // 2+ images always render full-page (side by side), so force plakat-style.
         imageMode: usesImage ? (isMulti ? "plakat" : imageMode) : "bakgrunn",
         targetMode, storeIds, tagIds,
@@ -157,20 +185,74 @@ export function ContentForm({ stores, tags, initial, audience = "intern" }: { st
       <div className="flex-1 grid grid-cols-1 lg:grid-cols-3 gap-6 p-6 max-w-6xl">
         {/* Main column */}
         <div className="lg:col-span-2 space-y-5">
-          <div>
-            <input
-              type="text"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="Tittel på saken..."
-              className="w-full text-2xl font-bold text-zinc-900 bg-transparent border-none focus:outline-none placeholder:text-zinc-300"
-            />
-          </div>
+          {!isOfferStruktur && (
+            <div>
+              <input
+                type="text"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder={type === "slide" ? "Tittel på plakaten..." : "Tittel på saken..."}
+                className="w-full text-2xl font-bold text-zinc-900 bg-transparent border-none focus:outline-none placeholder:text-zinc-300"
+              />
+            </div>
+          )}
 
           {type === "ticker" && (
             <p className="text-xs text-zinc-500 bg-amber-50 border border-amber-100 rounded-lg px-3 py-2">
               Tittelen er <strong>ticker-meldingen</strong> som ruller nederst på skjermen. Stripen vises kun når det finnes aktive ticker-meldinger.
             </p>
+          )}
+
+          {/* Offer authoring mode: structured price card vs uploaded poster */}
+          {type === "slide" && (
+            <div className="flex gap-1.5">
+              {([["struktur", "Bygg tilbudskort"], ["plakat", "Last opp plakat / PDF"]] as const).map(([mode, label]) => (
+                <button key={mode} type="button" onClick={() => setOfferMode(mode)}
+                  className={`flex-1 px-3 py-2 rounded-lg text-xs font-medium border transition-all ${offerMode === mode ? "border-zinc-900 bg-zinc-900 text-white" : "border-zinc-200 text-zinc-600 hover:border-zinc-300"}`}>
+                  {label}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {isOfferStruktur && (
+            <div className="space-y-4 rounded-xl border border-zinc-200 bg-white p-4">
+              <div>
+                <label className="block text-[10px] text-zinc-400 mb-1">Varenavn *</label>
+                <input value={offer.varenavn} onChange={(e) => setOffer((p) => ({ ...p, varenavn: e.target.value }))} placeholder="Reker 40/60"
+                  className="w-full text-lg font-bold border border-zinc-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-zinc-300" />
+              </div>
+              <div>
+                <label className="block text-[10px] text-zinc-400 mb-1">Vareinfo</label>
+                <input value={offer.vareinfo ?? ""} onChange={(e) => setOf("vareinfo", e.target.value)} placeholder="Kystfrost, fryst, 1 kg"
+                  className="w-full text-sm border border-zinc-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-zinc-300" />
+              </div>
+              <div>
+                <label className="block text-[10px] text-zinc-400 mb-1">Merkelapp</label>
+                <div className="flex flex-wrap gap-1.5">
+                  {BADGES.map((b) => (
+                    <button key={b} type="button" onClick={() => setOffer((p) => ({ ...p, badge: p.badge === b ? null : b }))}
+                      className={`px-2.5 py-1.5 rounded-lg text-[11px] font-bold border transition-all ${offer.badge === b ? "border-red-600 bg-red-600 text-white" : "border-zinc-200 text-zinc-600 hover:border-zinc-300"}`}>
+                      {b}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                {OFFER_GRID.map(({ k, label, ph }) => (
+                  <div key={k}>
+                    <label className="block text-[10px] text-zinc-400 mb-1">{label}</label>
+                    <input value={(offer[k] as string | null) ?? ""} onChange={(e) => setOf(k, e.target.value)} placeholder={ph}
+                      className="w-full text-sm border border-zinc-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-zinc-300" />
+                  </div>
+                ))}
+                <label className="flex items-center gap-2 text-xs text-zinc-700 self-end pb-2">
+                  <input type="checkbox" checked={offer.pant} onChange={(e) => setOffer((p) => ({ ...p, pant: e.target.checked }))} className="rounded border-zinc-300" />
+                  + pant
+                </label>
+              </div>
+              <p className="text-[10px] text-zinc-400">Bildet du laster opp under blir produktbildet på kortet.</p>
+            </div>
           )}
 
           {usesBody && (

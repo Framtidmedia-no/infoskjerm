@@ -4,6 +4,7 @@ import { requireRole } from "@/lib/admin/require-role"
 import { revalidatePath } from "next/cache"
 import { reconcileOffersSafe } from "@/lib/xibo/offers"
 import { audienceForType, type Audience } from "./audience"
+import type { OfferFields } from "@/lib/content/live"
 import type { Json } from "@/types/database"
 
 type AdminSupabase = Awaited<ReturnType<typeof requireRole>>["supabase"]
@@ -37,6 +38,8 @@ export interface ContentInput {
   /** Sales (stats) only: the KPI value + change indicator. */
   statsValue?: string | null
   statsChange?: string | null
+  /** Offer (slide) only: structured price-card fields (when not a poster). */
+  offer?: OfferFields | null
 }
 
 export interface SaveResult {
@@ -62,6 +65,7 @@ function buildBody(input: ContentInput): Json {
     audience: input.audience ?? audienceForType(input.type),
     ...(input.type === "job" ? { contactPerson: input.contactPerson ?? null, applyUrl: input.applyUrl ?? null } : {}),
     ...(input.type === "stats" ? { statsValue: input.statsValue ?? null, statsChange: input.statsChange ?? null } : {}),
+    ...(input.type === "slide" && input.offer ? { offer: input.offer } : {}),
   })) as Json
 }
 

@@ -15,6 +15,30 @@ export interface Block {
   text: string
 }
 
+/** Structured retail offer (the «tilbudskort» builder) — rendered as a price card. */
+export interface OfferFields {
+  varenavn: string
+  vareinfo: string | null
+  /** Badge text, e.g. TILBUD / KNALLPRIS / NYHET. */
+  badge: string | null
+  /** Headline price, e.g. "39,90". */
+  pris: string | null
+  /** Discount instead of/with price, e.g. "-30%". */
+  rabatt: string | null
+  /** Before-price (strikethrough), e.g. "59,90". */
+  forpris: string | null
+  /** Multi-buy text, e.g. "2 for 50". */
+  mengde: string | null
+  /** Unit price, e.g. "kr 79,80/kg". */
+  enhetspris: string | null
+  /** Member/loyalty price. */
+  medlemspris: string | null
+  /** Max per customer, e.g. "Maks 5 per kunde". */
+  maks: string | null
+  /** "+ pant" note. */
+  pant: boolean
+}
+
 export interface LiveItem {
   id: string
   type: string
@@ -33,6 +57,8 @@ export interface LiveItem {
   applyUrl: string | null
   statsValue: string | null
   statsChange: string | null
+  /** Set when the offer was authored as a structured price card (not a poster). */
+  offer: OfferFields | null
 }
 
 interface Body {
@@ -44,6 +70,7 @@ interface Body {
   applyUrl?: string | null
   statsValue?: string | null
   statsChange?: string | null
+  offer?: OfferFields | null
 }
 
 interface Target {
@@ -169,6 +196,7 @@ export async function fetchLiveContent(storeId: string | null, types: string[]):
       applyUrl: body.applyUrl ?? null,
       statsValue: body.statsValue ?? null,
       statsChange: body.statsChange ?? null,
+      offer: body.offer && body.offer.varenavn ? body.offer : null,
     }
   })
 }
