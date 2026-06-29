@@ -286,6 +286,34 @@ export function ContentForm({ stores, tags, initial }: { stores: StoreOption[]; 
           </section>
         </div>
       </div>
+
+      <Dialog open={confirmNoEndDate} onOpenChange={setConfirmNoEndDate}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <div className="mx-auto sm:mx-0 flex h-11 w-11 items-center justify-center rounded-full bg-amber-100 text-amber-600 mb-1">
+              <CalendarOff className="h-5 w-5" />
+            </div>
+            <DialogTitle>Ingen sluttdato satt</DialogTitle>
+            <DialogDescription>
+              Dette innholdet har ingen sluttdato og vil vises på skjermen til du fjerner det manuelt.
+              Er du sikker på at det ikke skal ha en sluttdato?
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2 sm:gap-2">
+            <Button variant="outline" size="sm" onClick={() => setConfirmNoEndDate(false)} disabled={saving}>
+              Sett sluttdato
+            </Button>
+            <Button
+              size="sm"
+              onClick={() => { setConfirmNoEndDate(false); doSave(true) }}
+              disabled={saving}
+              style={{ backgroundColor: "var(--brand-primary)" }}
+            >
+              <Send className="w-3.5 h-3.5 mr-1.5" /> Publiser likevel
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
