@@ -1,6 +1,7 @@
 import QRCode from "qrcode"
 import { fetchLiveContent, type LiveItem } from "@/lib/content/live"
 import { createAdminClient } from "@/lib/supabase/server"
+import { getBaseUrl } from "@/lib/base-url"
 import { TilbudRotator } from "./tilbud-rotator"
 import type { ChainBrand } from "./offer-card"
 
@@ -48,7 +49,7 @@ export default async function TilbudWidgetPage({ searchParams }: { searchParams:
   const items = [...(comps as LiveItem[]), ...(slides as LiveItem[])]
   const ticker = (tickerItems as LiveItem[]).map((t) => t.title.trim()).filter(Boolean)
 
-  // QR codes for competitions with a participation link.
+  // QR codes: competitions (participation link) + kundeklubb (per-store sign-up).
   const qr: Record<string, string> = {}
   for (const it of comps as LiveItem[]) {
     if (it.applyUrl?.trim()) {
@@ -56,6 +57,12 @@ export default async function TilbudWidgetPage({ searchParams }: { searchParams:
         qr[it.id] = await QRCode.toDataURL(normalizeUrl(it.applyUrl), { margin: 1, width: 360, color: { dark: "#0a0a0a", light: "#ffffff" } })
       } catch { /* best-effort */ }
     }
+  }
+  const klubbItems = (slides as LiveItem[]).filter((s) => s.klubb)
+  if (klubbItems.length > 0 && store) {
+    const base = await getBaseUrl()
+    const klubbQr = await QRCode.toDataURL(`${base}/klubb/${store}`, { margin: 1, width: 700, color: { dark: "#0a0a0a", light: "#ffffff" } }).catch(() => "")
+    for (const it of klubbItems) qr[it.id] = klubbQr
   }
 
   const row = storeRow.data as unknown as StoreChainRow | null

@@ -1,64 +1,8 @@
-import { requireRole } from "@/lib/admin/require-role"
-import { notFound } from "next/navigation"
-import { ContentForm, type TagOption, type ContentInitial } from "../_components/content-form"
-import { loadStoreOptions } from "../store-options"
-import type { ContentType, TargetMode } from "../actions"
-import { audienceForType, type Audience } from "../audience"
+import { EditContentView } from "../_components/edit-content-view"
 
 export const dynamic = "force-dynamic"
 
-const AUTHOR_ROLES = ["super_admin", "chain_manager", "area_manager", "store_manager", "store_employee"] as const
-
 export default async function EditContentPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
-  const { supabase } = await requireRole([...AUTHOR_ROLES])
-
-  const [{ data: item }, storeOptions, { data: tags }, { data: targets }] = await Promise.all([
-    supabase.from("content_items").select("id, title, type, body, valid_from, valid_to").eq("id", id).single(),
-    loadStoreOptions(supabase),
-    supabase.from("tags").select("id, name, color").order("name"),
-    supabase.from("content_targets").select("target_all, store_id, tag_id").eq("content_item_id", id),
-  ])
-
-  if (!item) notFound()
-
-  const body = (item.body ?? {}) as {
-    html?: string; imageUrl?: string | null; imageUrls?: string[]; imageMode?: "plakat" | "bakgrunn" | "liten"
-    audience?: Audience
-    contactPerson?: string | null; applyUrl?: string | null; statsValue?: string | null; statsChange?: string | null
-    offer?: import("@/lib/content/live").OfferFields | null
-    avdeling?: string | null
-    bgColor?: string | null; textColor?: string | null
-  }
-  const audience: Audience = body.audience === "kunde" || body.audience === "intern" ? body.audience : audienceForType(item.type as ContentType)
-  const targetRows = targets ?? []
-  let targetMode: TargetMode = "all"
-  if (targetRows.some((t) => t.store_id)) targetMode = "stores"
-  else if (targetRows.some((t) => t.tag_id)) targetMode = "tags"
-  else if (targetRows.some((t) => t.target_all)) targetMode = "all"
-
-  const initial: ContentInitial = {
-    id: item.id,
-    title: item.title,
-    type: item.type as ContentType,
-    bodyHtml: body.html ?? "",
-    imageUrl: body.imageUrl ?? null,
-    imageUrls: body.imageUrls?.length ? body.imageUrls : body.imageUrl ? [body.imageUrl] : [],
-    targetMode,
-    storeIds: targetRows.filter((t) => t.store_id).map((t) => t.store_id as string),
-    tagIds: targetRows.filter((t) => t.tag_id).map((t) => t.tag_id as string),
-    validFrom: item.valid_from ? item.valid_from.slice(0, 10) : null,
-    validTo: item.valid_to ? item.valid_to.slice(0, 10) : null,
-    imageMode: body.imageMode ?? "bakgrunn",
-    offer: body.offer ?? null,
-    avdeling: body.avdeling ?? "felles",
-    contactPerson: body.contactPerson ?? null,
-    applyUrl: body.applyUrl ?? null,
-    statsValue: body.statsValue ?? null,
-    statsChange: body.statsChange ?? null,
-    bgColor: body.bgColor ?? null,
-    textColor: body.textColor ?? null,
-  }
-
-  return <ContentForm stores={storeOptions} tags={(tags ?? []) as TagOption[]} initial={initial} audience={audience} />
+  return <EditContentView id={id} />
 }

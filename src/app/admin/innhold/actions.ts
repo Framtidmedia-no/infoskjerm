@@ -45,6 +45,8 @@ export interface ContentInput {
   /** Text cards: optional background + text colour. */
   bgColor?: string | null
   textColor?: string | null
+  /** Customer-club invite (slide): editable headline + subtext. */
+  klubb?: { headline: string; subtext: string } | null
 }
 
 export interface SaveResult {
@@ -75,6 +77,7 @@ function buildBody(input: ContentInput): Json {
     ...((input.type === "slide" || input.type === "competition") ? { avdeling: input.avdeling || "felles" } : {}),
     ...(input.bgColor ? { bgColor: input.bgColor } : {}),
     ...(input.textColor ? { textColor: input.textColor } : {}),
+    ...(input.type === "slide" && input.klubb ? { klubb: input.klubb } : {}),
   })) as Json
 }
 

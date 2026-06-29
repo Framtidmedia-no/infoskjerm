@@ -72,6 +72,7 @@ export interface ContentInitial {
   avdeling?: string | null
   bgColor?: string | null
   textColor?: string | null
+  klubb?: { headline: string; subtext: string } | null
 }
 
 const EMPTY_OFFER: OfferFields = {
@@ -138,8 +139,9 @@ export function ContentForm({ stores, tags, initial, audience = "intern" }: { st
   const [contactPerson, setContactPerson] = useState(initial?.contactPerson ?? "")
   const [applyUrl, setApplyUrl] = useState(initial?.applyUrl ?? "")
   const [imageMode, setImageMode] = useState<ImageMode>(initial?.imageMode ?? "bakgrunn")
-  const [offerMode, setOfferMode] = useState<"struktur" | "plakat">(initial?.offer ? "struktur" : "plakat")
+  const [offerMode, setOfferMode] = useState<"struktur" | "plakat" | "klubb">(initial?.offer ? "struktur" : initial?.klubb ? "klubb" : "plakat")
   const [offer, setOffer] = useState<OfferFields>(initial?.offer ?? EMPTY_OFFER)
+  const [klubb, setKlubb] = useState(initial?.klubb ?? { headline: "Bli medlem – det er gratis", subtext: "Medlemspriser, bonus og ukens beste tilbud." })
   const [avdeling, setAvdeling] = useState(initial?.avdeling ?? "felles")
   const [bgColor, setBgColor] = useState(initial?.bgColor ?? "")
   const [textColor, setTextColor] = useState(initial?.textColor ?? "")
@@ -149,7 +151,13 @@ export function ContentForm({ stores, tags, initial, audience = "intern" }: { st
   const [confirmNoEndDate, setConfirmNoEndDate] = useState(false)
 
   const isOfferStruktur = type === "slide" && offerMode === "struktur"
+  const isKlubb = type === "slide" && offerMode === "klubb"
   const usesColors = COLOR_TYPES.includes(type)
+  const OFFER_MODES: { k: "struktur" | "plakat" | "klubb"; label: string }[] = [
+    { k: "struktur", label: "Bygg tilbudskort" },
+    { k: "plakat", label: "Last opp plakat / PDF" },
+    ...(audience === "kunde" ? [{ k: "klubb" as const, label: "Kundeklubb-QR" }] : []),
+  ]
 
   // How many stores the current targeting reaches (live feedback).
   const reach = (() => {
@@ -244,10 +252,10 @@ export function ContentForm({ stores, tags, initial, audience = "intern" }: { st
     window.location.reload()
   }
 
-  const usesImage = IMAGE_TYPES.includes(type)
-  const usesBody = type !== "ticker" && !isOfferStruktur
+  const usesImage = IMAGE_TYPES.includes(type) && !isKlubb
+  const usesBody = type !== "ticker" && !isOfferStruktur && !isKlubb
   // Tilbud/annonser må alltid ha en gyldig periode (fra + til).
-  const periodRequired = type === "slide"
+  const periodRequired = type === "slide" && !isKlubb
   const isPdfUrl = (imageUrls[0] ?? "").toLowerCase().split("?")[0].endsWith(".pdf")
   const MAX_IMAGES = 4
   const isMulti = imageUrls.length >= 2
@@ -278,6 +286,8 @@ export function ContentForm({ stores, tags, initial, audience = "intern" }: { st
   function handleSave(publish: boolean) {
     if (isOfferStruktur) {
       if (!offer.varenavn.trim()) { toast.error("Skriv et varenavn"); return }
+    } else if (isKlubb) {
+      if (!klubb.headline.trim()) { toast.error("Skriv en overskrift"); return }
     } else if (!title.trim()) { toast.error("Skriv en tittel først"); return }
     if (targetMode === "stores" && storeIds.length === 0) { toast.error("Velg minst én butikk"); return }
     if (targetMode === "tags" && tagIds.length === 0) { toast.error("Velg minst én tagg"); return }
@@ -295,10 +305,11 @@ export function ContentForm({ stores, tags, initial, audience = "intern" }: { st
     setSaving(true)
     const res = await saveContent(
       {
-        title: isOfferStruktur ? offer.varenavn.trim() : title,
+        title: isKlubb ? klubb.headline.trim() : isOfferStruktur ? offer.varenavn.trim() : title,
         type, audience, bodyHtml: usesBody ? bodyHtml : "", imageUrl: usesImage ? imageUrls[0] ?? null : null,
         imageUrls: usesImage ? imageUrls : [],
         offer: isOfferStruktur ? offer : null,
+        klubb: isKlubb ? klubb : null,
         avdeling: (type === "slide" || type === "competition") ? avdeling : null,
         // 2+ images always render full-page (side by side), so force plakat-style.
         imageMode: usesImage ? (type === "slide" || isMulti ? "plakat" : imageMode) : "bakgrunn",
@@ -324,7 +335,8 @@ export function ContentForm({ stores, tags, initial, audience = "intern" }: { st
   // Live preview payload — rendered by the real screen components in an iframe.
   const previewData = {
     type, audience,
-    title: isOfferStruktur ? offer.varenavn : title,
+    title: isKlubb ? klubb.headline : isOfferStruktur ? offer.varenavn : title,
+    klubb: isKlubb ? klubb : null,
     bodyHtml: usesBody ? bodyHtml : "",
     imageUrl: imageUrls[0] ?? null,
     imageUrls,
@@ -365,7 +377,7 @@ export function ContentForm({ stores, tags, initial, audience = "intern" }: { st
               <button type="button" onClick={discardDraft} className="font-semibold hover:underline">Forkast</button>
             </div>
           )}
-          {!isOfferStruktur && (
+          {!isOfferStruktur && !isKlubb && (
             <div>
               <input
                 type="text"
@@ -386,9 +398,9 @@ export function ContentForm({ stores, tags, initial, audience = "intern" }: { st
           {/* Offer authoring mode: structured price card vs uploaded poster */}
           {type === "slide" && (
             <div className="flex gap-1.5">
-              {([["struktur", "Bygg tilbudskort"], ["plakat", "Last opp plakat / PDF"]] as const).map(([mode, label]) => (
-                <button key={mode} type="button" onClick={() => setOfferMode(mode)}
-                  className={`flex-1 px-3 py-2 rounded-lg text-xs font-medium border transition-all ${offerMode === mode ? "border-zinc-900 bg-zinc-900 text-white" : "border-zinc-200 text-zinc-600 hover:border-zinc-300"}`}>
+              {OFFER_MODES.map(({ k, label }) => (
+                <button key={k} type="button" onClick={() => setOfferMode(k)}
+                  className={`flex-1 px-3 py-2 rounded-lg text-xs font-medium border transition-all ${offerMode === k ? "border-zinc-900 bg-zinc-900 text-white" : "border-zinc-200 text-zinc-600 hover:border-zinc-300"}`}>
                   {label}
                 </button>
               ))}
@@ -448,6 +460,24 @@ export function ContentForm({ stores, tags, initial, audience = "intern" }: { st
                 </label>
               </div>
               <p className="text-[10px] text-zinc-400">Bildet du laster opp under blir produktbildet på kortet.</p>
+            </div>
+          )}
+
+          {isKlubb && (
+            <div className="space-y-4 rounded-xl border border-zinc-200 bg-white p-4">
+              <p className="text-[11px] text-zinc-500 bg-emerald-50 border border-emerald-100 rounded-lg px-3 py-2">
+                Kundeklubb-kort med <strong>QR-kode</strong> som tar kunden til butikkens egen påmeldingsside. QR-koden lages automatisk per butikk — du velger kun tekst og hvilke skjermer den vises på.
+              </p>
+              <div>
+                <label className="block text-[10px] text-zinc-400 mb-1">Overskrift *</label>
+                <input value={klubb.headline} onChange={(e) => setKlubb((p) => ({ ...p, headline: e.target.value }))} placeholder="Bli medlem – det er gratis"
+                  className="w-full text-lg font-bold border border-zinc-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-zinc-300" />
+              </div>
+              <div>
+                <label className="block text-[10px] text-zinc-400 mb-1">Undertekst</label>
+                <input value={klubb.subtext} onChange={(e) => setKlubb((p) => ({ ...p, subtext: e.target.value }))} placeholder="Medlemspriser, bonus og ukens beste tilbud."
+                  className="w-full text-sm border border-zinc-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-zinc-300" />
+              </div>
             </div>
           )}
 

@@ -21,7 +21,7 @@ export default async function CustomerContentListPage() {
         }
       />
       <div className="flex-1 p-6 max-w-6xl">
-        <ContentListClient items={rows} stores={stores} tags={tags} newHref="/admin/kundeinnhold/ny" />
+        <ContentListClient items={rows} stores={stores} tags={tags} newHref="/admin/kundeinnhold/ny" editBase="/admin/kundeinnhold" />
       </div>
     </div>
   )

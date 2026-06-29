@@ -1,5 +1,6 @@
 import QRCode from "qrcode"
 import { htmlToBlocks, type LiveItem } from "@/lib/content/live"
+import { getBaseUrl } from "@/lib/base-url"
 import { TilbudRotator } from "@/app/widget/tilbud/tilbud-rotator"
 import { NewsRotator } from "@/app/widget/nyheter/news-rotator"
 import type { ChainBrand } from "@/app/widget/tilbud/offer-card"
@@ -34,6 +35,7 @@ interface PreviewData {
   contactPerson?: string | null
   statsValue?: string | null
   statsChange?: string | null
+  klubb?: { headline: string; subtext: string } | null
   chain?: { name: string; logoUrl: string | null; color: string; brandFg: string | null } | null
 }
 
@@ -76,13 +78,20 @@ export default async function PreviewWidgetPage({ searchParams }: { searchParams
     avdeling: data.avdeling || "felles",
     bgColor: data.bgColor ?? null,
     textColor: data.textColor ?? null,
+    klubb: data.klubb && data.klubb.headline ? data.klubb : null,
   }
 
-  // QR for competitions/jobs with a link.
+  // QR for competitions/jobs (participation link) + kundeklubb (sample sign-up).
   const qr: Record<string, string> = {}
   if ((type === "competition" || type === "job") && data.applyUrl?.trim()) {
     try {
       qr.preview = await QRCode.toDataURL(normalizeUrl(data.applyUrl), { margin: 1, width: 360, color: { dark: "#0a0a0a", light: "#ffffff" } })
+    } catch { /* best-effort */ }
+  }
+  if (item.klubb) {
+    try {
+      const base = await getBaseUrl()
+      qr.preview = await QRCode.toDataURL(`${base}/klubb/forhandsvisning`, { margin: 1, width: 700, color: { dark: "#0a0a0a", light: "#ffffff" } })
     } catch { /* best-effort */ }
   }
 

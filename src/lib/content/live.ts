@@ -65,6 +65,8 @@ export interface LiveItem {
   bgColor: string | null
   /** Optional card text colour. null = default light-on-dark. */
   textColor: string | null
+  /** Customer-club invite (editable headline/subtext; QR auto per store). */
+  klubb: { headline: string; subtext: string } | null
 }
 
 interface Body {
@@ -81,6 +83,7 @@ interface Body {
   bgColor?: string | null
   textColor?: string | null
   pages?: string[]
+  klubb?: { headline: string; subtext: string } | null
 }
 
 interface Target {
@@ -230,6 +233,7 @@ export async function fetchLiveContent(storeId: string | null, types: string[], 
       avdeling: body.avdeling || "felles",
       bgColor: body.bgColor ?? null,
       textColor: body.textColor ?? null,
+      klubb: body.klubb && body.klubb.headline ? body.klubb : null,
     }
   })
 }

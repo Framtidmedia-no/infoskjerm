@@ -5,6 +5,7 @@ import type { LiveItem, Block } from "@/lib/content/live"
 import { OfferCard, type ChainBrand } from "./offer-card"
 import { PdfFlyer } from "./pdf-flyer"
 import { CompetitionCard } from "@/app/widget/_shared/competition-card"
+import { KundeklubbCard } from "@/app/widget/_shared/kundeklubb-card"
 
 /**
  * Full-screen offer presentation: a left side panel with the heading, period and
@@ -174,6 +175,11 @@ export function TilbudRotator({ items, ticker, storeName, chain = null, qr = {} 
       {!item ? (
         <div style={{ ...inset, display: "flex", alignItems: "center", justifyContent: "center", color: "rgba(255,255,255,.4)", fontSize: 34 }}>
           Ingen aktive tilbud
+        </div>
+      ) : item.klubb ? (
+        // Customer-club invite → full-bleed QR card (per-store sign-up link).
+        <div key={item.id} style={{ ...inset, animation: "grFade .6s ease-out" }}>
+          <KundeklubbCard headline={item.klubb.headline} subtext={item.klubb.subtext} qrUrl={qr[item.id] ?? ""} accent={chain?.color || "#16a34a"} logoUrl={chain?.logoUrl ?? null} chainName={chain?.name ?? null} />
         </div>
       ) : item.type === "competition" ? (
         // Customer competition → full-bleed flashy portrait card with QR.

@@ -63,7 +63,7 @@ const PAGE_SIZE = 12
 
 const selectCls = "text-xs bg-white border border-zinc-200 rounded-lg px-2.5 py-2 text-zinc-600 focus:outline-none focus:ring-1 focus:ring-zinc-300"
 
-export function ContentListClient({ items, stores, tags, newHref = "/admin/innhold/ny" }: { items: ContentRow[]; stores: Option[]; tags: Option[]; newHref?: string }) {
+export function ContentListClient({ items, stores, tags, newHref = "/admin/innhold/ny", editBase = "/admin/innhold" }: { items: ContentRow[]; stores: Option[]; tags: Option[]; newHref?: string; editBase?: string }) {
   const router = useRouter()
   const [busyId, setBusyId] = useState<string | null>(null)
   const [menuId, setMenuId] = useState<string | null>(null)
@@ -239,7 +239,7 @@ export function ContentListClient({ items, stores, tags, newHref = "/admin/innho
                 >
                   <Check className="w-4 h-4" />
                 </button>
-                <Link href={`/admin/innhold/${item.id}`} className="block relative aspect-[16/9] overflow-hidden">
+                <Link href={`${editBase}/${item.id}`} className="block relative aspect-[16/9] overflow-hidden">
                   {item.imageUrl && (item.imageUrl).toLowerCase().split("?")[0].endsWith(".pdf") ? (
                     <div className="w-full h-full bg-zinc-900 flex flex-col items-center justify-center gap-1.5 text-white/70">
                       <FileText className="w-9 h-9" />
@@ -260,7 +260,7 @@ export function ContentListClient({ items, stores, tags, newHref = "/admin/innho
                 </Link>
 
                 <div className="p-3.5">
-                  <Link href={`/admin/innhold/${item.id}`}>
+                  <Link href={`${editBase}/${item.id}`}>
                     <h3 className="text-sm font-semibold text-zinc-900 line-clamp-2 leading-snug hover:text-zinc-600">{item.title || "Uten tittel"}</h3>
                   </Link>
                   <div className="flex items-center gap-3 mt-2 text-[11px] text-zinc-400">
@@ -277,7 +277,7 @@ export function ContentListClient({ items, stores, tags, newHref = "/admin/innho
                     <>
                       <div className="fixed inset-0 z-10" onClick={closeMenu} />
                       <div className="absolute right-0 bottom-9 z-20 w-44 rounded-xl border border-zinc-200 bg-white shadow-lg py-1">
-                        <Link href={`/admin/innhold/${item.id}`} className="flex items-center gap-2 px-3 py-2 text-xs text-zinc-700 hover:bg-zinc-50"><Pencil className="w-3.5 h-3.5" /> Rediger</Link>
+                        <Link href={`${editBase}/${item.id}`} className="flex items-center gap-2 px-3 py-2 text-xs text-zinc-700 hover:bg-zinc-50"><Pencil className="w-3.5 h-3.5" /> Rediger</Link>
                         <button onClick={() => handleDuplicate(item.id)} className="w-full flex items-center gap-2 px-3 py-2 text-xs text-zinc-700 hover:bg-zinc-50"><Copy className="w-3.5 h-3.5" /> Dupliser</button>
                         <button onClick={() => handleDuplicate(item.id, 7)} className="w-full flex items-center gap-2 px-3 py-2 text-xs text-zinc-700 hover:bg-zinc-50"><CalendarPlus className="w-3.5 h-3.5" /> Kopier til neste uke</button>
                         {confirmId === item.id ? (
