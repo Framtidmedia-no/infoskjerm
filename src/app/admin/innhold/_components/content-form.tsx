@@ -127,7 +127,9 @@ export function ContentForm({ stores, tags, initial, audience = "intern" }: { st
       ...prev,
       varenavn: p.varenavn ?? prev.varenavn,
       vareinfo: p.vareinfo ?? prev.vareinfo,
+      // Spar-prisen settes både som pris og førpris — senk «Pris» til tilbudsprisen.
       pris: p.pris ?? prev.pris,
+      forpris: p.pris ?? prev.forpris,
       enhetspris: p.enhetspris ?? prev.enhetspris,
       pant: p.pant || prev.pant,
     }))

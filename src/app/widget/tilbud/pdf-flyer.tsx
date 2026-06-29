@@ -3,15 +3,19 @@
 import { useEffect, useState } from "react"
 
 /**
- * Renders the FRONT PAGE of a PDF flyer (kundeavis) to an image in the browser
- * with pdf.js, full-bleed, with a heading above it (e.g. "Kundeavis uke 27").
- * No PDF toolbar, no multi-page rotation — just the cover.
+ * Renders the first pages of a PDF flyer (kundeavis) to images in the browser
+ * with pdf.js, under a bold heading (e.g. "Kundeavis uke 27"), and rotates
+ * through them. Flyer pages are tall, so they fill a portrait screen. No PDF
+ * toolbar — clean rasterised pages.
  */
 
 const GREEN = "#16a34a"
+const MAX_PAGES = 6
+const PAGE_SECONDS = 7
 
 export function PdfFlyer({ url, title }: { url: string; title?: string }) {
-  const [cover, setCover] = useState<string | null>(null)
+  const [pages, setPages] = useState<string[]>([])
+  const [i, setI] = useState(0)
 
   useEffect(() => {
     let cancelled = false
@@ -19,36 +23,56 @@ export function PdfFlyer({ url, title }: { url: string; title?: string }) {
       const pdfjs = await import("pdfjs-dist")
       pdfjs.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.mjs"
       const doc = await pdfjs.getDocument({ url }).promise
-      const page = await doc.getPage(1)
-      const viewport = page.getViewport({ scale: 2 })
-      const canvas = document.createElement("canvas")
-      canvas.width = Math.ceil(viewport.width)
-      canvas.height = Math.ceil(viewport.height)
-      const ctx = canvas.getContext("2d")
-      if (!ctx) return
-      await page.render({ canvasContext: ctx, viewport }).promise
-      if (!cancelled) setCover(canvas.toDataURL("image/jpeg", 0.85))
+      const n = Math.min(MAX_PAGES, doc.numPages)
+      const out: string[] = []
+      for (let p = 1; p <= n && !cancelled; p++) {
+        const page = await doc.getPage(p)
+        const viewport = page.getViewport({ scale: 1.7 })
+        const canvas = document.createElement("canvas")
+        canvas.width = Math.ceil(viewport.width)
+        canvas.height = Math.ceil(viewport.height)
+        const ctx = canvas.getContext("2d")
+        if (!ctx) continue
+        await page.render({ canvasContext: ctx, viewport }).promise
+        out.push(canvas.toDataURL("image/jpeg", 0.82))
+        if (!cancelled) setPages([...out])
+      }
     })().catch(() => {})
     return () => {
       cancelled = true
     }
   }, [url])
 
+  useEffect(() => {
+    if (pages.length <= 1) return
+    const id = setTimeout(() => setI((v) => (v + 1) % pages.length), PAGE_SECONDS * 1000)
+    return () => clearTimeout(id)
+  }, [i, pages])
+
+  const page = pages.length ? pages[i % pages.length] : null
+
   return (
-    <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", background: "#fff", overflow: "hidden" }}>
+    <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", background: "#fff", overflow: "hidden", fontFamily: "Arial, Helvetica, sans-serif" }}>
       {title && (
-        <div style={{ flex: "0 0 auto", background: GREEN, color: "#fff", textAlign: "center", padding: "2.4vmin", fontWeight: 900, fontSize: "5vmin", letterSpacing: "0.3vmin", textTransform: "uppercase" }}>
+        <div style={{ flex: "0 0 auto", background: GREEN, color: "#fff", textAlign: "center", padding: "3vmin 4vmin", fontWeight: 900, fontSize: "6vmin", letterSpacing: "0.3vmin", textTransform: "uppercase", lineHeight: 1 }}>
           {title}
         </div>
       )}
-      <div style={{ flex: "1 1 auto", minHeight: 0, position: "relative" }}>
-        {cover ? (
+      <div style={{ flex: "1 1 auto", minHeight: 0, position: "relative", padding: "2.5vmin" }}>
+        {page ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={cover} alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "contain", animation: "grFade .5s ease-out" }} />
+          <img key={i} src={page} alt="" style={{ position: "absolute", inset: "2.5vmin", width: "calc(100% - 5vmin)", height: "calc(100% - 5vmin)", objectFit: "contain", animation: "grFade .5s ease-out" }} />
         ) : (
           <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", color: "#9aa0a6", fontSize: "4vmin" }}>Laster kundeavis…</div>
         )}
       </div>
+      {pages.length > 1 && (
+        <div style={{ flex: "0 0 auto", display: "flex", gap: "1.6vmin", justifyContent: "center", padding: "0 0 2.5vmin" }}>
+          {pages.map((_, p) => (
+            <span key={p} style={{ width: "2vmin", height: "2vmin", borderRadius: "50%", background: p === i % pages.length ? GREEN : "#d1d5db" }} />
+          ))}
+        </div>
+      )}
     </div>
   )
 }
