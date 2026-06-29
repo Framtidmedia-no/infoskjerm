@@ -4,12 +4,8 @@
   "buildCommand": "next build",
   "crons": [
     {
-      "path": "/api/cron/promote-scheduled",
-      "schedule": "* * * * *"
-    },
-    {
-      "path": "/api/cron/screen-health",
-      "schedule": "*/5 * * * *"
+      "path": "/api/cron/sync-kpi",
+      "schedule": "0 12,13 * * *"
     }
   ]
 }

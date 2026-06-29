@@ -672,6 +672,106 @@ export type Database = {
           },
         ]
       }
+      store_kpi_week: {
+        Row: {
+          ar: number
+          brutto_kr: number | null
+          budsjett_brutto_kr: number | null
+          budsjett_lonn: number | null
+          budsjett_omsetning: number | null
+          budsjett_svinn_gras: number | null
+          importert_tidspunkt: string | null
+          lonn_kr: number | null
+          netto_omsetning: number | null
+          netto_omsetning_fjoraaret: number | null
+          store_id: string
+          svinn_total: number | null
+          svinn_total_fjoraaret: number | null
+          synced_at: string | null
+          uke: number
+        }
+        Insert: {
+          ar: number
+          brutto_kr?: number | null
+          budsjett_brutto_kr?: number | null
+          budsjett_lonn?: number | null
+          budsjett_omsetning?: number | null
+          budsjett_svinn_gras?: number | null
+          importert_tidspunkt?: string | null
+          lonn_kr?: number | null
+          netto_omsetning?: number | null
+          netto_omsetning_fjoraaret?: number | null
+          store_id: string
+          svinn_total?: number | null
+          svinn_total_fjoraaret?: number | null
+          synced_at?: string | null
+          uke: number
+        }
+        Update: {
+          ar?: number
+          brutto_kr?: number | null
+          budsjett_brutto_kr?: number | null
+          budsjett_lonn?: number | null
+          budsjett_omsetning?: number | null
+          budsjett_svinn_gras?: number | null
+          importert_tidspunkt?: string | null
+          lonn_kr?: number | null
+          netto_omsetning?: number | null
+          netto_omsetning_fjoraaret?: number | null
+          store_id?: string
+          svinn_total?: number | null
+          svinn_total_fjoraaret?: number | null
+          synced_at?: string | null
+          uke?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "store_kpi_week_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      store_svinn_kommentert: {
+        Row: {
+          ikke_kommentert: number | null
+          kommentert: number | null
+          kommentert_prosent: number | null
+          store_id: string
+          svinn_prosent: number | null
+          synced_at: string | null
+          total_responses: number | null
+        }
+        Insert: {
+          ikke_kommentert?: number | null
+          kommentert?: number | null
+          kommentert_prosent?: number | null
+          store_id: string
+          svinn_prosent?: number | null
+          synced_at?: string | null
+          total_responses?: number | null
+        }
+        Update: {
+          ikke_kommentert?: number | null
+          kommentert?: number | null
+          kommentert_prosent?: number | null
+          store_id?: string
+          svinn_prosent?: number | null
+          synced_at?: string | null
+          total_responses?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "store_svinn_kommentert_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: true
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       store_tags: {
         Row: {
           store_id: string
@@ -995,6 +1095,15 @@ export type Database = {
         Args: { p_command: string; p_token: string }
         Returns: undefined
       }
+      screen_content: {
+        Args: { p_store_id: string }
+        Returns: {
+          body: Json
+          id: string
+          title: string
+          type: string
+        }[]
+      }
       screen_poll: {
         Args: { p_info?: string; p_token: string }
         Returns: {
@@ -1014,7 +1123,15 @@ export type Database = {
         | "archived"
         | "live"
         | "scheduled"
-      content_type: "news" | "competition" | "stats" | "weather" | "slide" | "job" | "birthday" | "ticker"
+      content_type:
+        | "news"
+        | "competition"
+        | "stats"
+        | "weather"
+        | "slide"
+        | "job"
+        | "birthday"
+        | "ticker"
       screen_status: "active" | "inactive" | "maintenance"
       user_role:
         | "super_admin"
@@ -1162,7 +1279,16 @@ export const Constants = {
         "live",
         "scheduled",
       ],
-      content_type: ["news", "competition", "stats", "weather", "slide", "job", "birthday", "ticker"],
+      content_type: [
+        "news",
+        "competition",
+        "stats",
+        "weather",
+        "slide",
+        "job",
+        "birthday",
+        "ticker",
+      ],
       screen_status: ["active", "inactive", "maintenance"],
       user_role: [
         "super_admin",
