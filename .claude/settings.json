@@ -90,7 +90,8 @@
       "Bash(node --input-type=module -e \"import\\('./scripts/xibo/lib.mjs'\\).then\\(m=>console.log\\('eksporterer:', Object.keys\\(m\\).filter\\(k=>/provision|schedule|findOrCreate|findDisplay/i.test\\(k\\)\\).join\\(', '\\)\\)\\)\")",
       "Bash(cat)",
       "Bash(node sptest.mjs)",
-      "Bash(curl -s -I \"https://publ.joker.no/digital-avis-uke-27\")"
+      "Bash(curl -s -I \"https://publ.joker.no/digital-avis-uke-27\")",
+      "Bash(python3 -c \"import sys,json;print\\(len\\(json.load\\(sys.stdin\\)\\),'targets'\\)\")"
     ],
     "additionalDirectories": [
       "/Users/frlund3/Documents/GitHub/infoskjerm/src/app/preview/[id]",

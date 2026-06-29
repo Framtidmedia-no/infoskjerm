@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, type CSSProperties } from "react"
 import type { LiveItem, Block } from "@/lib/content/live"
 import { OfferCard, type ChainBrand } from "./offer-card"
+import { PdfFlyer } from "./pdf-flyer"
 
 /**
  * Full-screen offer presentation: a left side panel with the heading, period and
@@ -161,7 +162,9 @@ export function TilbudRotator({ items, ticker, storeName, chain = null }: { item
   const [i, setI] = useState(0)
   useEffect(() => {
     if (items.length <= 1) return
-    const id = setTimeout(() => setI((v) => (v + 1) % items.length), SECONDS * 1000)
+    // PDF flyers (kundeavis) get longer so several pages show before advancing.
+    const secs = items[i % items.length]?.isPdf ? 45 : SECONDS
+    const id = setTimeout(() => setI((v) => (v + 1) % items.length), secs * 1000)
     return () => clearTimeout(id)
   }, [i, items])
 
@@ -197,6 +200,11 @@ export function TilbudRotator({ items, ticker, storeName, chain = null }: { item
             src={`${item.imageUrl}#page=1&view=Fit&toolbar=0&navpanes=0&scrollbar=0`}
             style={{ width: "100%", height: "100%", border: "none", display: "block" }}
           />
+        </div>
+      ) : item.isPdf && item.imageUrl ? (
+        // PDF flyer (kundeavis) → full-bleed page-by-page rotation.
+        <div key={item.id} style={{ ...inset, animation: "grFade .6s ease-out" }}>
+          <PdfFlyer url={item.imageUrl} />
         </div>
       ) : (
         // Uploaded poster (image) → side panel + media.

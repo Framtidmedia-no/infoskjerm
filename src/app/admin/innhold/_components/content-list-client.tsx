@@ -7,7 +7,7 @@ import { deleteContent, duplicateContent } from "../actions"
 import { toast } from "sonner"
 import {
   Newspaper, Trophy, ImageIcon, Briefcase, PartyPopper, BarChart3, Megaphone, Globe, Store as StoreIcon, Tag,
-  Copy, Trash2, Pencil, MoreVertical, Calendar, Search, ChevronLeft, ChevronRight,
+  Copy, Trash2, Pencil, MoreVertical, Calendar, Search, ChevronLeft, ChevronRight, FileText,
 } from "lucide-react"
 
 export interface ContentRow {
@@ -179,7 +179,12 @@ export function ContentListClient({ items, stores, tags, newHref = "/admin/innho
             return (
               <div key={item.id} className={`group relative rounded-2xl bg-white border border-zinc-200 overflow-hidden hover:shadow-lg hover:border-zinc-300 transition-all ${busyId === item.id ? "opacity-50" : ""}`}>
                 <Link href={`/admin/innhold/${item.id}`} className="block relative aspect-[16/9] overflow-hidden">
-                  {item.imageUrl ? (
+                  {item.imageUrl && (item.imageUrl).toLowerCase().split("?")[0].endsWith(".pdf") ? (
+                    <div className="w-full h-full bg-zinc-900 flex flex-col items-center justify-center gap-1.5 text-white/70">
+                      <FileText className="w-9 h-9" />
+                      <span className="text-[11px] font-semibold tracking-wide">PDF</span>
+                    </div>
+                  ) : item.imageUrl ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img src={item.imageUrl} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
                   ) : (
