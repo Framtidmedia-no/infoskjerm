@@ -173,18 +173,25 @@ function Gallery({ urls }: { urls: string[] }) {
   )
 }
 
-/** Multi-image post: title + text on top, images side by side filling the card. */
-function GalleryCard({ item }: { item: LiveItem }) {
+/**
+ * Text on the left, image(s) on the right. Used for multi-image posts and for
+ * single-image "Lite bilde" mode — so the text stays readable next to the image
+ * instead of disappearing (poster) or sitting on a dimmed background.
+ */
+function SplitCard({ item }: { item: LiveItem }) {
+  const multi = item.imageUrls.length >= 2
   return (
-    <div style={{ position: "absolute", inset: 0, padding: 50, boxSizing: "border-box", display: "flex", flexDirection: "column", gap: 16 }}>
-      <div style={{ flex: "0 0 auto", display: "flex", flexDirection: "column" }}>
+    <div style={{ position: "absolute", inset: 0, padding: 60, boxSizing: "border-box", display: "flex", gap: 44, alignItems: "stretch" }}>
+      <div style={{ flex: multi ? "0 0 40%" : "1 1 auto", minWidth: 0, display: "flex", flexDirection: "column" }}>
         <Kicker>{KICKER[item.type] ?? "GANGE-ROLV"}</Kicker>
-        <h1 style={{ fontSize: 56, fontWeight: 900, margin: "0 0 10px", lineHeight: 1.04 }}>{item.title}</h1>
+        <h1 style={{ fontSize: 60, fontWeight: 900, margin: "0 0 12px", lineHeight: 1.04 }}>{item.title}</h1>
         <Byline item={item} />
         <PeriodChip item={item} />
+        <ScrollText blocks={item.blocks} style={{ flex: "1 1 auto" }} />
       </div>
-      {item.blocks.length > 0 && <ScrollText blocks={item.blocks} style={{ flex: "0 1 auto", maxHeight: "34%" }} />}
-      <Gallery urls={item.imageUrls} />
+      <div style={{ flex: multi ? "1 1 auto" : "0 0 38%", minWidth: 0, display: "flex" }}>
+        <Gallery urls={item.imageUrls} />
+      </div>
     </div>
   )
 }
@@ -270,8 +277,9 @@ function StatsCard({ item }: { item: LiveItem }) {
 function Card({ item, qrUrl }: { item: LiveItem; qrUrl?: string }) {
   if (item.type === "stats") return <StatsCard item={item} />
   if (item.type === "job") return <JobCard item={item} qrUrl={qrUrl} />
-  // 2+ images → full-page gallery, side by side (never as a dimmed background).
-  if (item.imageUrls.length >= 2) return <GalleryCard item={item} />
+  // 2+ images, or single image in "Lite bilde" mode → text left, image(s) right.
+  if (item.imageUrls.length >= 2) return <SplitCard item={item} />
+  if (item.imageUrl && item.imageMode === "liten" && !item.isPdf) return <SplitCard item={item} />
   // Posters & PDFs always show full (never as a cropped background).
   if (item.imageUrl && (item.imageMode === "plakat" || item.isPdf)) return <PosterCard item={item} />
   return <StandardCard item={item} />

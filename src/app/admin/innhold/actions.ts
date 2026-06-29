@@ -11,7 +11,7 @@ const AUTHOR_ROLES = ["super_admin", "chain_manager", "area_manager", "store_man
 
 export type ContentType = "news" | "competition" | "stats" | "weather" | "slide" | "job" | "birthday" | "ticker"
 export type TargetMode = "all" | "stores" | "tags"
-export type ImageMode = "plakat" | "bakgrunn"
+export type ImageMode = "plakat" | "bakgrunn" | "liten"
 
 export interface ContentInput {
   title: string

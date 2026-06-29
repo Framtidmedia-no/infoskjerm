@@ -7,7 +7,7 @@ import { createAdminClient } from "@/lib/supabase/server"
  * `content_items`, and the screens read it live here.
  */
 
-export type ImageMode = "plakat" | "bakgrunn"
+export type ImageMode = "plakat" | "bakgrunn" | "liten"
 
 /** A text block parsed from the authored rich text — rendered as React (no raw HTML). */
 export interface Block {
@@ -159,7 +159,7 @@ export async function fetchLiveContent(storeId: string | null, types: string[]):
       blocks: htmlToBlocks(body.html ?? ""),
       imageUrl: firstImage,
       imageUrls,
-      imageMode: body.imageMode === "plakat" ? "plakat" : "bakgrunn",
+      imageMode: body.imageMode === "plakat" ? "plakat" : body.imageMode === "liten" ? "liten" : "bakgrunn",
       isPdf: (firstImage ?? "").toLowerCase().split("?")[0].endsWith(".pdf"),
       validFrom: it.valid_from,
       validTo: it.valid_to,

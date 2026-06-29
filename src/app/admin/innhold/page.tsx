@@ -87,12 +87,6 @@ export default async function ContentListPage() {
     }
   })
 
-  // Dynamisk modell: alle publiserte saker vises i ÉN base-mal (campaign 8).
-  // «Se på skjerm» forhåndsviser malen med hele rulleringen, ikke per-sak-layout.
-  const xiboBaseUrl = process.env.XIBO_API_URL ?? ""
-  const baseCampaignId = process.env.XIBO_BASE_CAMPAIGN_ID ?? "8"
-  const previewUrl = xiboBaseUrl ? `${xiboBaseUrl}/campaign/${baseCampaignId}/preview` : null
-
   return (
     <div className="flex flex-col flex-1">
       <Topbar
@@ -105,7 +99,7 @@ export default async function ContentListPage() {
         }
       />
       <div className="flex-1 p-6 max-w-6xl">
-        <ContentListClient items={rows} stores={stores ?? []} tags={tags ?? []} previewUrl={previewUrl} />
+        <ContentListClient items={rows} stores={stores ?? []} tags={tags ?? []} />
       </div>
     </div>
   )

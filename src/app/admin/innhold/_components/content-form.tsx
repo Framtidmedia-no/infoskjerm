@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/dialog"
 import {
   Newspaper, Trophy, ImageIcon, Briefcase, PartyPopper, Megaphone, FileText,
-  Store as StoreIcon, Tag, Globe, X, Calendar, Save, Send, ChevronLeft, Image as ImageLucide, Maximize2, CalendarOff,
+  Store as StoreIcon, Tag, Globe, X, Calendar, Save, Send, ChevronLeft, Image as ImageLucide, Maximize2, PanelRight, CalendarOff,
 } from "lucide-react"
 import Link from "next/link"
 
@@ -180,7 +180,7 @@ export function ContentForm({ stores, tags, initial }: { stores: StoreOption[]; 
                             </div>
                           ) : (
                             // eslint-disable-next-line @next/next/no-img-element
-                            <img src={url} alt="" className={`w-full h-36 ${isMulti || imageMode === "plakat" ? "object-contain bg-zinc-900" : "object-cover"}`} />
+                            <img src={url} alt="" className={`w-full h-36 ${isMulti || imageMode === "plakat" || imageMode === "liten" ? "object-contain bg-zinc-900" : "object-cover"}`} />
                           )}
                           <button onClick={() => removeImage(url)} className="absolute top-2 right-2 w-7 h-7 rounded-full bg-black/60 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                             <X className="w-4 h-4" />
@@ -195,14 +195,14 @@ export function ContentForm({ stores, tags, initial }: { stores: StoreOption[]; 
                     <div>
                       <label className="block text-[10px] text-zinc-400 mb-1">Bildevisning</label>
                       <div className="flex gap-1.5">
-                        {([["bakgrunn", "Bakgrunn", ImageLucide], ["plakat", "Plakat (vis hele)", Maximize2]] as const).map(([mode, label, Icon]) => (
+                        {([["bakgrunn", "Bakgrunn", ImageLucide], ["liten", "Lite bilde", PanelRight], ["plakat", "Plakat (vis hele)", Maximize2]] as const).map(([mode, label, Icon]) => (
                           <button key={mode} type="button" onClick={() => setImageMode(mode)}
                             className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-medium border transition-all ${imageMode === mode ? "border-zinc-900 bg-zinc-900 text-white" : "border-zinc-200 text-zinc-600 hover:border-zinc-300"}`}>
                             <Icon className="w-3 h-3" /> {label}
                           </button>
                         ))}
                       </div>
-                      <p className="text-[10px] text-zinc-400 mt-1">{imageMode === "plakat" ? "Hele bildet vises uten klipp — for ferdige plakater." : "Bildet fyller kortet som dempet bakgrunn med tekst oppå."}</p>
+                      <p className="text-[10px] text-zinc-400 mt-1">{imageMode === "plakat" ? "Hele bildet vises uten klipp — for ferdige plakater." : imageMode === "liten" ? "Lite bilde til høyre, teksten til venstre — teksten er hovedsaken." : "Bildet fyller kortet som dempet bakgrunn med tekst oppå."}</p>
                     </div>
                   )}
                   {isMulti && <p className="text-[10px] text-zinc-400">{imageUrls.length} bilder vises som <strong>helside, side om side</strong> — uten dempet bakgrunn.</p>}
