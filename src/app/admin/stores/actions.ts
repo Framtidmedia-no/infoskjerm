@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache"
 import { createClient } from "@/lib/supabase/server"
+import { logAudit } from "@/lib/admin/audit"
 
 async function requireUser() {
   const supabase = await createClient()
@@ -11,9 +12,11 @@ async function requireUser() {
 }
 
 export async function deleteStore(storeId: string) {
-  const { supabase } = await requireUser()
+  const { supabase, userId } = await requireUser()
+  const { data: store } = await supabase.from("stores").select("name").eq("id", storeId).maybeSingle()
   const { error } = await supabase.from("stores").delete().eq("id", storeId)
   if (error) return { ok: false, error: error.message }
+  await logAudit({ userId, action: "store.delete", entityType: "store", entityId: storeId, summary: `Slettet butikk «${store?.name ?? storeId}»` })
   revalidatePath("/admin/stores")
   return { ok: true }
 }
@@ -68,6 +71,7 @@ export async function createTag(name: string, color: string): Promise<CreateTagR
     .single()
 
   if (error) return { ok: false, error: error.message }
+  await logAudit({ userId, action: "tag.create", entityType: "tag", entityId: data.id, summary: `Opprettet tagg «${trimmed}»` })
   revalidatePath("/admin/stores")
   return { ok: true, tag: data }
 }
@@ -97,6 +101,7 @@ export async function createStore(data: {
   })
 
   if (error) return { ok: false, error: error.message }
+  await logAudit({ userId, action: "store.create", entityType: "store", summary: `Opprettet butikk «${data.name}»`, metadata: { chain_id: data.chain_id, city: data.city } })
   revalidatePath("/admin/stores")
   return { ok: true }
 }

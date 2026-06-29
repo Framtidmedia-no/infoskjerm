@@ -4,6 +4,7 @@ import { Suspense, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { createClient } from "@/lib/supabase/client"
+import { logLoginEvent } from "./actions"
 import { Eye, EyeOff, Loader2 } from "lucide-react"
 import Image from "next/image"
 
@@ -38,6 +39,7 @@ function LoginInner() {
       return
     }
 
+    await logLoginEvent().catch(() => {})
     router.push("/admin")
     router.refresh()
   }

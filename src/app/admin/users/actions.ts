@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache"
 import { requireRole } from "@/lib/admin/require-role"
+import { logAudit } from "@/lib/admin/audit"
 import { createClient } from "@supabase/supabase-js"
 import { createAdminClient } from "@/lib/supabase/server"
 import { getBaseUrl } from "@/lib/base-url"
@@ -19,7 +20,7 @@ export async function inviteUser(
   role: InvitableRole,
   storeIds: string[] = []
 ) {
-  const { tenantId } = await requireRole(["super_admin", "chain_manager"])
+  const { tenantId, userId: actorId } = await requireRole(["super_admin", "chain_manager"])
   const cleanEmail = email.trim().toLowerCase()
   if (!cleanEmail) return { ok: false, error: "E-post mangler" }
 
@@ -86,6 +87,7 @@ export async function inviteUser(
     return { ok: false, error: `Bruker opprettet, men e-post feilet: ${msg}` }
   }
 
+  await logAudit({ userId: actorId, action: "user.invite", entityType: "user", entityId: userId, summary: `Inviterte ${cleanEmail} som ${ROLE_LABEL[role]}`, metadata: { role, storeNames } })
   revalidatePath("/admin/users")
   return { ok: true }
 }
@@ -98,9 +100,11 @@ const ROLE_LABEL: Record<InvitableRole, string> = {
 }
 
 export async function deleteUser(userId: string) {
-  const { supabase } = await requireRole(["super_admin", "chain_manager"])
+  const { supabase, userId: actorId } = await requireRole(["super_admin", "chain_manager"])
+  const { data: target } = await supabase.from("users").select("email").eq("id", userId).maybeSingle()
   const { error } = await supabase.from("users").delete().eq("id", userId)
   if (error) return { ok: false, error: error.message }
+  await logAudit({ userId: actorId, action: "user.delete", entityType: "user", entityId: userId, summary: `Slettet bruker ${target?.email ?? userId}` })
 
   // Also delete from Supabase Auth so the user cannot log in again
   const supabaseAdmin = createClient(
@@ -118,18 +122,19 @@ export async function deleteUser(userId: string) {
 }
 
 export async function updateUserRole(userId: string, role: UserRole) {
-  const { supabase } = await requireRole(["super_admin", "chain_manager"])
+  const { supabase, userId: actorId } = await requireRole(["super_admin", "chain_manager"])
   const { error } = await supabase
     .from("users")
     .update({ role })
     .eq("id", userId)
   if (error) return { ok: false, error: error.message }
+  await logAudit({ userId: actorId, action: "user.role", entityType: "user", entityId: userId, summary: `Endret rolle til ${role}`, metadata: { role } })
   revalidatePath("/admin/users")
   return { ok: true }
 }
 
 export async function setUserStores(userId: string, storeIds: string[]) {
-  const { supabase } = await requireRole(["super_admin", "chain_manager", "area_manager"])
+  const { supabase, userId: actorId } = await requireRole(["super_admin", "chain_manager", "area_manager"])
   // Replace the user's store assignments
   const { error: delError } = await supabase.from("user_stores").delete().eq("user_id", userId)
   if (delError) return { ok: false, error: delError.message }
@@ -139,6 +144,7 @@ export async function setUserStores(userId: string, storeIds: string[]) {
       .insert(storeIds.map((sid) => ({ user_id: userId, store_id: sid })))
     if (error) return { ok: false, error: error.message }
   }
+  await logAudit({ userId: actorId, action: "user.stores", entityType: "user", entityId: userId, summary: `Oppdaterte butikktilgang (${storeIds.length} butikker)`, metadata: { storeIds } })
   revalidatePath("/admin/users")
   return { ok: true }
 }

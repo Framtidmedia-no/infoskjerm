@@ -1,6 +1,7 @@
 "use server"
 
 import { requireRole } from "@/lib/admin/require-role"
+import { logAudit } from "@/lib/admin/audit"
 import { revalidatePath } from "next/cache"
 import { audienceForType, type Audience } from "./audience"
 import type { OfferFields } from "@/lib/content/live"
@@ -139,37 +140,47 @@ export async function saveContent(input: ContentInput, id?: string): Promise<Sav
   // Skjermene leser publisert innhold live fra Supabase. Kundeskjermen er én
   // stående layout per butikk som alltid viser /widget/tilbud, så ingen ekstern
   // planlegging trengs ved publisering.
+  await logAudit({
+    userId,
+    action: id ? (input.publish ? "content.publish" : "content.update") : (input.publish ? "content.publish" : "content.create"),
+    entityType: "content",
+    entityId: contentId,
+    summary: `${id ? "Endret" : "Opprettet"}${input.publish ? " og publiserte" : ""} «${input.title.trim() || "innhold"}»`,
+    metadata: { type: input.type, audience: input.audience ?? audienceForType(input.type), status },
+  })
   revalidatePath("/admin/innhold")
   return { ok: true, id: contentId }
 }
 
 /** Publishes/unpublishes several items at once. */
 export async function bulkSetStatus(ids: string[], publish: boolean): Promise<SaveResult> {
-  const { supabase } = await requireRole([...AUTHOR_ROLES])
+  const { supabase, userId } = await requireRole([...AUTHOR_ROLES])
   if (ids.length === 0) return { ok: true }
   const { error } = await supabase
     .from("content_items")
     .update({ status: publish ? "live" : "draft", published_at: publish ? new Date().toISOString() : null, updated_at: new Date().toISOString() })
     .in("id", ids)
   if (error) return { ok: false, error: error.message }
+  await logAudit({ userId, action: publish ? "content.publish" : "content.unpublish", entityType: "content", summary: `${publish ? "Publiserte" : "Avpubliserte"} ${ids.length} element(er)`, metadata: { ids } })
   revalidatePath("/admin/innhold")
   return { ok: true }
 }
 
 /** Deletes several items (and their targets) at once. */
 export async function bulkDeleteContent(ids: string[]): Promise<SaveResult> {
-  const { supabase } = await requireRole([...AUTHOR_ROLES])
+  const { supabase, userId } = await requireRole([...AUTHOR_ROLES])
   if (ids.length === 0) return { ok: true }
   await supabase.from("content_targets").delete().in("content_item_id", ids)
   const { error } = await supabase.from("content_items").delete().in("id", ids)
   if (error) return { ok: false, error: error.message }
+  await logAudit({ userId, action: "content.delete", entityType: "content", summary: `Slettet ${ids.length} element(er)`, metadata: { ids } })
   revalidatePath("/admin/innhold")
   return { ok: true }
 }
 
 /** Shifts the validity period of several items by N days (e.g. extend +7). */
 export async function bulkShiftPeriod(ids: string[], days: number): Promise<SaveResult> {
-  const { supabase } = await requireRole([...AUTHOR_ROLES])
+  const { supabase, userId } = await requireRole([...AUTHOR_ROLES])
   if (ids.length === 0) return { ok: true }
   const { data: rows } = await supabase.from("content_items").select("id, valid_from, valid_to").in("id", ids)
   for (const r of rows ?? []) {
@@ -178,15 +189,18 @@ export async function bulkShiftPeriod(ids: string[], days: number): Promise<Save
       .update({ valid_from: shiftIso(r.valid_from, days), valid_to: shiftIso(r.valid_to, days), updated_at: new Date().toISOString() })
       .eq("id", r.id)
   }
+  await logAudit({ userId, action: "content.extend", entityType: "content", summary: `Forlenget ${ids.length} element(er) med ${days} dager`, metadata: { ids, days } })
   revalidatePath("/admin/innhold")
   return { ok: true }
 }
 
 export async function deleteContent(id: string): Promise<SaveResult> {
-  const { supabase } = await requireRole([...AUTHOR_ROLES])
+  const { supabase, userId } = await requireRole([...AUTHOR_ROLES])
+  const { data: row } = await supabase.from("content_items").select("title").eq("id", id).maybeSingle()
   await supabase.from("content_targets").delete().eq("content_item_id", id)
   const { error } = await supabase.from("content_items").delete().eq("id", id)
   if (error) return { ok: false, error: error.message }
+  await logAudit({ userId, action: "content.delete", entityType: "content", entityId: id, summary: `Slettet «${row?.title ?? id}»` })
   revalidatePath("/admin/innhold")
   return { ok: true }
 }
@@ -237,6 +251,7 @@ export async function duplicateContent(id: string, shiftDays = 0): Promise<SaveR
       targets.map((t) => ({ content_item_id: copy.id, target_all: t.target_all, store_id: t.store_id, tag_id: t.tag_id }))
     )
   }
+  await logAudit({ userId, action: "content.duplicate", entityType: "content", entityId: copy.id, summary: `Kopierte «${orig.title}»${shiftDays > 0 ? " til neste uke" : ""}`, metadata: { from: id, shiftDays } })
   revalidatePath("/admin/innhold")
   return { ok: true, id: copy.id }
 }

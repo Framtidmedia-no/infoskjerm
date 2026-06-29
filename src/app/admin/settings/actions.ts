@@ -3,6 +3,7 @@
 import { randomBytes } from "crypto"
 import { revalidatePath } from "next/cache"
 import { createClient } from "@/lib/supabase/server"
+import { logAudit } from "@/lib/admin/audit"
 
 export type ScreenCommand = "power_on" | "power_off" | "reload" | "reboot"
 
@@ -10,11 +11,11 @@ async function requireUser() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) throw new Error("Ikke innlogget")
-  return supabase
+  return { supabase, userId: user.id }
 }
 
 export async function sendCommand(screenId: string, command: ScreenCommand) {
-  const supabase = await requireUser()
+  const { supabase } = await requireUser()
   const { error } = await supabase
     .from("screens")
     .update({ pending_command: command })
@@ -25,7 +26,7 @@ export async function sendCommand(screenId: string, command: ScreenCommand) {
 }
 
 export async function createScreen(storeId: string, name: string) {
-  const supabase = await requireUser()
+  const { supabase, userId } = await requireUser()
 
   // tenant for the chosen store (RLS keeps this within the user's tenant)
   const { data: store, error: storeErr } = await supabase
@@ -44,26 +45,29 @@ export async function createScreen(storeId: string, name: string) {
     status: "active",
   })
   if (error) return { ok: false, error: error.message }
+  await logAudit({ userId, action: "screen.create", entityType: "screen", summary: `Opprettet skjerm «${name.trim() || "Ny skjerm"}»`, metadata: { storeId } })
   revalidatePath("/admin/settings")
   return { ok: true, token }
 }
 
 export async function regenerateToken(screenId: string) {
-  const supabase = await requireUser()
+  const { supabase, userId } = await requireUser()
   const token = "gr_" + randomBytes(24).toString("hex")
   const { error } = await supabase
     .from("screens")
     .update({ token })
     .eq("id", screenId)
   if (error) return { ok: false, error: error.message }
+  await logAudit({ userId, action: "screen.token", entityType: "screen", entityId: screenId, summary: "Genererte ny skjerm-token" })
   revalidatePath("/admin/settings")
   return { ok: true, token }
 }
 
 export async function deleteScreen(screenId: string) {
-  const supabase = await requireUser()
+  const { supabase, userId } = await requireUser()
   const { error } = await supabase.from("screens").delete().eq("id", screenId)
   if (error) return { ok: false, error: error.message }
+  await logAudit({ userId, action: "screen.delete", entityType: "screen", entityId: screenId, summary: "Slettet skjerm" })
   revalidatePath("/admin/settings")
   return { ok: true }
 }
@@ -74,12 +78,13 @@ export async function updateChainBranding(
   brandLight: string,
   brandFg: string
 ) {
-  const supabase = await requireUser()
+  const { supabase, userId } = await requireUser()
   const { error } = await supabase
     .from("chains")
     .update({ color, brand_light: brandLight, brand_fg: brandFg })
     .eq("id", chainId)
   if (error) return { ok: false, error: error.message }
+  await logAudit({ userId, action: "settings.branding", entityType: "chain", entityId: chainId, summary: "Oppdaterte kjede-farger", metadata: { color, brandLight, brandFg } })
   revalidatePath("/admin/settings")
   revalidatePath("/admin")
   return { ok: true }
@@ -96,7 +101,7 @@ export async function uploadChainLogo(
   chainId: string,
   formData: FormData
 ): Promise<{ ok: true; url: string } | { ok: false; error: string }> {
-  const supabase = await requireUser()
+  const { supabase, userId } = await requireUser()
 
   const file = formData.get("file")
   if (!(file instanceof File) || file.size === 0) return { ok: false, error: "Ingen fil valgt" }
@@ -115,6 +120,7 @@ export async function uploadChainLogo(
   const { error } = await supabase.from("chains").update({ logo_url: pub.publicUrl }).eq("id", chainId)
   if (error) return { ok: false, error: error.message }
 
+  await logAudit({ userId, action: "settings.logo", entityType: "chain", entityId: chainId, summary: "Lastet opp ny kjede-logo" })
   revalidatePath("/admin/settings")
   revalidatePath("/admin")
   return { ok: true, url: pub.publicUrl }
