@@ -61,7 +61,10 @@ De 16 butikk-layoutene er **planlagt** til display-gruppene (5–20). Når en Pi
 3. Sett CMS-adresse `https://xibo.framtidtech.no` + **CMS-nøkkel** (Xibo → Innstillinger → CMS Secret Key) i spilleren.
 4. I Xibo CMS → **Displays**: godkjenn (authorise) den nye skjermen.
 5. Legg skjermen i butikkens **display-gruppe** (samme navn som butikken). Da pulles og vises butikkens planlagte layout (Always) automatisk.
-6. (Valgfritt) Sett base-malen (campaign 8) som **global default-layout** i Xibo-innstillinger, så uplasserte skjermer viser noe med en gang.
+6. **Global default-layout er satt** til base-malen (DEFAULT_LAYOUT=layout 92) i Xibo-DB-en, så uplasserte skjermer viser base-malen umiddelbart. ⚠️ Layout-id endres ved base-rebuild — re-sett da via SSH:
+   `ssh -i ~/.ssh/id_ed25519 root@157.180.73.205 "docker exec xibo-cms-db-1 mysql -ucms -p\$(docker exec xibo-cms-db-1 printenv MYSQL_PASSWORD) cms -e \"UPDATE setting SET value='<ny base-layout-id>' WHERE setting='DEFAULT_LAYOUT';\""`
+
+> **Neste store modul:** butikk-KPI-dashbord på ansatt-skjermer (driftstall fra Gange-Rolv Drift) — egen plan: `docs/superpowers/plans/2026-06-29-butikk-kpi-dashboard.md`.
 
 ### 🟡 Resten
 - **DPA Framtid Tech ↔ Gange-Rolv** + org.nr i art.30-protokollen (markert `[FYLL INN]`).
