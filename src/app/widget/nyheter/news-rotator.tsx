@@ -33,19 +33,19 @@ function RichBlocks({ blocks }: { blocks: Block[] }) {
       {blocks.map((b, i) => {
         if (b.kind === "h")
           return (
-            <p key={i} style={{ fontSize: 38, fontWeight: 800, margin: "20px 0 6px", color: "#fff" }}>
+            <p key={i} style={{ fontSize: 38, fontWeight: 800, margin: "20px 0 6px", color: "currentColor" }}>
               {b.text}
             </p>
           )
         if (b.kind === "li")
           return (
-            <div key={i} style={{ display: "flex", gap: 14, fontSize: 34, lineHeight: 1.4, color: "rgba(255,255,255,.9)", margin: "6px 0" }}>
+            <div key={i} style={{ display: "flex", gap: 14, fontSize: 34, lineHeight: 1.4, color: "currentColor", margin: "6px 0", opacity: 0.92 }}>
               <span style={{ color: "#16a34a" }}>•</span>
               <span>{b.text}</span>
             </div>
           )
         return (
-          <p key={i} style={{ fontSize: 34, lineHeight: 1.45, color: "rgba(255,255,255,.9)", margin: "10px 0" }}>
+          <p key={i} style={{ fontSize: 34, lineHeight: 1.45, color: "currentColor", margin: "10px 0", opacity: 0.92 }}>
             {b.text}
           </p>
         )
@@ -96,7 +96,7 @@ function Kicker({ children }: { children: string }) {
 function Byline({ item }: { item: LiveItem }) {
   const parts = [item.date, item.author].filter(Boolean)
   if (parts.length === 0) return null
-  return <p style={{ fontSize: 24, color: "rgba(255,255,255,.5)", margin: "0 0 24px" }}>{parts.join(" · ")}</p>
+  return <p style={{ fontSize: 24, color: "currentColor", opacity: 0.55, margin: "0 0 24px" }}>{parts.join(" · ")}</p>
 }
 
 function formatPeriod(from: string | null, to: string | null): string | null {
@@ -144,8 +144,9 @@ function bgImage(url: string): CSSProperties {
 function StandardCard({ item }: { item: LiveItem }) {
   return (
     <>
-      {item.imageUrl && <div style={bgImage(item.imageUrl)} />}
-      <div style={{ position: "absolute", inset: 0, padding: 70, boxSizing: "border-box", display: "flex", flexDirection: "column" }}>
+      {item.bgColor && <div style={{ position: "absolute", inset: 0, background: item.bgColor }} />}
+      {item.imageUrl && !item.bgColor && <div style={bgImage(item.imageUrl)} />}
+      <div style={{ position: "absolute", inset: 0, padding: 70, boxSizing: "border-box", display: "flex", flexDirection: "column", color: item.textColor ?? "#fff" }}>
         {KICKER[item.type] && <Kicker>{KICKER[item.type]}</Kicker>}
         <h1 style={{ fontSize: 78, fontWeight: 900, margin: "0 0 14px", lineHeight: 1.03 }}>{item.title}</h1>
         <Byline item={item} />

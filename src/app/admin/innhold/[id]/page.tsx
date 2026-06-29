@@ -1,6 +1,7 @@
 import { requireRole } from "@/lib/admin/require-role"
 import { notFound } from "next/navigation"
-import { ContentForm, type StoreOption, type TagOption, type ContentInitial } from "../_components/content-form"
+import { ContentForm, type TagOption, type ContentInitial } from "../_components/content-form"
+import { loadStoreOptions } from "../store-options"
 import type { ContentType, TargetMode } from "../actions"
 import { audienceForType, type Audience } from "../audience"
 
@@ -12,9 +13,9 @@ export default async function EditContentPage({ params }: { params: Promise<{ id
   const { id } = await params
   const { supabase } = await requireRole([...AUTHOR_ROLES])
 
-  const [{ data: item }, { data: stores }, { data: tags }, { data: targets }] = await Promise.all([
+  const [{ data: item }, storeOptions, { data: tags }, { data: targets }] = await Promise.all([
     supabase.from("content_items").select("id, title, type, body, valid_from, valid_to").eq("id", id).single(),
-    supabase.from("stores").select("id, name, city, chains(name)").order("name"),
+    loadStoreOptions(supabase),
     supabase.from("tags").select("id, name, color").order("name"),
     supabase.from("content_targets").select("target_all, store_id, tag_id").eq("content_item_id", id),
   ])
@@ -27,6 +28,7 @@ export default async function EditContentPage({ params }: { params: Promise<{ id
     contactPerson?: string | null; applyUrl?: string | null; statsValue?: string | null; statsChange?: string | null
     offer?: import("@/lib/content/live").OfferFields | null
     avdeling?: string | null
+    bgColor?: string | null; textColor?: string | null
   }
   const audience: Audience = body.audience === "kunde" || body.audience === "intern" ? body.audience : audienceForType(item.type as ContentType)
   const targetRows = targets ?? []
@@ -54,11 +56,9 @@ export default async function EditContentPage({ params }: { params: Promise<{ id
     applyUrl: body.applyUrl ?? null,
     statsValue: body.statsValue ?? null,
     statsChange: body.statsChange ?? null,
+    bgColor: body.bgColor ?? null,
+    textColor: body.textColor ?? null,
   }
-
-  const storeOptions: StoreOption[] = (stores ?? []).map((s) => ({
-    id: s.id, name: s.name, chain: (s.chains as { name: string } | null)?.name ?? null, city: s.city,
-  }))
 
   return <ContentForm stores={storeOptions} tags={(tags ?? []) as TagOption[]} initial={initial} audience={audience} />
 }

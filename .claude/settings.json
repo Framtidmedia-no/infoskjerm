@@ -98,7 +98,16 @@
       "Bash(dig +short CNAME www.framtidtech.no)",
       "Bash(dig +short MX framtidtech.no)",
       "Bash(awk '/handle_new_user|CREATE TABLE.*users|CREATE TABLE.*user_stores|on_auth_user_created/,/;/' supabase/migrations/001_initial_schema.sql)",
-      "Bash(grep -nA30 'getUsersWithDetails')"
+      "Bash(grep -nA30 'getUsersWithDetails')",
+      "Bash(grep -nA3 -iE 'typescript|ignoreBuildError|eslint' next.config.ts)",
+      "Bash(grep -nA40 \"type ContentInput\" src/app/admin/innhold/actions.ts)",
+      "Bash(PORT=3137 npx next dev -p 3137)",
+      "Bash(echo \"dev server starting pid $!\")",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" http://localhost:3137/login)",
+      "Bash(node /private/tmp/claude-501/-Users-frlund3-Documents-GitHub-infoskjerm/3b042dc1-5452-49ab-98aa-dabbb0a3ed9e/scratchpad/bootstrap-admin.mjs)",
+      "Bash(node ./_e2e_bootstrap.mjs)",
+      "Bash(node ./_e2e_invite.mjs)",
+      "Bash(node ./_e2e_cleanup.mjs)"
     ],
     "additionalDirectories": [
       "/Users/frlund3/Documents/GitHub/infoskjerm/src/app/preview/[id]",

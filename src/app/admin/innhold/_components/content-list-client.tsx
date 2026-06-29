@@ -7,7 +7,7 @@ import { deleteContent, duplicateContent } from "../actions"
 import { toast } from "sonner"
 import {
   Newspaper, Trophy, ImageIcon, Briefcase, PartyPopper, BarChart3, Megaphone, Globe, Store as StoreIcon, Tag,
-  Copy, Trash2, Pencil, MoreVertical, Calendar, Search, ChevronLeft, ChevronRight, FileText,
+  Copy, Trash2, Pencil, MoreVertical, Calendar, CalendarPlus, Search, ChevronLeft, ChevronRight, FileText,
 } from "lucide-react"
 
 export interface ContentRow {
@@ -77,11 +77,11 @@ export function ContentListClient({ items, stores, tags, newHref = "/admin/innho
 
   function closeMenu() { setMenuId(null); setConfirmId(null) }
 
-  async function handleDuplicate(id: string) {
+  async function handleDuplicate(id: string, shiftDays = 0) {
     setBusyId(id); closeMenu()
-    const res = await duplicateContent(id)
+    const res = await duplicateContent(id, shiftDays)
     setBusyId(null)
-    if (res.ok) { toast.success("Kopiert"); router.refresh() } else toast.error(res.error ?? "Feil")
+    if (res.ok) { toast.success(shiftDays > 0 ? "Kopiert til neste uke (utkast)" : "Kopiert"); router.refresh() } else toast.error(res.error ?? "Feil")
   }
 
   async function handleDelete(id: string) {
@@ -218,6 +218,7 @@ export function ContentListClient({ items, stores, tags, newHref = "/admin/innho
                       <div className="absolute right-0 bottom-9 z-20 w-44 rounded-xl border border-zinc-200 bg-white shadow-lg py-1">
                         <Link href={`/admin/innhold/${item.id}`} className="flex items-center gap-2 px-3 py-2 text-xs text-zinc-700 hover:bg-zinc-50"><Pencil className="w-3.5 h-3.5" /> Rediger</Link>
                         <button onClick={() => handleDuplicate(item.id)} className="w-full flex items-center gap-2 px-3 py-2 text-xs text-zinc-700 hover:bg-zinc-50"><Copy className="w-3.5 h-3.5" /> Dupliser</button>
+                        <button onClick={() => handleDuplicate(item.id, 7)} className="w-full flex items-center gap-2 px-3 py-2 text-xs text-zinc-700 hover:bg-zinc-50"><CalendarPlus className="w-3.5 h-3.5" /> Kopier til neste uke</button>
                         {confirmId === item.id ? (
                           <button onClick={() => handleDelete(item.id)} className="w-full flex items-center gap-2 px-3 py-2 text-xs font-semibold text-white bg-red-600 hover:bg-red-700"><Trash2 className="w-3.5 h-3.5" /> Bekreft sletting</button>
                         ) : (

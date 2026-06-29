@@ -41,6 +41,9 @@ export interface ContentInput {
   offer?: OfferFields | null
   /** Customer offers: department/category ("felles" = whole store). */
   avdeling?: string | null
+  /** Text cards: optional background + text colour. */
+  bgColor?: string | null
+  textColor?: string | null
 }
 
 export interface SaveResult {
@@ -68,6 +71,8 @@ function buildBody(input: ContentInput): Json {
     ...(input.type === "stats" ? { statsValue: input.statsValue ?? null, statsChange: input.statsChange ?? null } : {}),
     ...(input.type === "slide" && input.offer ? { offer: input.offer } : {}),
     ...(input.type === "slide" ? { avdeling: input.avdeling || "felles" } : {}),
+    ...(input.bgColor ? { bgColor: input.bgColor } : {}),
+    ...(input.textColor ? { textColor: input.textColor } : {}),
   })) as Json
 }
 
@@ -147,7 +152,20 @@ export async function deleteContent(id: string): Promise<SaveResult> {
   return { ok: true }
 }
 
-export async function duplicateContent(id: string): Promise<SaveResult> {
+/** Shifts an ISO date (YYYY-MM-DD…) by N days, preserving null. */
+function shiftIso(iso: string | null, days: number): string | null {
+  if (!iso) return null
+  const d = new Date(iso)
+  if (Number.isNaN(d.getTime())) return iso
+  d.setDate(d.getDate() + days)
+  return d.toISOString().slice(0, 10)
+}
+
+/**
+ * Duplicates a content item as a new draft. With shiftDays (e.g. 7), the
+ * validity period is moved forward — "kopier til neste uke" for weekly offers.
+ */
+export async function duplicateContent(id: string, shiftDays = 0): Promise<SaveResult> {
   const { supabase, userId, tenantId: rawTenant } = await requireRole([...AUTHOR_ROLES])
   const tenantId = await effectiveTenant(supabase, rawTenant)
   const { data: orig } = await supabase
@@ -157,17 +175,18 @@ export async function duplicateContent(id: string): Promise<SaveResult> {
     .single()
   if (!orig) return { ok: false, error: "Fant ikke innholdet" }
 
+  const suffix = shiftDays > 0 ? "(neste uke)" : "(kopi)"
   const { data: copy, error } = await supabase
     .from("content_items")
     .insert({
-      title: `${orig.title} (kopi)`,
+      title: `${orig.title} ${suffix}`,
       type: orig.type,
       body: orig.body,
       status: "draft",
       tenant_id: tenantId,
       created_by: userId,
-      valid_from: orig.valid_from,
-      valid_to: orig.valid_to,
+      valid_from: shiftIso(orig.valid_from, shiftDays),
+      valid_to: shiftIso(orig.valid_to, shiftDays),
     })
     .select("id")
     .single()

@@ -1,5 +1,6 @@
 import { requireRole } from "@/lib/admin/require-role"
-import { ContentForm, type StoreOption, type TagOption } from "../../innhold/_components/content-form"
+import { ContentForm, type TagOption } from "../../innhold/_components/content-form"
+import { loadStoreOptions } from "../../innhold/store-options"
 
 export const dynamic = "force-dynamic"
 
@@ -8,18 +9,10 @@ const AUTHOR_ROLES = ["super_admin", "chain_manager", "area_manager", "store_man
 export default async function NewCustomerContentPage() {
   const { supabase } = await requireRole([...AUTHOR_ROLES])
 
-  const [{ data: stores }, { data: tags }] = await Promise.all([
-    supabase.from("stores").select("id, name, city, chains(name)").order("name"),
+  const [storeOptions, { data: tags }] = await Promise.all([
+    loadStoreOptions(supabase),
     supabase.from("tags").select("id, name, color").order("name"),
   ])
 
-  const storeOptions: StoreOption[] = (stores ?? []).map((s) => ({
-    id: s.id,
-    name: s.name,
-    chain: (s.chains as { name: string } | null)?.name ?? null,
-    city: s.city,
-  }))
-  const tagOptions: TagOption[] = (tags ?? []) as TagOption[]
-
-  return <ContentForm stores={storeOptions} tags={tagOptions} audience="kunde" />
+  return <ContentForm stores={storeOptions} tags={(tags ?? []) as TagOption[]} audience="kunde" />
 }

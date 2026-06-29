@@ -7,7 +7,8 @@ import { MediaUploader } from "@/components/admin/media-uploader"
 import { Button } from "@/components/ui/button"
 import { saveContent, type ContentType, type TargetMode, type ImageMode, type Audience } from "../actions"
 import { lookupSparProduct } from "../spar-actions"
-import type { OfferFields } from "@/lib/content/live"
+import type { OfferFields, LiveItem } from "@/lib/content/live"
+import { OfferCard } from "@/app/widget/tilbud/offer-card"
 import { toast } from "sonner"
 import {
   Dialog, DialogContent, DialogHeader, DialogFooter, DialogTitle, DialogDescription,
@@ -18,8 +19,37 @@ import {
 } from "lucide-react"
 import Link from "next/link"
 
-export interface StoreOption { id: string; name: string; chain: string | null; city: string | null }
+export interface StoreOption { id: string; name: string; chain: string | null; city: string | null; tagIds?: string[] }
 export interface TagOption { id: string; name: string; color: string | null }
+
+// Background/text colour presets for internal text cards.
+const COLOR_PRESETS: { label: string; bg: string; fg: string }[] = [
+  { label: "Mørk", bg: "#0a0a0a", fg: "#ffffff" },
+  { label: "Lys", bg: "#ffffff", fg: "#0a0a0a" },
+  { label: "Rød", bg: "#e4002b", fg: "#ffffff" },
+  { label: "Grønn", bg: "#16a34a", fg: "#ffffff" },
+  { label: "Marine", bg: "#0b1f3a", fg: "#ffffff" },
+]
+
+// Text-card types that support custom background/text colours (StandardCard).
+const COLOR_TYPES: ContentType[] = ["news", "competition", "birthday"]
+
+const isoDate = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`
+
+/** Monday–Sunday of the current week + offsetWeeks (Norwegian week, Mon start). */
+function campaignWeek(offsetWeeks: number): [string, string] {
+  const now = new Date()
+  const day = (now.getDay() + 6) % 7 // Monday = 0
+  const mon = new Date(now); mon.setDate(now.getDate() - day + offsetWeeks * 7)
+  const sun = new Date(mon); sun.setDate(mon.getDate() + 6)
+  return [isoDate(mon), isoDate(sun)]
+}
+
+/** Today → last day of the current month. */
+function restOfMonth(): [string, string] {
+  const now = new Date()
+  return [isoDate(now), isoDate(new Date(now.getFullYear(), now.getMonth() + 1, 0))]
+}
 
 export interface ContentInitial {
   id: string
@@ -40,6 +70,8 @@ export interface ContentInitial {
   statsChange?: string | null
   offer?: OfferFields | null
   avdeling?: string | null
+  bgColor?: string | null
+  textColor?: string | null
 }
 
 const EMPTY_OFFER: OfferFields = {
@@ -108,10 +140,22 @@ export function ContentForm({ stores, tags, initial, audience = "intern" }: { st
   const [offerMode, setOfferMode] = useState<"struktur" | "plakat">(initial?.offer ? "struktur" : "plakat")
   const [offer, setOffer] = useState<OfferFields>(initial?.offer ?? EMPTY_OFFER)
   const [avdeling, setAvdeling] = useState(initial?.avdeling ?? "felles")
+  const [bgColor, setBgColor] = useState(initial?.bgColor ?? "")
+  const [textColor, setTextColor] = useState(initial?.textColor ?? "")
   const [saving, setSaving] = useState(false)
   const [confirmNoEndDate, setConfirmNoEndDate] = useState(false)
 
   const isOfferStruktur = type === "slide" && offerMode === "struktur"
+  const usesColors = COLOR_TYPES.includes(type)
+
+  // How many stores the current targeting reaches (live feedback).
+  const reach = (() => {
+    if (targetMode === "all") return stores.length
+    if (targetMode === "stores") return storeIds.length
+    const hit = new Set<string>()
+    for (const s of stores) if ((s.tagIds ?? []).some((t) => tagIds.includes(t))) hit.add(s.id)
+    return hit.size
+  })()
   const setOf = (k: keyof OfferFields, v: string) => setOffer((p) => ({ ...p, [k]: v.trim() || null }))
 
   const [gtinInput, setGtinInput] = useState("")
@@ -193,6 +237,8 @@ export function ContentForm({ stores, tags, initial, audience = "intern" }: { st
         validFrom: validFrom || null, validTo: validTo || null, publish,
         contactPerson: type === "job" ? contactPerson || null : null,
         applyUrl: type === "job" ? applyUrl || null : null,
+        bgColor: usesColors ? bgColor || null : null,
+        textColor: usesColors ? textColor || null : null,
       },
       initial?.id
     )
@@ -203,6 +249,15 @@ export function ContentForm({ stores, tags, initial, audience = "intern" }: { st
     } else {
       toast.error(res.error ?? "Noe gikk galt")
     }
+  }
+
+  // Live preview model for the structured offer card (chain logo added per store).
+  const previewItem: LiveItem = {
+    id: "preview", type: "slide", title: offer.varenavn || "", blocks: [],
+    imageUrl: imageUrls[0] ?? null, imageUrls, imageMode: "plakat", isPdf: false,
+    validFrom: validFrom || null, validTo: validTo || null,
+    author: "", date: "", contactPerson: null, applyUrl: null,
+    statsValue: null, statsChange: null, offer, avdeling, bgColor: null, textColor: null,
   }
 
   return (
@@ -392,6 +447,17 @@ export function ContentForm({ stores, tags, initial, audience = "intern" }: { st
 
         {/* Sidebar column */}
         <div className="space-y-5">
+          {/* Live preview of the structured offer card */}
+          {isOfferStruktur && (
+            <section className="rounded-xl border border-zinc-200 bg-white p-4">
+              <h3 className="text-xs font-semibold text-zinc-600 mb-3">Forhåndsvisning</h3>
+              <div className="mx-auto rounded-xl overflow-hidden border border-zinc-200 shadow-sm" style={{ position: "relative", width: "100%", maxWidth: 230, aspectRatio: "9 / 16" }}>
+                <OfferCard item={previewItem} chain={null} />
+              </div>
+              <p className="text-[10px] text-zinc-400 mt-2.5 text-center">Oppdateres live. Kjedelogo legges til automatisk per butikk.</p>
+            </section>
+          )}
+
           {/* Type — only show a selector when the audience has more than one type */}
           {typeOptions.length > 1 && (
             <section className="rounded-xl border border-zinc-200 bg-white p-4">
@@ -418,6 +484,10 @@ export function ContentForm({ stores, tags, initial, audience = "intern" }: { st
                 </button>
               ))}
             </div>
+
+            <p className={`text-[11px] font-medium mb-2 ${reach === 0 ? "text-red-500" : "text-emerald-600"}`}>
+              → Vises på {reach} av {stores.length} butikker
+            </p>
 
             {targetMode === "all" && <p className="text-[11px] text-zinc-400">Vises på alle butikkers skjermer.</p>}
 
@@ -461,9 +531,49 @@ export function ContentForm({ stores, tags, initial, audience = "intern" }: { st
             </section>
           )}
 
+          {/* Appearance — background + text colour for text cards */}
+          {usesColors && (
+            <section className="rounded-xl border border-zinc-200 bg-white p-4">
+              <h3 className="text-xs font-semibold text-zinc-600 mb-2.5">Utseende</h3>
+              <div className="flex flex-wrap gap-1.5 mb-3">
+                {COLOR_PRESETS.map((p) => {
+                  const active = bgColor.toLowerCase() === p.bg && textColor.toLowerCase() === p.fg
+                  return (
+                    <button key={p.label} type="button" title={p.label} onClick={() => { setBgColor(p.bg); setTextColor(p.fg) }}
+                      className={`w-8 h-8 rounded-lg border-2 transition-all ${active ? "border-zinc-900 scale-110" : "border-zinc-200"}`}
+                      style={{ background: p.bg }}>
+                      <span className="text-[10px] font-bold" style={{ color: p.fg }}>A</span>
+                    </button>
+                  )
+                })}
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[10px] text-zinc-400 mb-1">Bakgrunn</label>
+                  <input type="color" value={bgColor || "#0a0a0a"} onChange={(e) => setBgColor(e.target.value)} className="w-full h-9 rounded-lg border border-zinc-200 bg-white cursor-pointer" />
+                </div>
+                <div>
+                  <label className="block text-[10px] text-zinc-400 mb-1">Skriftfarge</label>
+                  <input type="color" value={textColor || "#ffffff"} onChange={(e) => setTextColor(e.target.value)} className="w-full h-9 rounded-lg border border-zinc-200 bg-white cursor-pointer" />
+                </div>
+              </div>
+              {(bgColor || textColor) && (
+                <button type="button" onClick={() => { setBgColor(""); setTextColor("") }} className="text-[10px] text-zinc-400 hover:text-zinc-700 mt-2">Nullstill til standard (mørk)</button>
+              )}
+            </section>
+          )}
+
           {/* Period */}
           <section className="rounded-xl border border-zinc-200 bg-white p-4">
             <h3 className="flex items-center gap-1.5 text-xs font-semibold text-zinc-600 mb-2.5"><Calendar className="w-3.5 h-3.5" /> Periode <span className={`font-normal ${periodRequired ? "text-red-500" : "text-zinc-400"}`}>{periodRequired ? "(påkrevd)" : "(valgfritt)"}</span></h3>
+            <div className="flex flex-wrap gap-1.5 mb-2.5">
+              {([["Denne uka", () => campaignWeek(0)], ["Neste uke", () => campaignWeek(1)], ["Ut måneden", () => restOfMonth()]] as const).map(([label, range]) => (
+                <button key={label} type="button" onClick={() => { const [f, t] = range(); setValidFrom(f); setValidTo(t) }}
+                  className="px-2.5 py-1.5 rounded-lg text-[11px] font-medium border border-zinc-200 text-zinc-600 hover:border-zinc-900 hover:text-zinc-900 transition-all">
+                  {label}
+                </button>
+              ))}
+            </div>
             <div className="space-y-2">
               <div>
                 <label className="block text-[10px] text-zinc-400 mb-1">Fra{periodRequired && <span className="text-red-500"> *</span>}</label>

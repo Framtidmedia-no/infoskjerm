@@ -1,19 +1,28 @@
 "use client"
 
-import { useState } from "react"
-import { useRouter } from "next/navigation"
+import { Suspense, useState } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
+import Link from "next/link"
 import { createClient } from "@/lib/supabase/client"
 import { Eye, EyeOff, Loader2 } from "lucide-react"
-import { Button } from "@/components/ui/button"
 import Image from "next/image"
 
-export default function LoginPage() {
+const ERROR_MESSAGES: Record<string, string> = {
+  lenke_ugyldig: "Lenken er ugyldig eller allerede brukt. Be om en ny.",
+  lenke_utlopt: "Lenken er utløpt. Be om en ny invitasjon eller tilbakestilling.",
+}
+
+function LoginInner() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const urlError = searchParams.get("error")
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(
+    urlError ? ERROR_MESSAGES[urlError] ?? "Noe gikk galt med lenken." : null
+  )
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -97,6 +106,11 @@ export default function LoginPage() {
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
               </div>
+              <div className="text-right mt-1.5">
+                <Link href="/glemt-passord" className="text-xs text-zinc-500 hover:text-emerald-400 transition-colors">
+                  Glemt passord?
+                </Link>
+              </div>
             </div>
 
             {error && (
@@ -125,5 +139,13 @@ export default function LoginPage() {
         </p>
       </div>
     </div>
+  )
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-zinc-950" />}>
+      <LoginInner />
+    </Suspense>
   )
 }

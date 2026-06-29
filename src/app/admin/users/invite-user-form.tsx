@@ -1,12 +1,14 @@
 "use client"
 
 import { useState } from "react"
-import { UserPlus, X, Loader2 } from "lucide-react"
+import { UserPlus, X, Loader2, Store as StoreIcon } from "lucide-react"
 import { inviteUser } from "./actions"
 
 import { ROLE_LABELS, ROLE_DESCRIPTIONS } from "@/lib/roles"
 
 type InviteRole = "chain_manager" | "area_manager" | "store_manager" | "store_employee"
+
+type Store = { id: string; name: string }
 
 const ROLE_OPTIONS: { value: InviteRole; label: string; desc: string }[] = [
   { value: "chain_manager", label: ROLE_LABELS.chain_manager, desc: ROLE_DESCRIPTIONS.chain_manager },
@@ -15,26 +17,63 @@ const ROLE_OPTIONS: { value: InviteRole; label: string; desc: string }[] = [
   { value: "store_employee", label: ROLE_LABELS.store_employee, desc: ROLE_DESCRIPTIONS.store_employee },
 ]
 
-export function InviteUserForm() {
+// Roller som er scopet til spesifikke butikker (Tenant Admin får alle).
+const STORE_SCOPED: InviteRole[] = ["area_manager", "store_manager", "store_employee"]
+// Roller som kun kan ha én butikk.
+const SINGLE_STORE: InviteRole[] = ["store_manager"]
+
+export function InviteUserForm({ stores }: { stores: Store[] }) {
   const [open, setOpen] = useState(false)
   const [email, setEmail] = useState("")
   const [role, setRole] = useState<InviteRole>("store_employee")
+  const [storeIds, setStoreIds] = useState<string[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
 
+  const needsStores = STORE_SCOPED.includes(role)
+  const singleStore = SINGLE_STORE.includes(role)
+
+  function selectRole(next: InviteRole) {
+    setRole(next)
+    setError(null)
+    // Bytter man til/fra én-butikk-rolle, behold maks én.
+    if (SINGLE_STORE.includes(next)) setStoreIds((ids) => ids.slice(0, 1))
+    if (!STORE_SCOPED.includes(next)) setStoreIds([])
+  }
+
+  function toggleStore(id: string) {
+    setError(null)
+    setStoreIds((ids) => {
+      if (ids.includes(id)) return ids.filter((x) => x !== id)
+      if (singleStore) return [id]
+      return [...ids, id]
+    })
+  }
+
+  function reset() {
+    setEmail("")
+    setRole("store_employee")
+    setStoreIds([])
+    setError(null)
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!email.trim()) return
+    if (needsStores && storeIds.length === 0) {
+      setError("Velg minst én butikk for denne rollen.")
+      return
+    }
     setLoading(true)
     setError(null)
-    const result = await inviteUser(email.trim(), role)
+    const result = await inviteUser(email.trim(), role, storeIds)
     setLoading(false)
     if (!result.ok) {
       setError(result.error ?? "Kunne ikke sende invitasjon")
     } else {
       setSuccess(true)
-      setEmail("")
+      reset()
       setTimeout(() => { setSuccess(false); setOpen(false) }, 2500)
     }
   }
@@ -98,7 +137,7 @@ export function InviteUserForm() {
                       name="role"
                       value={opt.value}
                       checked={role === opt.value}
-                      onChange={() => setRole(opt.value)}
+                      onChange={() => selectRole(opt.value)}
                       className="sr-only"
                     />
                     <div className="flex-1">
@@ -109,6 +148,52 @@ export function InviteUserForm() {
                 ))}
               </div>
             </div>
+
+            {needsStores ? (
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <label className="block text-xs font-medium text-zinc-600">
+                    {singleStore ? "Velg butikk" : "Velg butikker"}
+                  </label>
+                  <span className="text-[11px] text-zinc-400">{storeIds.length} valgt</span>
+                </div>
+                <div className="max-h-44 overflow-y-auto rounded-xl border border-zinc-200 divide-y divide-zinc-100">
+                  {stores.length === 0 ? (
+                    <p className="text-xs text-zinc-400 px-3 py-3">Ingen butikker funnet.</p>
+                  ) : (
+                    stores.map((s) => {
+                      const checked = storeIds.includes(s.id)
+                      return (
+                        <label
+                          key={s.id}
+                          className={`flex items-center gap-2.5 px-3 py-2 cursor-pointer transition-colors ${
+                            checked ? "bg-emerald-50" : "hover:bg-zinc-50"
+                          }`}
+                        >
+                          <input
+                            type={singleStore ? "radio" : "checkbox"}
+                            name="store"
+                            checked={checked}
+                            onChange={() => toggleStore(s.id)}
+                            className="accent-emerald-600"
+                          />
+                          <StoreIcon className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
+                          <span className="text-sm text-zinc-800">{s.name}</span>
+                        </label>
+                      )
+                    })
+                  )}
+                </div>
+              </div>
+            ) : (
+              <div className="flex items-start gap-2 rounded-xl bg-blue-50 border border-blue-100 px-3 py-2.5">
+                <StoreIcon className="w-4 h-4 text-blue-600 mt-0.5 shrink-0" />
+                <p className="text-xs text-blue-800">
+                  Tenant Admin får automatisk tilgang til <strong>alle butikker</strong>.
+                </p>
+              </div>
+            )}
+
             {error && <p className="text-sm text-red-500">{error}</p>}
             <button
               type="submit"

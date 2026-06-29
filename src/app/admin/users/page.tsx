@@ -35,7 +35,7 @@ export default async function UsersPage() {
       <Topbar
         title="Brukere"
         subtitle={`${users.length} brukere`}
-        actions={<InviteUserForm />}
+        actions={<InviteUserForm stores={allStores} />}
       />
       <div className="flex-1 p-6">
         {users.length === 0 ? (
