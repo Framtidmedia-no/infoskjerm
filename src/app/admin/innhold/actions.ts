@@ -31,6 +31,29 @@ export interface SaveResult {
   error?: string
 }
 
+/** "28. juni 2026" — Norwegian long date for the news card. */
+function formatNorwegianDate(iso: string): string {
+  const d = new Date(iso)
+  if (Number.isNaN(d.getTime())) return ""
+  return d.toLocaleDateString("nb-NO", { day: "numeric", month: "long", year: "numeric" })
+}
+
+/** Resolves the content author's display name + a formatted publish date for the card. */
+async function resolveByline(supabase: AdminSupabase, contentId: string): Promise<{ author: string; displayDate: string }> {
+  const { data: meta } = await supabase
+    .from("content_items")
+    .select("created_by, created_at, published_at")
+    .eq("id", contentId)
+    .single()
+  let author = ""
+  if (meta?.created_by) {
+    const { data: u } = await supabase.from("users").select("full_name, email").eq("id", meta.created_by).single()
+    author = u?.full_name || u?.email || ""
+  }
+  const dateIso = meta?.published_at || meta?.created_at || new Date().toISOString()
+  return { author, displayDate: formatNorwegianDate(dateIso) }
+}
+
 async function effectiveTenant(supabase: AdminSupabase, tenantId: string): Promise<string> {
   if (tenantId) return tenantId
   const { data } = await supabase.from("tenants").select("id").limit(1).single()
@@ -127,6 +150,7 @@ export async function saveContent(input: ContentInput, id?: string): Promise<Sav
   try {
     if (input.publish) {
       const stores = await resolveStoresField(supabase, input)
+      const { author, displayDate } = await resolveByline(supabase, contentId!)
       const rowId = await upsertNewsRow({
         contentId: contentId!,
         title: input.title.trim(),
@@ -136,6 +160,8 @@ export async function saveContent(input: ContentInput, id?: string): Promise<Sav
         stores,
         validFrom: input.validFrom || null,
         validTo: input.validTo || null,
+        displayDate,
+        author,
       })
       const newBody = JSON.parse(JSON.stringify({
         html: input.bodyHtml,

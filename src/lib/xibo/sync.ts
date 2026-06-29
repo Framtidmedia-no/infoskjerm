@@ -33,7 +33,14 @@ const COL = {
   fra: 6,
   til: 7,
   contentId: 8,
+  dato: 9,
+  forfatter: 10,
 } as const
+
+// Sentinel bounds so the template's date-window filter never has to deal with
+// empty/NULL date cells (open-ended news shows always).
+const DATE_FLOOR = "2000-01-01 00:00:00"
+const DATE_CEIL = "2099-12-31 23:59:59"
 
 export interface NewsRow {
   /** Supabase content_items.id — the stable key we match rows on. */
@@ -47,6 +54,10 @@ export interface NewsRow {
   stores: string
   validFrom: string | null
   validTo: string | null
+  /** Pre-formatted Norwegian publish date shown on the card, e.g. "28. juni 2026". */
+  displayDate: string
+  /** Author display name shown on the card. */
+  author: string
 }
 
 interface XiboDataRow {
@@ -86,9 +97,11 @@ function rowForm(row: NewsRow): Record<string, string> {
     [`dataSetColumnId_${COL.bilde}`]: row.imageUrl ?? "",
     [`dataSetColumnId_${COL.type}`]: row.type,
     [`dataSetColumnId_${COL.butikker}`]: row.stores,
-    [`dataSetColumnId_${COL.fra}`]: toXiboDate(row.validFrom),
-    [`dataSetColumnId_${COL.til}`]: toXiboDate(row.validTo),
+    [`dataSetColumnId_${COL.fra}`]: toXiboDate(row.validFrom) || DATE_FLOOR,
+    [`dataSetColumnId_${COL.til}`]: toXiboDate(row.validTo) || DATE_CEIL,
     [`dataSetColumnId_${COL.contentId}`]: row.contentId,
+    [`dataSetColumnId_${COL.dato}`]: row.displayDate,
+    [`dataSetColumnId_${COL.forfatter}`]: row.author,
   }
 }
 

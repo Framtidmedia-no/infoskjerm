@@ -14,12 +14,14 @@ const securityHeaders = [
   { key: "X-Frame-Options", value: "SAMEORIGIN" }, // SAMEORIGIN (ikke DENY) — iframe i builder-preview
 ]
 
-// /widget/* must be embeddable in the self-hosted Xibo signage iframe. We drop
-// X-Frame-Options and allowlist only the Xibo origins via CSP frame-ancestors.
-const XIBO_ORIGINS = "https://xibo.framtidtech.no http://157.180.73.205"
+// /widget/* are public, non-sensitive display pages (weather, ticker) that must
+// render inside the Xibo signage player/preview — which can run from varying
+// origins (CMS domain, raw IP, Pi player webview). They hold no secrets, auth or
+// user data, so we allow any ancestor to frame them (no X-Frame-Options, and an
+// explicit permissive frame-ancestors so the global rule can't tighten them).
 const widgetHeaders = [
   ...baseSecurityHeaders,
-  { key: "Content-Security-Policy", value: `frame-ancestors 'self' ${XIBO_ORIGINS}` },
+  { key: "Content-Security-Policy", value: "frame-ancestors *" },
 ]
 
 const nextConfig: NextConfig = {
