@@ -98,7 +98,8 @@ function Media({ item }: { item: LiveItem }) {
   return (
     <div style={{ flex: "1 1 auto", minHeight: 0, display: "grid", gridTemplateColumns: `repeat(${cols}, 1fr)`, gap: 18 }}>
       {urls.map((url, i) => (
-        <div key={i} style={{ backgroundImage: `url('${url}')`, backgroundSize: "contain", backgroundPosition: "center", backgroundRepeat: "no-repeat", borderRadius: 18, background: "rgba(255,255,255,.04)" }} />
+        // NB: backgroundColor (ikke background-shorthand) — shorthand nullstiller backgroundImage.
+        <div key={i} style={{ backgroundImage: `url('${url}')`, backgroundSize: "contain", backgroundPosition: "center", backgroundRepeat: "no-repeat", borderRadius: 18, backgroundColor: "rgba(255,255,255,.04)" }} />
       ))}
     </div>
   )

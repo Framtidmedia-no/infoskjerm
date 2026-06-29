@@ -163,21 +163,24 @@ function Gallery({ urls }: { urls: string[] }) {
   return (
     <div style={{ flex: "1 1 auto", minHeight: 0, display: "grid", gridTemplateColumns: `repeat(${cols}, 1fr)`, gap: 18 }}>
       {urls.map((url, i) => (
-        <div key={i} style={{ backgroundImage: `url('${url}')`, backgroundSize: "contain", backgroundPosition: "center", backgroundRepeat: "no-repeat", borderRadius: 16, background: "rgba(255,255,255,.04)" }} />
+        // NB: backgroundColor (ikke background-shorthand) — shorthand nullstiller backgroundImage.
+        <div key={i} style={{ backgroundImage: `url('${url}')`, backgroundSize: "contain", backgroundPosition: "center", backgroundRepeat: "no-repeat", borderRadius: 16, backgroundColor: "rgba(255,255,255,.04)" }} />
       ))}
     </div>
   )
 }
 
-/** Multi-image post: title on top, images side by side filling the card. */
+/** Multi-image post: title + text on top, images side by side filling the card. */
 function GalleryCard({ item }: { item: LiveItem }) {
   return (
     <div style={{ position: "absolute", inset: 0, padding: 50, boxSizing: "border-box", display: "flex", flexDirection: "column", gap: 16 }}>
       <div style={{ flex: "0 0 auto", display: "flex", flexDirection: "column" }}>
         <Kicker>{KICKER[item.type] ?? "GANGE-ROLV"}</Kicker>
-        <h1 style={{ fontSize: 58, fontWeight: 900, margin: "0 0 12px", lineHeight: 1.04 }}>{item.title}</h1>
+        <h1 style={{ fontSize: 56, fontWeight: 900, margin: "0 0 10px", lineHeight: 1.04 }}>{item.title}</h1>
+        <Byline item={item} />
         <PeriodChip item={item} />
       </div>
+      {item.blocks.length > 0 && <ScrollText blocks={item.blocks} style={{ flex: "0 1 auto", maxHeight: "34%" }} />}
       <Gallery urls={item.imageUrls} />
     </div>
   )
