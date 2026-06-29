@@ -286,25 +286,73 @@ function Card({ item, qrUrl }: { item: LiveItem; qrUrl?: string }) {
 
 const TICKER_HEIGHT = 96
 
-/** Bottom ticker overlay — only rendered when there are active messages. */
+/** One ticker message; scrolls horizontally only if it overflows the bar. */
+function TickerLine({ text }: { text: string }) {
+  const wrap = useRef<HTMLDivElement>(null)
+  const inner = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    const w = wrap.current
+    const n = inner.current
+    if (!w || !n) return
+    const over = n.scrollWidth - w.clientWidth
+    if (over <= 8) return
+    const dur = Math.max(8, Math.round(over / 90) + 4) * 1000
+    const anim = n.animate(
+      [
+        { transform: "translateX(0)" },
+        { transform: "translateX(0)", offset: 0.12 },
+        { transform: `translateX(-${over}px)`, offset: 0.88 },
+        { transform: `translateX(-${over}px)` },
+      ],
+      { duration: dur, iterations: Infinity, direction: "alternate", easing: "linear" }
+    )
+    return () => anim.cancel()
+  }, [text])
+  return (
+    <div ref={wrap} style={{ flex: "1 1 auto", overflow: "hidden", position: "relative", height: "100%", display: "flex", alignItems: "center" }}>
+      <div ref={inner} style={{ whiteSpace: "nowrap", fontSize: 30, fontWeight: 600, willChange: "transform" }}>
+        {text}
+      </div>
+    </div>
+  )
+}
+
+/**
+ * Bottom ticker bar — rotates through the active ticker messages one at a time
+ * ("flere tickere etter hverandre") instead of merging them into one line, so
+ * each message gets its own moment and stays readable. A small counter shows
+ * which ticker of how many is on screen.
+ */
 function TickerOverlay({ messages }: { messages: string[] }) {
-  const line = messages.join("    ·    ")
+  const [t, setT] = useState(0)
+  const idx = t % messages.length
+  const current = messages[idx]
+
+  useEffect(() => {
+    if (messages.length <= 1) return
+    // Time proportional to length so longer messages can scroll fully (min 8s).
+    const secs = Math.max(8, Math.round(current.length / 7))
+    const id = setTimeout(() => setT((v) => (v + 1) % messages.length), secs * 1000)
+    return () => clearTimeout(id)
+  }, [t, messages, current])
+
   return (
     <div style={{ position: "absolute", left: 0, right: 0, bottom: 0, height: TICKER_HEIGHT, display: "flex", alignItems: "center", overflow: "hidden", background: "#16a34a", color: "#fff" }}>
-      <style>{`
-        @keyframes gr-pulse{0%{box-shadow:0 0 0 0 rgba(255,255,255,.65)}70%{box-shadow:0 0 0 16px rgba(255,255,255,0)}100%{box-shadow:0 0 0 0 rgba(255,255,255,0)}}
-        @keyframes gr-scroll{from{transform:translateX(0)}to{transform:translateX(-50%)}}
-      `}</style>
+      <style>{`@keyframes gr-pulse{0%{box-shadow:0 0 0 0 rgba(255,255,255,.65)}70%{box-shadow:0 0 0 16px rgba(255,255,255,0)}100%{box-shadow:0 0 0 0 rgba(255,255,255,0)}}@keyframes grTickIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}`}</style>
       <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "0 28px", height: "100%", flex: "0 0 auto", background: "#16a34a", zIndex: 2, fontWeight: 900, fontSize: 26, letterSpacing: 3 }}>
         <span style={{ width: 15, height: 15, borderRadius: 9999, background: "#ef4444", flex: "0 0 auto", animation: "gr-pulse 1.4s ease-out infinite" }} />
         <span>NYTT</span>
       </div>
-      <div style={{ flex: "1 1 auto", overflow: "hidden", position: "relative", height: "100%" }}>
-        <div style={{ position: "absolute", top: 0, left: 0, height: "100%", display: "flex", alignItems: "center", whiteSpace: "nowrap", fontSize: 30, fontWeight: 600, animation: "gr-scroll 30s linear infinite", willChange: "transform" }}>
-          <span style={{ paddingRight: 80 }}>{line}</span>
-          <span style={{ paddingRight: 80 }}>{line}</span>
-        </div>
+      <div key={idx} style={{ flex: "1 1 auto", height: "100%", display: "flex", alignItems: "center", animation: "grTickIn .45s ease-out" }}>
+        <TickerLine text={current} />
       </div>
+      {messages.length > 1 && (
+        <div style={{ flex: "0 0 auto", display: "flex", gap: 9, padding: "0 28px", alignItems: "center" }}>
+          {messages.map((_, p) => (
+            <span key={p} style={{ width: 11, height: 11, borderRadius: 9999, background: p === idx ? "#fff" : "rgba(255,255,255,.4)" }} />
+          ))}
+        </div>
+      )}
     </div>
   )
 }
