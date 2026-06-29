@@ -13,10 +13,11 @@ import { NewsRotator } from "./news-rotator"
 
 export const dynamic = "force-dynamic"
 
-// This widget renders the CUSTOMER content region. Offers (slide) have their own
-// full-screen "Tilbud" layout, and internal types (+ ticker) must never reach a
-// customer screen — so we fetch only customer-audience cards and no ticker.
+// Customer screens get news-style cards only (offers/tilbud have their own
+// full-screen layout). Internal/back-room screens additionally show staff
+// "ukens tilbud" slides (poster/PDF/structured offer) + the ticker.
 const CARD_TYPES = ["news", "competition", "job", "birthday"]
+const INTERNAL_CARD_TYPES = [...CARD_TYPES, "slide"]
 
 function normalizeUrl(raw: string): string {
   const v = raw.trim()
@@ -29,8 +30,9 @@ export default async function NewsWidgetPage({ searchParams }: { searchParams: P
   // flate=intern → bakrom/ansatte: internt innhold (nyheter/gratulerer/stilling) + ticker.
   // ellers → kundeskjerm: kun kunde-innhold, aldri ticker.
   const audience = flate === "intern" ? "intern" : "kunde"
+  const cardTypes = audience === "intern" ? INTERNAL_CARD_TYPES : CARD_TYPES
   const [items, tickerItems] = await Promise.all([
-    fetchLiveContent(store ?? null, CARD_TYPES, audience),
+    fetchLiveContent(store ?? null, cardTypes, audience),
     audience === "intern" ? fetchLiveContent(store ?? null, ["ticker"], "intern") : Promise.resolve([]),
   ])
   const ticker = tickerItems.map((t) => t.title.trim()).filter(Boolean)

@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useRef, useState, type CSSProperties } from "react"
+import { useEffect, useState, type CSSProperties } from "react"
 import type { LiveItem, Block } from "@/lib/content/live"
 import { OfferCard, type ChainBrand } from "./offer-card"
 import { PdfFlyer } from "./pdf-flyer"
@@ -52,37 +52,6 @@ function RichBlocks({ blocks }: { blocks: Block[] }) {
   )
 }
 
-/** Auto-scrolls the side-panel text when it overflows. */
-function ScrollText({ blocks }: { blocks: Block[] }) {
-  const wrap = useRef<HTMLDivElement>(null)
-  const inner = useRef<HTMLDivElement>(null)
-  useEffect(() => {
-    const w = wrap.current
-    const n = inner.current
-    if (!w || !n) return
-    const over = n.scrollHeight - w.clientHeight
-    if (over <= 8) return
-    const dur = Math.max(10, Math.round(over / 35) + 6) * 1000
-    const anim = n.animate(
-      [
-        { transform: "translateY(0)" },
-        { transform: "translateY(0)", offset: 0.12 },
-        { transform: `translateY(-${over}px)`, offset: 0.88 },
-        { transform: `translateY(-${over}px)` },
-      ],
-      { duration: dur, iterations: Infinity, direction: "alternate", easing: "ease-in-out" }
-    )
-    return () => anim.cancel()
-  }, [blocks])
-  return (
-    <div ref={wrap} style={{ flex: "1 1 auto", minHeight: 0, overflow: "hidden", position: "relative" }}>
-      <div ref={inner}>
-        <RichBlocks blocks={blocks} />
-      </div>
-    </div>
-  )
-}
-
 /** Poster (contain), PDF first page (iframe), or several images side by side. */
 function Media({ item }: { item: LiveItem }) {
   if (item.isPdf && item.imageUrl) {
@@ -122,20 +91,26 @@ function Media({ item }: { item: LiveItem }) {
   )
 }
 
-function SidePanel({ item, storeName }: { item: LiveItem; storeName: string | null }) {
+/** Header block for a customer poster slide: kicker, title, text and period —
+ *  stacked ABOVE the image/PDF (portrait: text on top, media below). */
+function PosterHeader({ item, storeName }: { item: LiveItem; storeName: string | null }) {
   const period = formatPeriod(item.validFrom, item.validTo)
   return (
-    <aside style={{ flex: "0 0 34%", maxWidth: 640, display: "flex", flexDirection: "column", padding: "60px 54px", boxSizing: "border-box", background: "rgba(255,255,255,.04)", borderRight: "1px solid rgba(255,255,255,.08)" }}>
-      <p style={{ color: GREEN, fontWeight: "bold", letterSpacing: 4, fontSize: 24, margin: 0, textTransform: "uppercase" }}>Tilbud</p>
+    <div style={{ flex: "0 0 auto", padding: "64px 60px 24px", display: "flex", flexDirection: "column" }}>
+      <p style={{ color: GREEN, fontWeight: "bold", letterSpacing: 4, fontSize: 26, margin: 0, textTransform: "uppercase" }}>Tilbud</p>
       {storeName && <p style={{ fontSize: 22, color: "rgba(255,255,255,.5)", margin: "10px 0 0", textTransform: "uppercase", letterSpacing: 1 }}>{storeName}</p>}
-      <h1 style={{ fontSize: 60, fontWeight: 900, margin: "16px 0 18px", lineHeight: 1.04 }}>{item.title}</h1>
+      <h1 style={{ fontSize: 78, fontWeight: 900, margin: "16px 0 0", lineHeight: 1.03 }}>{item.title}</h1>
+      {item.blocks.length > 0 && (
+        <div style={{ maxHeight: 300, overflow: "hidden", marginTop: 18 }}>
+          <RichBlocks blocks={item.blocks} />
+        </div>
+      )}
       {period && (
-        <span style={{ alignSelf: "flex-start", background: GREEN, color: "#fff", fontSize: 25, fontWeight: 700, padding: "10px 24px", borderRadius: 9999, marginBottom: 26 }}>
+        <span style={{ alignSelf: "flex-start", background: GREEN, color: "#fff", fontSize: 28, fontWeight: 700, padding: "10px 28px", borderRadius: 9999, marginTop: 22 }}>
           {period}
         </span>
       )}
-      <ScrollText blocks={item.blocks} />
-    </aside>
+    </div>
   )
 }
 
@@ -197,10 +172,10 @@ export function TilbudRotator({ items, ticker, storeName, chain = null }: { item
           <PdfFlyer url={item.imageUrl} title={item.title} color={chain?.color} fg={chain?.brandFg} pages={item.pages} />
         </div>
       ) : (
-        // Uploaded poster (image) → side panel + media.
-        <div key={item.id} style={{ ...inset, display: "flex", animation: "grFade .6s ease-out" }}>
-          <SidePanel item={item} storeName={storeName} />
-          <div style={{ flex: "1 1 auto", minWidth: 0, display: "flex", padding: 48, boxSizing: "border-box" }}>
+        // Customer poster/PDF slide → text on TOP, image/PDF below (portrait).
+        <div key={item.id} style={{ ...inset, display: "flex", flexDirection: "column", animation: "grFade .6s ease-out" }}>
+          <PosterHeader item={item} storeName={storeName} />
+          <div style={{ flex: "1 1 auto", minHeight: 0, display: "flex", padding: "0 54px 54px", boxSizing: "border-box" }}>
             <Media item={item} />
           </div>
         </div>
