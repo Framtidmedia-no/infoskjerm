@@ -70,6 +70,7 @@ export function ContentListClient({ items, stores, tags, previewUrl }: { items: 
 
   const [search, setSearch] = useState("")
   const [statusF, setStatusF] = useState("all")
+  const [typeF, setTypeF] = useState("")
   const [storeF, setStoreF] = useState("")
   const [tagF, setTagF] = useState("")
   const [page, setPage] = useState(0)
@@ -94,11 +95,12 @@ export function ContentListClient({ items, stores, tags, previewUrl }: { items: 
     return items.filter((it) => {
       if (search && !it.title.toLowerCase().includes(search.toLowerCase())) return false
       if (statusF !== "all" && (it.status ?? "draft") !== statusF) return false
+      if (typeF && it.type !== typeF) return false
       if (storeF && !it.storeIds.includes(storeF)) return false
       if (tagF && !it.tagIds.includes(tagF)) return false
       return true
     })
-  }, [items, search, statusF, storeF, tagF])
+  }, [items, search, statusF, typeF, storeF, tagF])
 
   const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
   const current = Math.min(page, pageCount - 1)
@@ -108,7 +110,7 @@ export function ContentListClient({ items, stores, tags, previewUrl }: { items: 
     return (v: T) => { setter(v); setPage(0) }
   }
 
-  const hasFilters = search || statusF !== "all" || storeF || tagF
+  const hasFilters = search || statusF !== "all" || typeF || storeF || tagF
 
   return (
     <div className="space-y-4">
@@ -131,6 +133,15 @@ export function ContentListClient({ items, stores, tags, previewUrl }: { items: 
           <option value="scheduled">Planlagt</option>
           <option value="archived">Arkivert</option>
         </select>
+        <select value={typeF} onChange={(e) => resetPage(setTypeF)(e.target.value)} className={selectCls}>
+          <option value="">Alle typer</option>
+          <option value="news">Nyhet</option>
+          <option value="competition">Konkurranse</option>
+          <option value="slide">Tilbud / annet</option>
+          <option value="job">Stilling</option>
+          <option value="birthday">Gratulerer</option>
+          <option value="ticker">Ticker</option>
+        </select>
         <select value={storeF} onChange={(e) => resetPage(setStoreF)(e.target.value)} className={selectCls}>
           <option value="">Alle butikker</option>
           {stores.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
@@ -140,7 +151,7 @@ export function ContentListClient({ items, stores, tags, previewUrl }: { items: 
           {tags.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
         </select>
         {hasFilters && (
-          <button onClick={() => { setSearch(""); setStatusF("all"); setStoreF(""); setTagF(""); setPage(0) }} className="text-xs text-zinc-400 hover:text-zinc-700 px-2">Nullstill</button>
+          <button onClick={() => { setSearch(""); setStatusF("all"); setTypeF(""); setStoreF(""); setTagF(""); setPage(0) }} className="text-xs text-zinc-400 hover:text-zinc-700 px-2">Nullstill</button>
         )}
       </div>
 
