@@ -13,7 +13,9 @@ import { NewsRotator } from "./news-rotator"
 
 export const dynamic = "force-dynamic"
 
-const CARD_TYPES = ["news", "competition", "slide", "job", "birthday"]
+// Offers (slide) are intentionally excluded — they have their own full-screen
+// "Tilbud" layout (/widget/tilbud) so they don't show in two places.
+const CARD_TYPES = ["news", "competition", "job", "birthday"]
 
 function normalizeUrl(raw: string): string {
   const v = raw.trim()

@@ -152,3 +152,7 @@ export async function buildFullscreenWebpage(api, layoutId, uri) {
 export function kpiUri(appUrl, storeId) {
   return `${appUrl}/widget/butikk-kpi?store=${storeId}`
 }
+
+export function tilbudUri(appUrl, storeId) {
+  return `${appUrl}/widget/tilbud?store=${storeId}`
+}

@@ -109,6 +109,9 @@ function formatPeriod(from: string | null, to: string | null): string | null {
 }
 
 function PeriodChip({ item }: { item: LiveItem }) {
+  // Only offers have a customer-relevant validity period. On regular posts the
+  // date is just an internal publish/scheduling detail — don't show it.
+  if (item.type !== "slide") return null
   const label = formatPeriod(item.validFrom, item.validTo)
   if (!label) return null
   return (

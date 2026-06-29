@@ -2,6 +2,7 @@
 
 import { requireRole } from "@/lib/admin/require-role"
 import { revalidatePath } from "next/cache"
+import { reconcileOffersSafe } from "@/lib/xibo/offers"
 import type { Json } from "@/types/database"
 
 type AdminSupabase = Awaited<ReturnType<typeof requireRole>>["supabase"]
@@ -120,16 +121,21 @@ export async function saveContent(input: ContentInput, id?: string): Promise<Sav
   }
 
   // Skjermene leser publisert innhold live fra Supabase via /widget/nyheter, så
-  // selve publiseringen er bare denne lagringen — ingen ekstern synk.
+  // selve publiseringen er bare lagring. Unntak: tilbud har en egen helside-
+  // layout per butikk som kun skal være planlagt når butikken har aktive tilbud
+  // — synk det umiddelbart (best-effort; cron retter opp ved feil).
+  if (input.type === "slide") await reconcileOffersSafe()
   revalidatePath("/admin/innhold")
   return { ok: true, id: contentId }
 }
 
 export async function deleteContent(id: string): Promise<SaveResult> {
   const { supabase } = await requireRole([...AUTHOR_ROLES])
+  const { data: existing } = await supabase.from("content_items").select("type").eq("id", id).maybeSingle()
   await supabase.from("content_targets").delete().eq("content_item_id", id)
   const { error } = await supabase.from("content_items").delete().eq("id", id)
   if (error) return { ok: false, error: error.message }
+  if (existing?.type === "slide") await reconcileOffersSafe()
   revalidatePath("/admin/innhold")
   return { ok: true }
 }
