@@ -152,10 +152,11 @@ export function ContentForm({ stores, tags, initial, audience = "intern" }: { st
   // Utseende (bakgrunn/skrift) på alt innhold unntatt ticker, strukturert
   // tilbudskort og kundeklubb (de har egne, faste design).
   const usesColors = type !== "ticker" && !isOfferStruktur && !isKlubb
+  // Kundeklubb styres per butikk (Butikker → butikk → Kundeklubb), ikke som
+  // innholdselement — så ingen «klubb»-modus her.
   const OFFER_MODES: { k: "struktur" | "plakat" | "klubb"; label: string }[] = [
     { k: "struktur", label: "Bygg tilbudskort" },
     { k: "plakat", label: "Last opp plakat / PDF" },
-    ...(audience === "kunde" ? [{ k: "klubb" as const, label: "Kundeklubb-QR" }] : []),
   ]
 
   // How many stores the current targeting reaches (live feedback).

@@ -11,6 +11,26 @@ async function requireUser() {
   return { supabase, userId: user.id }
 }
 
+export async function updateStoreKundeklubb(
+  storeId: string,
+  settings: { enabled: boolean; url: string; headline: string; subtext: string }
+) {
+  const { supabase, userId } = await requireUser()
+  const { error } = await supabase
+    .from("stores")
+    .update({
+      kundeklubb_enabled: settings.enabled,
+      kundeklubb_url: settings.url.trim() || null,
+      kundeklubb_headline: settings.headline.trim() || null,
+      kundeklubb_subtext: settings.subtext.trim() || null,
+    })
+    .eq("id", storeId)
+  if (error) return { ok: false, error: error.message }
+  await logAudit({ userId, action: "store.kundeklubb", entityType: "store", entityId: storeId, summary: `Oppdaterte kundeklubb (${settings.enabled ? "på" : "av"})` })
+  revalidatePath(`/admin/stores/${storeId}`)
+  return { ok: true }
+}
+
 export async function deleteStore(storeId: string) {
   const { supabase, userId } = await requireUser()
   const { data: store } = await supabase.from("stores").select("name").eq("id", storeId).maybeSingle()

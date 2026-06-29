@@ -883,6 +883,10 @@ export type Database = {
           email: string
           gln: string
           id: string
+          kundeklubb_enabled: boolean
+          kundeklubb_headline: string | null
+          kundeklubb_subtext: string | null
+          kundeklubb_url: string | null
           latitude: number | null
           longitude: number | null
           name: string
@@ -911,6 +915,10 @@ export type Database = {
           email?: string
           gln?: string
           id?: string
+          kundeklubb_enabled?: boolean
+          kundeklubb_headline?: string | null
+          kundeklubb_subtext?: string | null
+          kundeklubb_url?: string | null
           latitude?: number | null
           longitude?: number | null
           name?: string

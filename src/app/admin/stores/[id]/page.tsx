@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Building2, Mail, Monitor, ArrowLeft } from "lucide-react"
 import Link from "next/link"
 import { fetchScreensByStore } from "@/lib/xibo/screens"
+import { KundeklubbSettings } from "../_components/kundeklubb-settings"
 
 export const dynamic = "force-dynamic"
 
@@ -80,6 +81,21 @@ export default async function StoreDetailPage({ params }: PageProps) {
                 </div>
               )}
             </div>
+          </CardContent>
+        </Card>
+
+        {/* Kundeklubb (per-store QR + toggle) */}
+        <Card>
+          <CardContent className="p-5">
+            <KundeklubbSettings
+              storeId={store.id}
+              initial={{
+                enabled: store.kundeklubb_enabled ?? false,
+                url: store.kundeklubb_url ?? "",
+                headline: store.kundeklubb_headline ?? "Bli medlem – det er gratis",
+                subtext: store.kundeklubb_subtext ?? "Medlemspriser, bonus og ukens beste tilbud.",
+              }}
+            />
           </CardContent>
         </Card>
 

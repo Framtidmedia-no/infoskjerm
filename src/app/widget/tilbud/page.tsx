@@ -1,7 +1,6 @@
 import QRCode from "qrcode"
 import { fetchLiveContent, type LiveItem } from "@/lib/content/live"
 import { createAdminClient } from "@/lib/supabase/server"
-import { getBaseUrl } from "@/lib/base-url"
 import { TilbudRotator } from "./tilbud-rotator"
 import type { ChainBrand } from "./offer-card"
 
@@ -28,7 +27,21 @@ export const dynamic = "force-dynamic"
 
 interface StoreChainRow {
   name: string
+  kundeklubb_enabled: boolean | null
+  kundeklubb_url: string | null
+  kundeklubb_headline: string | null
+  kundeklubb_subtext: string | null
   chains: { name: string; logo_url: string | null; color: string; brand_fg: string | null } | null
+}
+
+/** Synthetic LiveItem for the per-store customer-club card (settings, not CMS). */
+function klubbLiveItem(headline: string, subtext: string): LiveItem {
+  return {
+    id: "kundeklubb", type: "slide", title: headline, blocks: [], imageUrl: null, imageUrls: [],
+    imageMode: "plakat", isPdf: false, pages: [], validFrom: null, validTo: null, author: "", date: "",
+    contactPerson: null, applyUrl: null, statsValue: null, statsChange: null, offer: null,
+    avdeling: "felles", bgColor: null, textColor: null, klubb: { headline, subtext },
+  }
 }
 
 export default async function TilbudWidgetPage({ searchParams }: { searchParams: Promise<{ store?: string; avdeling?: string }> }) {
@@ -40,7 +53,7 @@ export default async function TilbudWidgetPage({ searchParams }: { searchParams:
     // Customer competitions — same flashy module as internal, shown on the screen.
     fetchLiveContent(store ?? null, ["competition"], "kunde", avdeling),
     store
-      ? supabase.from("stores").select("name, chains(name, logo_url, color, brand_fg)").eq("id", store).maybeSingle()
+      ? supabase.from("stores").select("name, kundeklubb_enabled, kundeklubb_url, kundeklubb_headline, kundeklubb_subtext, chains(name, logo_url, color, brand_fg)").eq("id", store).maybeSingle()
       : Promise.resolve({ data: null }),
     // Opt-in customer ticker: only kunde-audience tickers targeted to this store.
     fetchLiveContent(store ?? null, ["ticker"], "kunde"),
@@ -58,14 +71,19 @@ export default async function TilbudWidgetPage({ searchParams }: { searchParams:
       } catch { /* best-effort */ }
     }
   }
-  const klubbItems = (slides as LiveItem[]).filter((s) => s.klubb)
-  if (klubbItems.length > 0 && store) {
-    const base = await getBaseUrl()
-    const klubbQr = await QRCode.toDataURL(`${base}/klubb/${store}`, { margin: 1, width: 700, color: { dark: "#0a0a0a", light: "#ffffff" } }).catch(() => "")
-    for (const it of klubbItems) qr[it.id] = klubbQr
+  const row = storeRow.data as unknown as StoreChainRow | null
+
+  // Per-store customer club: when enabled with a URL, inject a QR card pointing
+  // to THAT store's own sign-up link (set in Butikker → store → Kundeklubb).
+  if (row?.kundeklubb_enabled && row.kundeklubb_url?.trim()) {
+    const klubbItem = klubbLiveItem(
+      row.kundeklubb_headline || "Bli medlem – det er gratis",
+      row.kundeklubb_subtext || "Medlemspriser, bonus og ukens beste tilbud.",
+    )
+    items.push(klubbItem)
+    qr[klubbItem.id] = await QRCode.toDataURL(normalizeUrl(row.kundeklubb_url), { margin: 1, width: 700, color: { dark: "#0a0a0a", light: "#ffffff" } }).catch(() => "")
   }
 
-  const row = storeRow.data as unknown as StoreChainRow | null
   const storeName = row?.name ?? null
   const chainRow = row?.chains ?? null
   const chain: ChainBrand | null = chainRow
