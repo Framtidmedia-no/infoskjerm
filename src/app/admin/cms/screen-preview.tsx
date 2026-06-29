@@ -69,11 +69,12 @@ export function ScreenPreview({
   const tilbudSrc = `/widget/tilbud?store=${store.id}`
   const kpiSrc = `/widget/butikk-kpi?store=${store.id}`
   const oversiktSrc = `/widget/kpi-oversikt`
+  const internInnholdSrc = `/widget/nyheter?store=${store.id}&flate=intern`
 
   const subTabs: { key: View; label: string }[] =
     flate === "kunde"
       ? [{ key: "kunde-skjerm", label: "Skjerm" }, { key: "kunde-tilbud", label: store.hasOffers ? "Tilbud (aktivt)" : "Tilbud" }]
-      : [{ key: "intern-kpi", label: "Butikk-KPI" }, { key: "intern-oversikt", label: "Alle butikker" }]
+      : [{ key: "intern-innhold", label: "Internt innhold" }, { key: "intern-kpi", label: "Butikk-KPI" }, { key: "intern-oversikt", label: "Alle butikker" }]
 
   return (
     <div className="space-y-4">
@@ -95,7 +96,7 @@ export function ScreenPreview({
           <button onClick={() => setView("kunde-skjerm")} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold transition-all ${flate === "kunde" ? "bg-zinc-900 text-white" : "text-zinc-600"}`}>
             <Megaphone className="w-3.5 h-3.5" /> Kundeskjerm
           </button>
-          <button onClick={() => setView("intern-kpi")} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold transition-all ${flate === "intern" ? "bg-zinc-900 text-white" : "text-zinc-600"}`}>
+          <button onClick={() => setView("intern-innhold")} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold transition-all ${flate === "intern" ? "bg-zinc-900 text-white" : "text-zinc-600"}`}>
             <Monitor className="w-3.5 h-3.5" /> Internskjerm (bakrom)
           </button>
         </div>
@@ -131,7 +132,7 @@ export function ScreenPreview({
           ) : (
             <iframe
               title={view}
-              src={view === "kunde-tilbud" ? tilbudSrc : view === "intern-kpi" ? kpiSrc : oversiktSrc}
+              src={view === "kunde-tilbud" ? tilbudSrc : view === "intern-kpi" ? kpiSrc : view === "intern-innhold" ? internInnholdSrc : oversiktSrc}
               scrolling="no"
               style={{ position: "absolute", top: 0, left: 0, width: STAGE_W, height: STAGE_H, border: "none" }}
             />
@@ -148,7 +149,7 @@ export function ScreenPreview({
   )
 }
 
-type View = "kunde-skjerm" | "kunde-tilbud" | "intern-kpi" | "intern-oversikt"
+type View = "kunde-skjerm" | "kunde-tilbud" | "intern-innhold" | "intern-kpi" | "intern-oversikt"
 
 function ScreenStatus({ storeName, screens }: { storeName: string; screens: StoreScreen[] }) {
   const [pending, startTransition] = useTransition()

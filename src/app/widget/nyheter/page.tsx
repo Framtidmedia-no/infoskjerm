@@ -24,11 +24,16 @@ function normalizeUrl(raw: string): string {
   return /^https?:\/\//i.test(v) ? v : `https://${v}`
 }
 
-export default async function NewsWidgetPage({ searchParams }: { searchParams: Promise<{ store?: string }> }) {
-  const { store } = await searchParams
-  // Customer screens: customer-audience content only, and never the ticker.
-  const items = await fetchLiveContent(store ?? null, CARD_TYPES, "kunde")
-  const ticker: string[] = []
+export default async function NewsWidgetPage({ searchParams }: { searchParams: Promise<{ store?: string; flate?: string }> }) {
+  const { store, flate } = await searchParams
+  // flate=intern → bakrom/ansatte: internt innhold (nyheter/gratulerer/stilling) + ticker.
+  // ellers → kundeskjerm: kun kunde-innhold, aldri ticker.
+  const audience = flate === "intern" ? "intern" : "kunde"
+  const [items, tickerItems] = await Promise.all([
+    fetchLiveContent(store ?? null, CARD_TYPES, audience),
+    audience === "intern" ? fetchLiveContent(store ?? null, ["ticker"], "intern") : Promise.resolve([]),
+  ])
+  const ticker = tickerItems.map((t) => t.title.trim()).filter(Boolean)
 
   // Pre-generate QR codes (PNG data URLs) for job ads with an application link.
   const qr: Record<string, string> = {}
