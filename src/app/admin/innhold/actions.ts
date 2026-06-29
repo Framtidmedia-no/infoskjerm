@@ -9,7 +9,7 @@ type AdminSupabase = Awaited<ReturnType<typeof requireRole>>["supabase"]
 
 const AUTHOR_ROLES = ["super_admin", "chain_manager", "area_manager", "store_manager", "store_employee"] as const
 
-export type ContentType = "news" | "competition" | "stats" | "weather" | "slide" | "job"
+export type ContentType = "news" | "competition" | "stats" | "weather" | "slide" | "job" | "birthday"
 export type TargetMode = "all" | "stores" | "tags"
 
 export interface ContentInput {
@@ -36,6 +36,7 @@ const TYPE_LABEL: Record<ContentType, string> = {
   stats: "SALGSTALL",
   weather: "VÆR",
   job: "STILLING LEDIG",
+  birthday: "GRATULERER",
 }
 
 /** Builds the card body, appending job contact/apply lines for job ads. */
