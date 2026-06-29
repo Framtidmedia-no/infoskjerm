@@ -62,7 +62,7 @@ const PAGE_SIZE = 12
 
 const selectCls = "text-xs bg-white border border-zinc-200 rounded-lg px-2.5 py-2 text-zinc-600 focus:outline-none focus:ring-1 focus:ring-zinc-300"
 
-export function ContentListClient({ items, stores, tags }: { items: ContentRow[]; stores: Option[]; tags: Option[] }) {
+export function ContentListClient({ items, stores, tags, newHref = "/admin/innhold/ny" }: { items: ContentRow[]; stores: Option[]; tags: Option[]; newHref?: string }) {
   const router = useRouter()
   const [busyId, setBusyId] = useState<string | null>(null)
   const [menuId, setMenuId] = useState<string | null>(null)
@@ -162,7 +162,7 @@ export function ContentListClient({ items, stores, tags }: { items: ContentRow[]
           <Newspaper className="w-10 h-10 text-zinc-300 mx-auto mb-3" />
           <p className="text-sm font-medium text-zinc-700">{hasFilters ? "Ingen treff" : "Ingen innhold ennå"}</p>
           {!hasFilters && (
-            <Link href="/admin/innhold/ny" className="inline-block mt-4 text-xs font-semibold text-white px-3.5 py-2 rounded-lg" style={{ backgroundColor: "var(--brand-primary)" }}>+ Nytt innhold</Link>
+            <Link href={newHref} className="inline-block mt-4 text-xs font-semibold text-white px-3.5 py-2 rounded-lg" style={{ backgroundColor: "var(--brand-primary)" }}>+ Nytt innhold</Link>
           )}
         </div>
       ) : (

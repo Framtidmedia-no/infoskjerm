@@ -70,11 +70,29 @@
       "Bash(npx --yes supabase projects list)",
       "Bash(xargs -I{} sh -c 'echo \"--- {} ---\"; head -20 {}')",
       "Bash(npx --yes vercel env ls production)",
-      "Bash(node scripts/xibo/build-kpi-layouts.mjs)"
+      "Bash(node scripts/xibo/build-kpi-layouts.mjs)",
+      "Bash(git --no-pager status)",
+      "Bash(git --no-pager log --oneline -5)",
+      "Bash(git --no-pager diff --stat HEAD -- src/app/admin/innhold/_components/content-form.tsx)",
+      "Bash(git --no-pager log --oneline origin/main -3)",
+      "Bash(git --no-pager log --oneline origin/main..HEAD)",
+      "Bash(python3 -c \"import urllib.parse;print\\(urllib.parse.quote\\(\\\\\"select event_message, timestamp from edge_logs where event_message ilike '%429%' or event_message ilike '%storage%' order by timestamp desc limit 15\\\\\"\\)\\)\")",
+      "Bash(curl -s https://api.supabase.com/v1/projects/__TRACKED_VAR__/analytics/endpoints/logs.all?sql=__CMDSUB_OUTPUT__ -H 'Authorization: Bearer __CMDSUB_OUTPUT__')",
+      "Bash(python3 -c \"import sys,json;d=json.load\\(sys.stdin\\);print\\('status:',d.get\\('status'\\),'| plan region:',d.get\\('region'\\)\\)\")",
+      "Bash(curl -s -w '\\\\nHTTP %{http_code}\\\\n' -X POST https://api.supabase.com/v1/projects/__TRACKED_VAR__/restart -H 'Authorization: Bearer __CMDSUB_OUTPUT__' -H 'Content-Type: application/json')",
+      "Bash(node node_modules/next/dist/bin/next build)",
+      "Bash(node scripts/xibo/build-offer-layouts.mjs)",
+      "Bash(xargs -I {} bash -c 'echo \"=== {} ===\" && head -40 \"{}\"')",
+      "Bash(grep -rhoE \"\\(GET|POST|PUT|DELETE\\)? ?\\\\`?/?\\(api/\\)?\\(layout|region|playlist|widget|schedule|campaign|display|displaygroup|dataset|stats|notification|command|daypart|template|media|library|fault|log\\)[a-zA-Z/]*\" scripts/xibo src/lib/xibo)",
+      "Bash(echo \"=== async params-mønster \\(stores/[id]\\) ===\" && sed -n '1,25p' src/app/admin/stores/[id]/page.tsx | grep -A8 \"params\" && echo \"\" && echo \"=== innhold/[id] params ===\" && grep -n \"params\" src/app/admin/innhold/\\\\[id\\\\]/page.tsx | head)",
+      "Bash(node --check scripts/xibo/lib.mjs)",
+      "Bash(node --check scripts/xibo/build-widget-layout.mjs)",
+      "Bash(node --input-type=module -e \"import\\('./scripts/xibo/lib.mjs'\\).then\\(m=>console.log\\('eksporterer:', Object.keys\\(m\\).filter\\(k=>/provision|schedule|findOrCreate|findDisplay/i.test\\(k\\)\\).join\\(', '\\)\\)\\)\")"
     ],
     "additionalDirectories": [
       "/Users/frlund3/Documents/GitHub/infoskjerm/src/app/preview/[id]",
-      "/Users/frlund3/Documents/GitHub/infoskjerm/src/app/api/screens/[id]"
+      "/Users/frlund3/Documents/GitHub/infoskjerm/src/app/api/screens/[id]",
+      "/Users/frlund3/Documents/GitHub/infoskjerm/.claude/worktrees/cms-driftsverktoy/src/app/admin/stores/[id]"
     ]
   }
 }

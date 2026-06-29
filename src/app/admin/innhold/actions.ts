@@ -3,6 +3,7 @@
 import { requireRole } from "@/lib/admin/require-role"
 import { revalidatePath } from "next/cache"
 import { reconcileOffersSafe } from "@/lib/xibo/offers"
+import { audienceForType, type Audience } from "./audience"
 import type { Json } from "@/types/database"
 
 type AdminSupabase = Awaited<ReturnType<typeof requireRole>>["supabase"]
@@ -12,6 +13,7 @@ const AUTHOR_ROLES = ["super_admin", "chain_manager", "area_manager", "store_man
 export type ContentType = "news" | "competition" | "stats" | "weather" | "slide" | "job" | "birthday" | "ticker"
 export type TargetMode = "all" | "stores" | "tags"
 export type ImageMode = "plakat" | "bakgrunn" | "liten"
+export type { Audience } from "./audience"
 
 export interface ContentInput {
   title: string
@@ -21,6 +23,8 @@ export interface ContentInput {
   /** All attached images. 2+ → rendered full-page, side by side (no dimmed bg). */
   imageUrls?: string[]
   imageMode?: ImageMode
+  /** Customer screens vs staff/back-room. Falls back to audienceForType. */
+  audience?: Audience
   targetMode: TargetMode
   storeIds: string[]
   tagIds: string[]
@@ -55,6 +59,7 @@ function buildBody(input: ContentInput): Json {
     imageUrl: imageUrls[0] ?? input.imageUrl ?? null,
     imageUrls,
     imageMode: input.imageMode ?? "bakgrunn",
+    audience: input.audience ?? audienceForType(input.type),
     ...(input.type === "job" ? { contactPerson: input.contactPerson ?? null, applyUrl: input.applyUrl ?? null } : {}),
     ...(input.type === "stats" ? { statsValue: input.statsValue ?? null, statsChange: input.statsChange ?? null } : {}),
   })) as Json

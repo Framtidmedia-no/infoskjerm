@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation"
 import { RichTextEditor } from "@/components/admin/rich-text-editor"
 import { MediaUploader } from "@/components/admin/media-uploader"
 import { Button } from "@/components/ui/button"
-import { saveContent, type ContentType, type TargetMode, type ImageMode } from "../actions"
+import { saveContent, type ContentType, type TargetMode, type ImageMode, type Audience } from "../actions"
 import { toast } from "sonner"
 import {
   Dialog, DialogContent, DialogHeader, DialogFooter, DialogTitle, DialogDescription,
@@ -49,10 +49,19 @@ const TYPES: { key: ContentType; label: string; icon: React.ElementType }[] = [
 
 const IMAGE_TYPES: ContentType[] = ["news", "competition", "slide", "job", "birthday"]
 
-export function ContentForm({ stores, tags, initial }: { stores: StoreOption[]; tags: TagOption[]; initial?: ContentInitial }) {
+// Which content types belong to each audience/menu.
+const AUDIENCE_TYPES: Record<Audience, ContentType[]> = {
+  kunde: ["slide"],
+  intern: ["news", "competition", "job", "birthday", "ticker"],
+}
+
+export function ContentForm({ stores, tags, initial, audience = "intern" }: { stores: StoreOption[]; tags: TagOption[]; initial?: ContentInitial; audience?: Audience }) {
   const router = useRouter()
+  const allowedTypes = AUDIENCE_TYPES[audience]
+  const typeOptions = TYPES.filter((t) => allowedTypes.includes(t.key))
+  const listHref = audience === "kunde" ? "/admin/kundeinnhold" : "/admin/innhold"
   const [title, setTitle] = useState(initial?.title ?? "")
-  const [type, setType] = useState<ContentType>(initial?.type ?? "news")
+  const [type, setType] = useState<ContentType>(initial?.type ?? allowedTypes[0])
   const [bodyHtml, setBodyHtml] = useState(initial?.bodyHtml ?? "")
   const [imageUrls, setImageUrls] = useState<string[]>(initial?.imageUrls?.length ? initial.imageUrls : initial?.imageUrl ? [initial.imageUrl] : [])
   const [targetMode, setTargetMode] = useState<TargetMode>(initial?.targetMode ?? "all")
@@ -109,7 +118,7 @@ export function ContentForm({ stores, tags, initial }: { stores: StoreOption[]; 
     setSaving(true)
     const res = await saveContent(
       {
-        title, type, bodyHtml: usesBody ? bodyHtml : "", imageUrl: usesImage ? imageUrls[0] ?? null : null,
+        title, type, audience, bodyHtml: usesBody ? bodyHtml : "", imageUrl: usesImage ? imageUrls[0] ?? null : null,
         imageUrls: usesImage ? imageUrls : [],
         // 2+ images always render full-page (side by side), so force plakat-style.
         imageMode: usesImage ? (isMulti ? "plakat" : imageMode) : "bakgrunn",
@@ -123,7 +132,7 @@ export function ContentForm({ stores, tags, initial }: { stores: StoreOption[]; 
     setSaving(false)
     if (res.ok) {
       toast.success(publish ? "Publisert" : "Lagret som utkast")
-      router.push("/admin/innhold")
+      router.push(listHref)
     } else {
       toast.error(res.error ?? "Noe gikk galt")
     }
@@ -133,7 +142,7 @@ export function ContentForm({ stores, tags, initial }: { stores: StoreOption[]; 
     <div className="flex flex-col flex-1">
       {/* Topbar */}
       <div className="flex items-center gap-3 px-6 h-14 bg-white border-b border-zinc-200 sticky top-0 z-10">
-        <Link href="/admin/innhold" className="p-1.5 rounded-lg hover:bg-zinc-100 text-zinc-400 hover:text-zinc-700"><ChevronLeft className="w-4 h-4" /></Link>
+        <Link href={listHref} className="p-1.5 rounded-lg hover:bg-zinc-100 text-zinc-400 hover:text-zinc-700"><ChevronLeft className="w-4 h-4" /></Link>
         <h1 className="text-sm font-semibold text-zinc-900">{initial ? "Rediger innhold" : "Nytt innhold"}</h1>
         <div className="ml-auto flex items-center gap-2">
           <Button variant="outline" size="sm" onClick={() => handleSave(false)} disabled={saving}>
@@ -246,18 +255,20 @@ export function ContentForm({ stores, tags, initial }: { stores: StoreOption[]; 
 
         {/* Sidebar column */}
         <div className="space-y-5">
-          {/* Type */}
-          <section className="rounded-xl border border-zinc-200 bg-white p-4">
-            <h3 className="text-xs font-semibold text-zinc-600 mb-2.5">Type</h3>
-            <div className="grid grid-cols-2 gap-1.5">
-              {TYPES.map(({ key, label, icon: Icon }) => (
-                <button key={key} onClick={() => { setType(key); if (key === "slide") setImageMode("plakat") }}
-                  className={`flex items-center gap-1.5 px-2.5 py-2 rounded-lg text-xs font-medium border transition-all ${type === key ? "border-zinc-900 bg-zinc-900 text-white" : "border-zinc-200 text-zinc-600 hover:border-zinc-300"}`}>
-                  <Icon className="w-3.5 h-3.5" /> {label}
-                </button>
-              ))}
-            </div>
-          </section>
+          {/* Type — only show a selector when the audience has more than one type */}
+          {typeOptions.length > 1 && (
+            <section className="rounded-xl border border-zinc-200 bg-white p-4">
+              <h3 className="text-xs font-semibold text-zinc-600 mb-2.5">Type</h3>
+              <div className="grid grid-cols-2 gap-1.5">
+                {typeOptions.map(({ key, label, icon: Icon }) => (
+                  <button key={key} onClick={() => { setType(key); if (key === "slide") setImageMode("plakat") }}
+                    className={`flex items-center gap-1.5 px-2.5 py-2 rounded-lg text-xs font-medium border transition-all ${type === key ? "border-zinc-900 bg-zinc-900 text-white" : "border-zinc-200 text-zinc-600 hover:border-zinc-300"}`}>
+                    <Icon className="w-3.5 h-3.5" /> {label}
+                  </button>
+                ))}
+              </div>
+            </section>
+          )}
 
           {/* Targeting */}
           <section className="rounded-xl border border-zinc-200 bg-white p-4">

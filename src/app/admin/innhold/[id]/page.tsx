@@ -2,6 +2,7 @@ import { requireRole } from "@/lib/admin/require-role"
 import { notFound } from "next/navigation"
 import { ContentForm, type StoreOption, type TagOption, type ContentInitial } from "../_components/content-form"
 import type { ContentType, TargetMode } from "../actions"
+import { audienceForType, type Audience } from "../audience"
 
 export const dynamic = "force-dynamic"
 
@@ -21,9 +22,11 @@ export default async function EditContentPage({ params }: { params: Promise<{ id
   if (!item) notFound()
 
   const body = (item.body ?? {}) as {
-    html?: string; imageUrl?: string | null; imageUrls?: string[]; imageMode?: "plakat" | "bakgrunn"
+    html?: string; imageUrl?: string | null; imageUrls?: string[]; imageMode?: "plakat" | "bakgrunn" | "liten"
+    audience?: Audience
     contactPerson?: string | null; applyUrl?: string | null; statsValue?: string | null; statsChange?: string | null
   }
+  const audience: Audience = body.audience === "kunde" || body.audience === "intern" ? body.audience : audienceForType(item.type as ContentType)
   const targetRows = targets ?? []
   let targetMode: TargetMode = "all"
   if (targetRows.some((t) => t.store_id)) targetMode = "stores"
@@ -53,5 +56,5 @@ export default async function EditContentPage({ params }: { params: Promise<{ id
     id: s.id, name: s.name, chain: (s.chains as { name: string } | null)?.name ?? null, city: s.city,
   }))
 
-  return <ContentForm stores={storeOptions} tags={(tags ?? []) as TagOption[]} initial={initial} />
+  return <ContentForm stores={storeOptions} tags={(tags ?? []) as TagOption[]} initial={initial} audience={audience} />
 }
