@@ -40,6 +40,8 @@ export interface ContentInput {
   statsChange?: string | null
   /** Offer (slide) only: structured price-card fields (when not a poster). */
   offer?: OfferFields | null
+  /** Customer offers: department/category ("felles" = whole store). */
+  avdeling?: string | null
 }
 
 export interface SaveResult {
@@ -66,6 +68,7 @@ function buildBody(input: ContentInput): Json {
     ...(input.type === "job" ? { contactPerson: input.contactPerson ?? null, applyUrl: input.applyUrl ?? null } : {}),
     ...(input.type === "stats" ? { statsValue: input.statsValue ?? null, statsChange: input.statsChange ?? null } : {}),
     ...(input.type === "slide" && input.offer ? { offer: input.offer } : {}),
+    ...(input.type === "slide" ? { avdeling: input.avdeling || "felles" } : {}),
   })) as Json
 }
 

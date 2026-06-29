@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useRef, useState, useTransition } from "react"
-import { Monitor, ImageIcon, ChevronDown, RefreshCw, Camera, Wifi, WifiOff, Megaphone } from "lucide-react"
+import { Monitor, ChevronDown, RefreshCw, Camera, Wifi, WifiOff, Megaphone } from "lucide-react"
 import type { StoreScreen, ScreenSync } from "@/lib/xibo/screens"
 import { pushToScreen, requestNewScreenshot } from "./actions"
 
@@ -25,10 +25,7 @@ export interface PreviewStore {
   hasOffers: boolean
 }
 
-const STAGE_W = 1920
-const STAGE_H = 1080
-const STRIP_H = 180
-
+// Customer screens are always portrait (1080×1920); internal/back-room landscape.
 const SYNC_BADGE: Record<ScreenSync, { label: string; cls: string }> = {
   ok: { label: "Oppdatert", cls: "bg-emerald-50 text-emerald-700 border-emerald-200" },
   downloading: { label: "Laster ned", cls: "bg-amber-50 text-amber-700 border-amber-200" },
@@ -49,6 +46,12 @@ export function ScreenPreview({
   const [scale, setScale] = useState(0.5)
   const flate = view.startsWith("kunde") ? "kunde" : "intern"
 
+  // Customer = portrait 1080×1920, internal = landscape 1920×1080.
+  const portrait = flate === "kunde"
+  const STAGE_W = portrait ? 1080 : 1920
+  const STAGE_H = portrait ? 1920 : 1080
+  const STRIP_H = portrait ? 150 : 180
+
   useEffect(() => {
     const el = wrapRef.current
     if (!el) return
@@ -57,7 +60,7 @@ export function ScreenPreview({
     const ro = new ResizeObserver(update)
     ro.observe(el)
     return () => ro.disconnect()
-  }, [])
+  }, [STAGE_W])
 
   const store = stores.find((s) => s.id === storeId) ?? stores[0]
   if (!store) return <p className="text-sm text-zinc-500">Ingen butikker ennå.</p>
@@ -65,15 +68,15 @@ export function ScreenPreview({
   const storeScreens = screens[store.id] ?? []
   const navn = store.city || store.name
   const topbarSrc = `/widget/topbar?butikk=${encodeURIComponent(store.name)}&lat=${store.lat ?? ""}&lon=${store.lon ?? ""}&navn=${encodeURIComponent(navn)}`
-  const newsSrc = `/widget/nyheter?store=${store.id}`
   const tilbudSrc = `/widget/tilbud?store=${store.id}`
   const kpiSrc = `/widget/butikk-kpi?store=${store.id}`
   const oversiktSrc = `/widget/kpi-oversikt`
   const internInnholdSrc = `/widget/nyheter?store=${store.id}&flate=intern`
 
+  // Kunde = ett portrett-skjermbilde (toppstripe + tilbud/avis). Intern = 3 faner.
   const subTabs: { key: View; label: string }[] =
     flate === "kunde"
-      ? [{ key: "kunde-skjerm", label: "Skjerm" }, { key: "kunde-tilbud", label: store.hasOffers ? "Tilbud (aktivt)" : "Tilbud" }]
+      ? []
       : [{ key: "intern-innhold", label: "Internt innhold" }, { key: "intern-kpi", label: "Butikk-KPI" }, { key: "intern-oversikt", label: "Alle butikker" }]
 
   return (
@@ -102,16 +105,16 @@ export function ScreenPreview({
         </div>
       </div>
 
-      {/* Sub-view within the flate */}
+      {/* Sub-view within the flate (intern only) */}
       <div className="flex flex-wrap items-center gap-1.5">
         {subTabs.map((t) => (
           <button key={t.key} onClick={() => setView(t.key)}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-all ${view === t.key ? "border-zinc-900 bg-zinc-900 text-white" : "border-zinc-200 text-zinc-600 hover:border-zinc-300"}`}>
-            {t.key === "kunde-tilbud" ? <ImageIcon className="w-3.5 h-3.5" /> : <Monitor className="w-3.5 h-3.5" />} {t.label}
+            <Monitor className="w-3.5 h-3.5" /> {t.label}
           </button>
         ))}
-        {view === "kunde-tilbud" && !store.hasOffers && (
-          <span className="text-xs text-zinc-400">Vises kun når butikken har aktive tilbud.</span>
+        {flate === "kunde" && (
+          <span className="text-xs text-zinc-400">Stående kundeskjerm — toppstripe + tilbud/kundeavis. Aldri interne nyheter eller ticker.</span>
         )}
         {flate === "intern" && (
           <span className="text-xs text-zinc-400">Bakrom/ansatte — vises aldri til kunder.</span>
@@ -121,13 +124,13 @@ export function ScreenPreview({
       {/* Ops panel — live player status, push-now, real screenshot */}
       {flate === "kunde" && <ScreenStatus key={store.id} storeName={store.name} screens={storeScreens} />}
 
-      {/* 16:9 stage, scaled to the real 1920×1080 screen */}
-      <div ref={wrapRef} className="relative w-full rounded-2xl overflow-hidden border border-zinc-200 bg-black shadow-sm" style={{ aspectRatio: "16 / 9" }}>
+      {/* Scaled stage — portrait for customer, landscape for internal */}
+      <div ref={wrapRef} className="relative rounded-2xl overflow-hidden border border-zinc-200 bg-black shadow-sm mx-auto" style={{ aspectRatio: portrait ? "9 / 16" : "16 / 9", width: "100%", maxWidth: portrait ? 400 : undefined }}>
         <div style={{ position: "absolute", top: 0, left: 0, width: STAGE_W, height: STAGE_H, transform: `scale(${scale})`, transformOrigin: "top left" }}>
           {view === "kunde-skjerm" ? (
             <>
               <iframe title="Toppstripe" src={topbarSrc} scrolling="no" style={{ position: "absolute", top: 0, left: 0, width: STAGE_W, height: STRIP_H, border: "none" }} />
-              <iframe title="Innhold" src={newsSrc} scrolling="no" style={{ position: "absolute", top: STRIP_H, left: 0, width: STAGE_W, height: STAGE_H - STRIP_H, border: "none" }} />
+              <iframe title="Innhold" src={tilbudSrc} scrolling="no" style={{ position: "absolute", top: STRIP_H, left: 0, width: STAGE_W, height: STAGE_H - STRIP_H, border: "none" }} />
             </>
           ) : (
             <iframe

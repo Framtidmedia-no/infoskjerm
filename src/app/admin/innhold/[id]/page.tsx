@@ -26,6 +26,7 @@ export default async function EditContentPage({ params }: { params: Promise<{ id
     audience?: Audience
     contactPerson?: string | null; applyUrl?: string | null; statsValue?: string | null; statsChange?: string | null
     offer?: import("@/lib/content/live").OfferFields | null
+    avdeling?: string | null
   }
   const audience: Audience = body.audience === "kunde" || body.audience === "intern" ? body.audience : audienceForType(item.type as ContentType)
   const targetRows = targets ?? []
@@ -48,6 +49,7 @@ export default async function EditContentPage({ params }: { params: Promise<{ id
     validTo: item.valid_to ? item.valid_to.slice(0, 10) : null,
     imageMode: body.imageMode ?? "bakgrunn",
     offer: body.offer ?? null,
+    avdeling: body.avdeling ?? "felles",
     contactPerson: body.contactPerson ?? null,
     applyUrl: body.applyUrl ?? null,
     statsValue: body.statsValue ?? null,

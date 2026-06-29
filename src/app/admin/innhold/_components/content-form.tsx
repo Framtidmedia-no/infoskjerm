@@ -39,6 +39,7 @@ export interface ContentInitial {
   statsValue?: string | null
   statsChange?: string | null
   offer?: OfferFields | null
+  avdeling?: string | null
 }
 
 const EMPTY_OFFER: OfferFields = {
@@ -47,6 +48,17 @@ const EMPTY_OFFER: OfferFields = {
 }
 
 const BADGES = ["TILBUD", "KNALLPRIS", "NYHET", "SUPERPRIS", "KAMPANJE"]
+
+// Departments an offer can be shown in. "felles" = whole store (all screens).
+const AVDELINGER: { key: string; label: string }[] = [
+  { key: "felles", label: "Hele butikken" },
+  { key: "frukt", label: "Frukt & grønt" },
+  { key: "ferskvare", label: "Ferskvare" },
+  { key: "bakeri", label: "Bakeri" },
+  { key: "kjott-fisk", label: "Kjøtt & fisk" },
+  { key: "kasse", label: "Kasse" },
+  { key: "inngang", label: "Inngang" },
+]
 
 const OFFER_GRID: { k: keyof OfferFields; label: string; ph: string }[] = [
   { k: "pris", label: "Pris", ph: "39,90" },
@@ -94,6 +106,7 @@ export function ContentForm({ stores, tags, initial, audience = "intern" }: { st
   const [imageMode, setImageMode] = useState<ImageMode>(initial?.imageMode ?? "bakgrunn")
   const [offerMode, setOfferMode] = useState<"struktur" | "plakat">(initial?.offer ? "struktur" : "plakat")
   const [offer, setOffer] = useState<OfferFields>(initial?.offer ?? EMPTY_OFFER)
+  const [avdeling, setAvdeling] = useState(initial?.avdeling ?? "felles")
   const [saving, setSaving] = useState(false)
   const [confirmNoEndDate, setConfirmNoEndDate] = useState(false)
 
@@ -170,6 +183,7 @@ export function ContentForm({ stores, tags, initial, audience = "intern" }: { st
         type, audience, bodyHtml: usesBody ? bodyHtml : "", imageUrl: usesImage ? imageUrls[0] ?? null : null,
         imageUrls: usesImage ? imageUrls : [],
         offer: isOfferStruktur ? offer : null,
+        avdeling: type === "slide" ? avdeling : null,
         // 2+ images always render full-page (side by side), so force plakat-style.
         imageMode: usesImage ? (type === "slide" || isMulti ? "plakat" : imageMode) : "bakgrunn",
         targetMode, storeIds, tagIds,
@@ -431,6 +445,18 @@ export function ContentForm({ stores, tags, initial, audience = "intern" }: { st
               </div>
             )}
           </section>
+
+          {/* Avdeling — kun for kundeannonser (tilbud) */}
+          {type === "slide" && (
+            <section className="rounded-xl border border-zinc-200 bg-white p-4">
+              <h3 className="text-xs font-semibold text-zinc-600 mb-2.5">Avdeling</h3>
+              <select value={avdeling} onChange={(e) => setAvdeling(e.target.value)}
+                className="w-full text-xs border border-zinc-200 rounded-lg px-2.5 py-2 focus:outline-none focus:ring-1 focus:ring-zinc-300">
+                {AVDELINGER.map((a) => <option key={a.key} value={a.key}>{a.label}</option>)}
+              </select>
+              <p className="text-[10px] text-zinc-400 mt-1.5">Vises på skjermer i denne avdelingen. «Hele butikken» vises på alle kundeskjermer.</p>
+            </section>
+          )}
 
           {/* Period */}
           <section className="rounded-xl border border-zinc-200 bg-white p-4">

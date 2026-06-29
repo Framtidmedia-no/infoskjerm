@@ -23,12 +23,12 @@ interface StoreChainRow {
   chains: { name: string; logo_url: string | null; color: string; brand_fg: string | null } | null
 }
 
-export default async function TilbudWidgetPage({ searchParams }: { searchParams: Promise<{ store?: string }> }) {
-  const { store } = await searchParams
+export default async function TilbudWidgetPage({ searchParams }: { searchParams: Promise<{ store?: string; avdeling?: string }> }) {
+  const { store, avdeling } = await searchParams
   const supabase = createAdminClient()
 
   const [items, storeRow] = await Promise.all([
-    fetchLiveContent(store ?? null, ["slide"], "kunde"),
+    fetchLiveContent(store ?? null, ["slide"], "kunde", avdeling),
     store
       ? supabase.from("stores").select("name, chains(name, logo_url, color, brand_fg)").eq("id", store).maybeSingle()
       : Promise.resolve({ data: null }),

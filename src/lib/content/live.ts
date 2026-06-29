@@ -57,6 +57,8 @@ export interface LiveItem {
   statsChange: string | null
   /** Set when the offer was authored as a structured price card (not a poster). */
   offer: OfferFields | null
+  /** Department/category, e.g. "frukt"/"ferskvare". "felles" = whole store. */
+  avdeling: string
 }
 
 interface Body {
@@ -69,6 +71,7 @@ interface Body {
   statsValue?: string | null
   statsChange?: string | null
   offer?: OfferFields | null
+  avdeling?: string | null
 }
 
 interface Target {
@@ -126,7 +129,7 @@ function withinWindow(from: string | null, to: string | null, now: number): bool
  * @param storeId  Supabase store id, or null for the all-stores base feed.
  * @param types    content_type values to include.
  */
-export async function fetchLiveContent(storeId: string | null, types: string[], audience?: "kunde" | "intern"): Promise<LiveItem[]> {
+export async function fetchLiveContent(storeId: string | null, types: string[], audience?: "kunde" | "intern", avdeling?: string): Promise<LiveItem[]> {
   const supabase = createAdminClient()
   const now = Date.now()
 
@@ -168,11 +171,20 @@ export async function fetchLiveContent(storeId: string | null, types: string[], 
     return false
   }
 
+  // A department screen shows its own department + "felles" (whole-store) items.
+  // An "felles"/main screen (or no department) shows everything.
+  const matchAvdeling = (body: { avdeling?: string } | null): boolean => {
+    if (!avdeling || avdeling === "felles") return true
+    const a = body?.avdeling || "felles"
+    return a === avdeling || a === "felles"
+  }
+
   const visible = items.filter(
     (it) =>
       withinWindow(it.valid_from, it.valid_to, now) &&
       targets(it) &&
-      (!audience || audienceOf(it.type, it.body as { audience?: string } | null) === audience)
+      (!audience || audienceOf(it.type, it.body as { audience?: string } | null) === audience) &&
+      matchAvdeling(it.body as { avdeling?: string } | null)
   )
 
   // Resolve author names in one batch.
@@ -205,6 +217,7 @@ export async function fetchLiveContent(storeId: string | null, types: string[], 
       statsValue: body.statsValue ?? null,
       statsChange: body.statsChange ?? null,
       offer: body.offer && body.offer.varenavn ? body.offer : null,
+      avdeling: body.avdeling || "felles",
     }
   })
 }
