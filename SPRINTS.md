@@ -27,13 +27,13 @@ Mål: «butikk X trenger en egen side» blir én kommando, ikke dager.
 
 > NB: build-scriptet muterer delt Xibo-state (prod) — kjøres bevisst, ikke i CI. Verifisert her med `node --check` + ren modul-import; ikke kjørt mot prod.
 
-## Sprint 3 — Innsikt: proof-of-play + feilvarsler
-- **`GET /stats`** proof-of-play → ekte «hva ble vist, når, hvor lenge» (erstatter slettet `play_log`).
-- **`GET /fault` + `/notification`** → skjermfeil i admin før kunden ser svart skjerm.
+## Sprint 3 — Innsikt: proof-of-play + feilvarsler ✅
+- **`src/lib/xibo/insight.ts`** — defensivt datalag: `GET /fault` (skjermfeil) + `GET /stats?type=Layout` (proof-of-play, aggregert per layout, 7-dagers vindu). Tolererer både array- og `{data}`-svar; aldri kast.
+- **`InsightPanel`** øverst i `/admin/cms`: aktive skjermfeil + «mest vist» med søylegraf. Ærlige tom-tilstander når ingen Pi er tilkoblet.
 
 ---
 
 ### Status
 - [x] Sprint 1 — driftsverktøy i /admin/cms
 - [x] Sprint 2 — generisk spesial-widget-bygger
-- [ ] Sprint 3 — proof-of-play + feilvarsler
+- [x] Sprint 3 — proof-of-play + feilvarsler
