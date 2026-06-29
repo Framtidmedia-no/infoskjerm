@@ -43,8 +43,14 @@ Digital klokke + dato, Yr-vær (webpage-widget `/widget/vaer`), DataSet View-nyh
 - **Type-merkelapp** som kicker (GANGE-ROLV / KONKURRANSE / TILBUD / STILLING LEDIG) via kolonne `merkelapp`.
 - `/widget/*` rammbar fra hvor som helst (CSP `frame-ancestors *`) — offentlig display-innhold.
 
-### ✅ Stillingsannonser
-Ny `content_type 'job'` (migrasjon 015) med felter kontaktperson + søknadslenke i skjemaet; vises på kortet med «STILLING LEDIG»-merkelapp.
+### ✅ Stillingsannonser + bursdagshilsen
+Ny `content_type 'job'` (migrasjon 015, kontaktperson + søknadslenke, «STILLING LEDIG») og `'birthday'` (migrasjon 016, «GRATULERER»).
+
+### ✅ Per-rolle datafiltrering
+Innholdslista filtreres per rolle: kjede-/plattformadmin ser alt; enhets-/områderoller ser kun innhold som treffer butikkene de har tilgang til (`user_stores`), innhold målrettet alle, eller egne utkast.
+
+### ✅ GDPR
+Registrert i Framtid Tech AS art.30-protokoll (v1.9) som databehandler-prosjekt; Xibo/Hetzner som underdatabehandler.
 
 > DataSet 1-kolonner nå: tittel, tekst, bilde, type, butikker, fra, til, contentId, **dato, forfatter, merkelapp**.
 > Endre maldesign: rediger `scripts/xibo/lib.mjs` → kjør base- + butikk-builderne på nytt (idempotent).
@@ -54,10 +60,9 @@ Ny `content_type 'job'` (migrasjon 015) med felter kontaktperson + søknadslenke
 ## DET SOM GJENSTÅR
 
 ### 🟡 Resten
-- Bursdagshilsen + flere innholdstyper
-- Per-rolle datafiltrering (enhetsadmin ser kun sine butikkers innhold)
-- Raspberry Pi: Arexibo-spiller når maskinvare finnes (ingen displays registrert ennå → planleggingen «venter» på hardware)
-- **GDPR (AVKLARES):** global regel sier GangeRolv-prosjekter holdes UTENFOR Framtid Tech AS art.30. Men infra (xibo.framtidtech.no/Hetzner) er Framtid Tech AS, og hvis Framtid Tech driver signage-plattformen som databehandler for Gange-Rolv, hører Xibo/Hetzner som underdatabehandlere inn i protokollen. **Bekreft forretningsforholdet med Frank før master-protokollen røres.**
+- **Raspberry Pi:** Arexibo-spiller når maskinvare finnes. Ingen displays registrert i Xibo ennå → de 16 planleggingene «venter» på at en Pi melder seg inn i riktig display-gruppe. Da vises butikkens layout automatisk.
+- **DPA Framtid Tech ↔ Gange-Rolv** + org.nr i art.30-protokollen (markert `[FYLL INN]`).
+- Eventuelt: QR-kode for søknadslenke på stillingskort; per-butikk redaktør-begrensning også i RLS (i dag filtrert i UI/server).
 
 ---
 
