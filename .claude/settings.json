@@ -87,7 +87,9 @@
       "Bash(echo \"=== async params-mønster \\(stores/[id]\\) ===\" && sed -n '1,25p' src/app/admin/stores/[id]/page.tsx | grep -A8 \"params\" && echo \"\" && echo \"=== innhold/[id] params ===\" && grep -n \"params\" src/app/admin/innhold/\\\\[id\\\\]/page.tsx | head)",
       "Bash(node --check scripts/xibo/lib.mjs)",
       "Bash(node --check scripts/xibo/build-widget-layout.mjs)",
-      "Bash(node --input-type=module -e \"import\\('./scripts/xibo/lib.mjs'\\).then\\(m=>console.log\\('eksporterer:', Object.keys\\(m\\).filter\\(k=>/provision|schedule|findOrCreate|findDisplay/i.test\\(k\\)\\).join\\(', '\\)\\)\\)\")"
+      "Bash(node --input-type=module -e \"import\\('./scripts/xibo/lib.mjs'\\).then\\(m=>console.log\\('eksporterer:', Object.keys\\(m\\).filter\\(k=>/provision|schedule|findOrCreate|findDisplay/i.test\\(k\\)\\).join\\(', '\\)\\)\\)\")",
+      "Bash(cat)",
+      "Bash(node sptest.mjs)"
     ],
     "additionalDirectories": [
       "/Users/frlund3/Documents/GitHub/infoskjerm/src/app/preview/[id]",

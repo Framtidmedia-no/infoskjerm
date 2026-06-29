@@ -6,6 +6,7 @@ import { RichTextEditor } from "@/components/admin/rich-text-editor"
 import { MediaUploader } from "@/components/admin/media-uploader"
 import { Button } from "@/components/ui/button"
 import { saveContent, type ContentType, type TargetMode, type ImageMode, type Audience } from "../actions"
+import { lookupSparProduct } from "../spar-actions"
 import type { OfferFields } from "@/lib/content/live"
 import { toast } from "sonner"
 import {
@@ -98,6 +99,27 @@ export function ContentForm({ stores, tags, initial, audience = "intern" }: { st
 
   const isOfferStruktur = type === "slide" && offerMode === "struktur"
   const setOf = (k: keyof OfferFields, v: string) => setOffer((p) => ({ ...p, [k]: v.trim() || null }))
+
+  const [gtinInput, setGtinInput] = useState("")
+  const [looking, setLooking] = useState(false)
+  async function doLookup() {
+    if (!gtinInput.trim() || looking) return
+    setLooking(true)
+    const res = await lookupSparProduct(gtinInput)
+    setLooking(false)
+    if (!res.ok || !res.product) { toast.error(res.error ?? "Fant ikke varen på spar.no"); return }
+    const p = res.product
+    setOffer((prev) => ({
+      ...prev,
+      varenavn: p.varenavn ?? prev.varenavn,
+      vareinfo: p.vareinfo ?? prev.vareinfo,
+      pris: p.pris ?? prev.pris,
+      enhetspris: p.enhetspris ?? prev.enhetspris,
+      pant: p.pant || prev.pant,
+    }))
+    setImageUrls([p.imageUrl])
+    toast.success(p.varenavn ? `Hentet «${p.varenavn}»` : "Hentet produktbilde")
+  }
 
   // Forhåndsutfyll fradato med dagens dato for nytt innhold (ikke ved redigering).
   // Settes på klienten for å unngå SSR/klient-hydration-mismatch på datoen.
@@ -217,6 +239,20 @@ export function ContentForm({ stores, tags, initial, audience = "intern" }: { st
 
           {isOfferStruktur && (
             <div className="space-y-4 rounded-xl border border-zinc-200 bg-white p-4">
+              <div className="rounded-lg bg-zinc-50 border border-zinc-200 p-3">
+                <label className="block text-[10px] text-zinc-400 mb-1">Hent fra spar.no (lim inn lenke eller GTIN)</label>
+                <div className="flex gap-2">
+                  <input value={gtinInput} onChange={(e) => setGtinInput(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); doLookup() } }}
+                    placeholder="https://spar.no/varer/… eller 54492653"
+                    className="flex-1 text-sm border border-zinc-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-zinc-300" />
+                  <button type="button" onClick={doLookup} disabled={looking}
+                    className="px-3 py-2 rounded-lg text-xs font-semibold text-white disabled:opacity-50 whitespace-nowrap" style={{ backgroundColor: "var(--brand-primary)" }}>
+                    {looking ? "Henter…" : "Hent"}
+                  </button>
+                </div>
+                <p className="text-[10px] text-zinc-400 mt-1">Fyller varenavn, vareinfo, pris, enhetspris, pant og produktbilde automatisk.</p>
+              </div>
               <div>
                 <label className="block text-[10px] text-zinc-400 mb-1">Varenavn *</label>
                 <input value={offer.varenavn} onChange={(e) => setOffer((p) => ({ ...p, varenavn: e.target.value }))} placeholder="Reker 40/60"

@@ -44,7 +44,7 @@ export function ScreenPreview({
   screens: Record<string, StoreScreen[]>
 }) {
   const [storeId, setStoreId] = useState(stores[0]?.id ?? "")
-  const [view, setView] = useState<View>("kunde-skjerm")
+  const [view, setView] = useState<View>("intern-innhold")
   const wrapRef = useRef<HTMLDivElement>(null)
   const [scale, setScale] = useState(0.5)
   const flate = view.startsWith("kunde") ? "kunde" : "intern"
