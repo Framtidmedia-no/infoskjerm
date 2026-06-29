@@ -94,6 +94,18 @@ function Media({ item }: { item: LiveItem }) {
   }
   const urls = item.imageUrls.length ? item.imageUrls : item.imageUrl ? [item.imageUrl] : []
   if (urls.length === 0) return <div style={{ flex: "1 1 auto" }} />
+  // Single poster (often portrait): contain it, and fill the empty sides with a
+  // blurred, enlarged copy so a portrait ad never leaves black bars on screen.
+  if (urls.length === 1) {
+    const url = urls[0]
+    return (
+      <div style={{ flex: "1 1 auto", minHeight: 0, position: "relative", borderRadius: 18, overflow: "hidden" }}>
+        <div style={{ position: "absolute", inset: 0, backgroundImage: `url('${url}')`, backgroundSize: "cover", backgroundPosition: "center", filter: "blur(48px) brightness(0.45)", transform: "scale(1.25)" }} />
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={url} alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "contain" }} />
+      </div>
+    )
+  }
   const cols = urls.length >= 4 ? 2 : urls.length
   const rows = Math.ceil(urls.length / cols)
   return (
