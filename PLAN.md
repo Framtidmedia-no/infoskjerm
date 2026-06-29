@@ -32,20 +32,25 @@ White-label digital signage-CMS for **Gange-Rolv** (16 SPAR/EUROSPAR/JOKER-butik
 Publisering skriver til **Supabase `content_items`** (kilden). Skjermene viser innhold via **app-rendrede webpage-widgets** som Xibo embedder — full designkontroll i Next.js, ikke Xibos stive DataSet/maler. Xibo står for skjermstyring + planlegging.
 
 **Widgets (offentlige, leser live fra Supabase via service role):**
-- `/widget/nyheter?store=<id>` — roterende nyhetskort + **ticker-overlay nederst** (kun når aktiv). Per-type kort: nyhet/konkurranse/tilbud/gratulerer (plakat- eller bakgrunnsbilde), **stilling** (QR «skann for å søke» + kontaktperson), **salgstall** (KPI-kort med ▲/▼). Autoscroll for lang tekst. Innhold parses til tekstblokker server-side (ingen rå-HTML → ingen XSS). Auto-refresh hvert 10. min.
-- `/widget/vaer?lat=&lon=&navn=` — Yr-vær per butikk.
+- `/widget/topbar?butikk=&lat=&lon=&navn=` — tynn toppstripe: butikknavn + live klokke + dato + nåvær + kompakt 4-dagersvarsel (Europe/Oslo).
+- `/widget/nyheter?store=<id>` — roterende nyhetskort + **ticker-overlay nederst** (kun når aktiv). Per-type kort: nyhet/konkurranse/gratulerer (plakat/bakgrunn, **2+ bilder = helside side om side**), **stilling** (QR «skann for å søke» + kontaktperson). Autoscroll for lang tekst. Innhold parses til tekstblokker server-side (ingen rå-HTML → ingen XSS). Auto-refresh hvert 10. min. (Tilbud vises IKKE her — egen helside, se under.)
+- `/widget/tilbud?store=<id>` — **helside-tilbud**: sidepanel (tittel/periode/tekst) + plakat/PDF/flere bilder + ticker-overlay. Vises kun når butikken har aktive tilbud (dynamisk planlegging).
+- `/widget/vaer?lat=&lon=&navn=` — Yr-vær (frittstående; toppstripen bruker samme `lib/weather/yr`).
 
-**Xibo-layout (3 soner, full høyde):** nyheter (1340×1000) · digital klokke+dato (480×230) · vær (480×740). Ingen egen ticker-region — ticker er overlay i nyhets-widgeten (ingen tom boks når den er tom).
+**Xibo-layout (2 soner, full bredde):** toppstripe (1920×180) · innhold/nyheter (1920×900). Ticker er overlay i nyhets-widgeten (ingen tom boks når tom).
 
-- **Base-mal:** campaign 8 (`scripts/xibo/build-base-template.mjs`).
-- **16 butikk-layouts:** campaign 12–27 (`scripts/xibo/build-store-layouts.mjs`), vær på butikkens koordinater + `?store=`-filtrert nyhets-/ticker-feed, **planlagt** til display-gruppe 5–20 (Always). Idempotent.
+- **Base-mal:** campaign 8, layout 92 (`scripts/xibo/build-base-template.mjs`). `DEFAULT_LAYOUT=92` i Xibo-DB — verifiser etter rebuild (publish beholder normalt layoutId).
+- **16 butikk-layouts:** campaign 12–27 (`scripts/xibo/build-store-layouts.mjs`), butikknavn + koordinater i toppstripe + `?store=`-filtrert feed, **planlagt** til display-gruppe 5–20 (Always). Idempotent.
+- **16 tilbud-helsider:** campaign 47–62 (`scripts/xibo/build-offer-layouts.mjs`) — **ikke** planlagt fast. `reconcileOfferSchedules` (publiseringskrok + cron `/api/cron/reconcile-offers`, 5 0,6,12,18) legger til/fjerner planlegging per butikk basert på aktive tilbud.
 - Delt byggelogikk: `scripts/xibo/lib.mjs`. Endre design → rediger relevante widget-komponenter (app) + evt. `lib.mjs`, deploy, kjør builderne på nytt.
 
 ## FERDIG
 - ✅ App-rendret nyhetssone med rike per-type-kort, plakat/bakgrunn-bildevalg, QR for stilling, KPI for salgstall, autoscroll, dato+forfatter-byline, type-merkelapp.
 - ✅ CMS-drevet ticker-overlay (egen `ticker`-type), skjules når tom.
 - ✅ Per-butikk vær + innholdsfiltrering (målretting + dato-vindu) + planlegging til display-grupper.
-- ✅ Innholdstyper: nyhet, konkurranse, tilbud, **stilling** (kontaktperson + søknadslenke), **gratulerer** (bryllup/jubileum/bursdag), **salgstall** (manuelt KPI), **ticker**.
+- ✅ Innholdstyper: nyhet, konkurranse, **tilbud** (egen helside m/ sidepanel + PDF/plakat), **stilling** (kontaktperson + søknadslenke), **gratulerer** (bryllup/jubileum/bursdag), **ticker**.
+- ✅ Flere bilder per sak (maks 4) — 1 bilde: bakgrunn/plakat, 2+ bilder: helside side om side.
+- ✅ Toppstripe (butikknavn + klokke + vær) — innhold/plakater i full bredde.
 - ✅ Per-rolle datafiltrering (enhetsadmin ser kun egne butikkers innhold).
 - ✅ GDPR art.30 (v1.9) — databehandler-prosjekt, Xibo/Hetzner underdatabehandler.
 - ✅ `/widget/*` rammbar fra hvor som helst (CSP `frame-ancestors *`).
