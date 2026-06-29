@@ -187,8 +187,19 @@ export function TilbudRotator({ items, ticker, storeName, chain = null }: { item
         <div key={item.id} style={{ ...inset, animation: "grFade .6s ease-out" }}>
           <OfferCard item={item} chain={chain} />
         </div>
+      ) : item.isPdf && item.imageUrl ? (
+        // Kundeavis / PDF → show the whole FRONT PAGE, full-bleed. No side panel
+        // (it would crop the page to half), and only page 1 so a multi-page flyer
+        // shows its front page rather than scrolling.
+        <div key={item.id} style={{ ...inset, background: "#fff", animation: "grFade .6s ease-out" }}>
+          <iframe
+            title={item.title}
+            src={`${item.imageUrl}#page=1&view=Fit&toolbar=0&navpanes=0&scrollbar=0`}
+            style={{ width: "100%", height: "100%", border: "none", display: "block" }}
+          />
+        </div>
       ) : (
-        // Uploaded poster/PDF → side panel + media.
+        // Uploaded poster (image) → side panel + media.
         <div key={item.id} style={{ ...inset, display: "flex", animation: "grFade .6s ease-out" }}>
           <SidePanel item={item} storeName={storeName} />
           <div style={{ flex: "1 1 auto", minWidth: 0, display: "flex", padding: 48, boxSizing: "border-box" }}>

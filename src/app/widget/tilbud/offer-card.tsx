@@ -43,24 +43,28 @@ function PriceTag({ offer }: { offer: OfferFields }) {
     <div style={{ flex: "0 0 auto", display: "flex", flexDirection: "column", alignItems: "flex-end" }}>
       {offer.forpris && <span style={{ fontSize: "5vmin", color: "#9aa0a6", textDecoration: "line-through", fontWeight: 700, lineHeight: 1 }}>{offer.forpris}</span>}
       <div style={{ display: "flex", alignItems: "flex-start", color: RED, lineHeight: 0.85 }}>
-        <span style={{ fontSize: "22vmin", fontWeight: 900, letterSpacing: "-0.6vmin" }}>{kr}</span>
-        {ore && <span style={{ fontSize: "9vmin", fontWeight: 900, marginTop: "1.5vmin" }}>{ore}</span>}
+        <span style={{ fontSize: "19vmin", fontWeight: 900, letterSpacing: "-0.6vmin" }}>{kr}</span>
+        {ore && <span style={{ fontSize: "7.5vmin", fontWeight: 900, marginTop: "1.5vmin" }}>{ore}</span>}
       </div>
     </div>
   )
 }
 
-/** Footer that carries the store's chain logo (or a clean wordmark fallback). */
+/**
+ * Footer carrying the store's chain logo. Never shows a generic chain name to
+ * customers: if there is no chain logo or name, the footer is omitted entirely.
+ */
 function BrandFooter({ chain }: { chain: ChainBrand | null }) {
-  const accent = chain?.color ?? GREEN
+  if (!chain || (!chain.logoUrl && !chain.name)) return null
+  const accent = chain.color || GREEN
   return (
-    <div style={{ flex: "0 0 auto", marginTop: "4vmin", marginLeft: "-6vmin", marginRight: "-6vmin", borderTop: `0.8vmin solid ${accent}`, background: "#fff", display: "flex", alignItems: "center", justifyContent: "center", padding: "3vmin 6vmin", minHeight: "9vmin", boxSizing: "border-box" }}>
-      {chain?.logoUrl ? (
+    <div style={{ flex: "0 0 auto", marginTop: "3vmin", marginLeft: "-5vmin", marginRight: "-5vmin", borderTop: `0.8vmin solid ${accent}`, background: "#fff", display: "flex", alignItems: "center", justifyContent: "center", padding: "2.5vmin 5vmin", minHeight: "9vmin", boxSizing: "border-box" }}>
+      {chain.logoUrl ? (
         // eslint-disable-next-line @next/next/no-img-element
-        <img src={chain.logoUrl} alt={chain.name} style={{ maxHeight: "9vmin", maxWidth: "70%", objectFit: "contain" }} />
+        <img src={chain.logoUrl} alt={chain.name} style={{ maxHeight: "10vmin", maxWidth: "60%", objectFit: "contain" }} />
       ) : (
         <span style={{ color: accent, fontWeight: 900, letterSpacing: "0.5vmin", fontSize: "5vmin", textTransform: "uppercase" }}>
-          {chain?.name ?? "Gange-Rolv"}
+          {chain.name}
         </span>
       )}
     </div>
@@ -77,7 +81,7 @@ export function OfferCard({ item, chain = null }: { item: LiveItem; chain?: Chai
   const badgeFg = chain?.brandFg ?? "#fff"
 
   return (
-    <div style={{ position: "absolute", inset: 0, background: "#fff", color: INK, display: "flex", flexDirection: "column", padding: "6vmin 6vmin 0", boxSizing: "border-box", fontFamily: "Arial, Helvetica, sans-serif", overflow: "hidden" }}>
+    <div style={{ position: "absolute", inset: 0, background: "#fff", color: INK, display: "flex", flexDirection: "column", padding: "4vmin 5vmin 0", boxSizing: "border-box", fontFamily: "Arial, Helvetica, sans-serif", overflow: "hidden" }}>
       {/* Badge + period */}
       <div style={{ flex: "0 0 auto", display: "flex", alignItems: "center", gap: "3vmin", flexWrap: "wrap" }}>
         {offer.badge && (
@@ -86,14 +90,14 @@ export function OfferCard({ item, chain = null }: { item: LiveItem; chain?: Chai
         {period && <span style={{ marginLeft: "auto", background: GREEN, color: "#fff", fontWeight: 800, fontSize: "3.4vmin", padding: "1.4vmin 3.2vmin", borderRadius: "100vmin" }}>{period}</span>}
       </div>
 
-      {/* Product image */}
+      {/* Product image — the hero; fills the card as large as possible */}
       {img && (
-        <div style={{ flex: "1 1 auto", minHeight: 0, margin: "3vmin 0", backgroundImage: `url('${img}')`, backgroundSize: "contain", backgroundPosition: "center", backgroundRepeat: "no-repeat" }} />
+        <div style={{ flex: "1 1 auto", minHeight: "44vmin", margin: "1.5vmin 0", backgroundImage: `url('${img}')`, backgroundSize: "contain", backgroundPosition: "center", backgroundRepeat: "no-repeat" }} />
       )}
 
       {/* Name + info */}
       <div style={{ flex: "0 0 auto" }}>
-        <h1 style={{ fontSize: "8.5vmin", fontWeight: 900, margin: 0, lineHeight: 1.02, letterSpacing: "-0.3vmin" }}>{offer.varenavn}</h1>
+        <h1 style={{ fontSize: "8vmin", fontWeight: 900, margin: 0, lineHeight: 1.02, letterSpacing: "-0.3vmin" }}>{offer.varenavn}</h1>
         {offer.vareinfo && <p style={{ fontSize: "4vmin", color: "#5f6368", margin: "1.5vmin 0 0" }}>{offer.vareinfo}</p>}
       </div>
 
