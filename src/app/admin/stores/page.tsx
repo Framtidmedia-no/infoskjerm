@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server"
 import { getStoresBoard, getAllTags } from "@/lib/admin/queries"
+import { fetchScreensByStore } from "@/lib/xibo/screens"
 import { Topbar } from "@/components/admin/topbar"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
@@ -28,6 +29,10 @@ export default async function StoresPage() {
     getAllTags(supabase),
   ])
 
+  // Real screen counts from the engine (Xibo), keyed by store id.
+  const allStores = rawChains.flatMap((c) => ((c.stores as unknown as RawStore[]) ?? []).map((s) => ({ id: s.id, name: s.name })))
+  const screensByStore = await fetchScreensByStore(allStores)
+
   const chains: BoardChain[] = rawChains.map((chain) => {
     const stores: BoardStore[] = ((chain.stores as unknown as RawStore[]) ?? [])
       .map((store) => ({
@@ -38,7 +43,7 @@ export default async function StoresPage() {
         email: store.email,
         org_number: store.org_number,
         gln: store.gln,
-        screenCount: store.screens?.length ?? 0,
+        screenCount: screensByStore.get(store.id)?.length ?? 0,
         tags: (store.store_tags ?? [])
           .map((st) => st.tags)
           .filter((t): t is BoardTag => Boolean(t)),
