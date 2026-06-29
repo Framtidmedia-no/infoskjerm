@@ -370,7 +370,22 @@ export function ContentForm({ stores, tags, initial, audience = "intern" }: { st
         </div>
       </div>
 
-      <div className="flex-1 grid grid-cols-1 lg:grid-cols-3 gap-6 p-6 max-w-6xl">
+      {/* Type — first choice, full width on top */}
+      {typeOptions.length > 1 && (
+        <div className="px-6 pt-6 max-w-6xl w-full">
+          <h3 className="text-xs font-semibold text-zinc-600 mb-2">Type</h3>
+          <div className="flex flex-wrap gap-1.5">
+            {typeOptions.map(({ key, label, icon: Icon }) => (
+              <button key={key} onClick={() => { setType(key); if (key === "slide") setImageMode("plakat") }}
+                className={`flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-sm font-medium border transition-all ${type === key ? "border-zinc-900 bg-zinc-900 text-white" : "border-zinc-200 text-zinc-600 hover:border-zinc-300"}`}>
+                <Icon className="w-4 h-4" /> {label}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <div className="flex-1 grid grid-cols-1 lg:grid-cols-3 gap-6 px-6 pb-6 pt-4 max-w-6xl">
         {/* Main column */}
         <div className="lg:col-span-2 space-y-5">
           {restored && (
@@ -596,20 +611,6 @@ export function ContentForm({ stores, tags, initial, audience = "intern" }: { st
             )}
           </section>
 
-          {/* Type — only show a selector when the audience has more than one type */}
-          {typeOptions.length > 1 && (
-            <section className="rounded-xl border border-zinc-200 bg-white p-4">
-              <h3 className="text-xs font-semibold text-zinc-600 mb-2.5">Type</h3>
-              <div className="grid grid-cols-2 gap-1.5">
-                {typeOptions.map(({ key, label, icon: Icon }) => (
-                  <button key={key} onClick={() => { setType(key); if (key === "slide") setImageMode("plakat") }}
-                    className={`flex items-center gap-1.5 px-2.5 py-2 rounded-lg text-xs font-medium border transition-all ${type === key ? "border-zinc-900 bg-zinc-900 text-white" : "border-zinc-200 text-zinc-600 hover:border-zinc-300"}`}>
-                    <Icon className="w-3.5 h-3.5" /> {label}
-                  </button>
-                ))}
-              </div>
-            </section>
-          )}
 
           {/* Targeting */}
           <section className="rounded-xl border border-zinc-200 bg-white p-4">

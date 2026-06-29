@@ -93,7 +93,7 @@ export function OfferCard({ item, chain = null }: { item: LiveItem; chain?: Chai
     <div style={{ position: "absolute", inset: 0, background: "#fff", containerType: "size", overflow: "hidden" }}>
     <style>{`@keyframes grOcShine{0%{transform:translateX(-60%) skewX(-14deg)}100%{transform:translateX(260%) skewX(-14deg)}}@keyframes grOcPop{from{transform:rotate(-8deg) scale(.55);opacity:0}to{transform:rotate(-8deg) scale(1);opacity:1}}`}</style>
     {/* Soft moving shine sweep for a premium feel. */}
-    <div style={{ position: "absolute", top: 0, bottom: 0, left: 0, width: "30cqmin", background: "linear-gradient(90deg,transparent,rgba(0,0,0,.035),transparent)", animation: "grOcShine 6s ease-in-out infinite", pointerEvents: "none", zIndex: 5 }} />
+    <div style={{ position: "absolute", top: 0, bottom: 0, left: 0, width: "34cqmin", background: "linear-gradient(90deg,transparent,rgba(0,0,0,.07),transparent)", animation: "grOcShine 4.5s ease-in-out infinite", pointerEvents: "none", zIndex: 5 }} />
     <div style={{ position: "absolute", inset: 0, background: "#fff", color: INK, display: "flex", flexDirection: "column", padding: "5cqmin 5cqmin 0", boxSizing: "border-box", fontFamily: "Arial, Helvetica, sans-serif", overflow: "hidden" }}>
       {/* Top: name + info, full width */}
       <div style={{ flex: "0 0 auto" }}>

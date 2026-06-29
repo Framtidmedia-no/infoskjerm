@@ -80,6 +80,15 @@ export function MediaUploader({ onUpload, maxFiles = 10, accept = ["image/jpeg",
     if (e.target.files) handleFiles(e.target.files)
   }
 
+  const hasVideo = accept.some((a) => a.startsWith("video/"))
+  const hasPdf = accept.includes("application/pdf")
+  const formatHint = [
+    accept.some((a) => a.startsWith("image/")) ? "JPG, PNG, WEBP, GIF" : null,
+    hasPdf ? "PDF" : null,
+    hasVideo ? "MP4/WEBM-video" : null,
+  ].filter(Boolean).join(" · ") + " — maks 50 MB per fil"
+  const isVideoUrl = (u: string) => /\.(mp4|webm|mov|m4v)$/.test(u.toLowerCase().split("?")[0])
+
   return (
     <div className="space-y-4">
       {/* Drop zone */}
@@ -104,12 +113,12 @@ export function MediaUploader({ onUpload, maxFiles = 10, accept = ["image/jpeg",
           </div>
           <div>
             <p className="text-sm font-semibold text-zinc-700">
-              {dragging ? "Slipp filer her" : "Dra og slipp bilder her"}
+              {dragging ? "Slipp filer her" : hasVideo ? "Dra og slipp bilde eller video her" : "Dra og slipp bilder her"}
             </p>
             <p className="text-xs text-zinc-400 mt-1">
               eller <span className="text-zinc-700 underline underline-offset-2">velg fra datamaskin</span>
             </p>
-            <p className="text-xs text-zinc-300 mt-2">JPG, PNG, WEBP, GIF — maks 50 MB per fil</p>
+            <p className="text-xs text-zinc-300 mt-2">{formatHint}</p>
           </div>
         </div>
       </label>
@@ -121,7 +130,10 @@ export function MediaUploader({ onUpload, maxFiles = 10, accept = ["image/jpeg",
             <div key={i} className="flex items-center gap-3 bg-white border border-zinc-100 rounded-xl p-3">
               <div className="w-9 h-9 rounded-lg bg-zinc-100 flex items-center justify-center flex-shrink-0">
                 {upload.status === "done" && upload.url
-                  ? <img src={upload.url} alt="" className="w-9 h-9 object-cover rounded-lg" />
+                  ? (isVideoUrl(upload.url)
+                      // eslint-disable-next-line jsx-a11y/media-has-caption
+                      ? <video src={upload.url} muted className="w-9 h-9 object-cover rounded-lg" />
+                      : <img src={upload.url} alt="" className="w-9 h-9 object-cover rounded-lg" />)
                   : <ImageIcon className="w-4 h-4 text-zinc-400" />
                 }
               </div>
