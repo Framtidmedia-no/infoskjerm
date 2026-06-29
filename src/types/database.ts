@@ -46,6 +46,7 @@ export type Database = {
           color: string
           created_at: string | null
           id: string
+          logo_url: string | null
           name: Database["public"]["Enums"]["chain_type"]
           tenant_id: string
         }
@@ -55,6 +56,7 @@ export type Database = {
           color?: string
           created_at?: string | null
           id?: string
+          logo_url?: string | null
           name: Database["public"]["Enums"]["chain_type"]
           tenant_id: string
         }
@@ -64,6 +66,7 @@ export type Database = {
           color?: string
           created_at?: string | null
           id?: string
+          logo_url?: string | null
           name?: Database["public"]["Enums"]["chain_type"]
           tenant_id?: string
         }

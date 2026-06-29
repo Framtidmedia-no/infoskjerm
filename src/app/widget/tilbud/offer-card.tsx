@@ -4,8 +4,17 @@ import type { LiveItem, OfferFields } from "@/lib/content/live"
  * A structured retail offer rendered as a bold price card (SPAR/EUROSPAR style):
  * badge, product image, name, big price or discount, before-price, multi-buy and
  * the fine print. Sized in `vmin` so it scales cleanly on both portrait customer
- * screens and landscape previews. White card with red price + green brand bar.
+ * screens and landscape previews. White card with red price + a chain-logo
+ * footer (EUROSPAR logo for EUROSPAR stores, SPAR for SPAR, JOKER for JOKER).
  */
+
+/** Branding for the store's chain, used for the footer logo and badge accent. */
+export interface ChainBrand {
+  name: string
+  logoUrl: string | null
+  color: string
+  brandFg: string | null
+}
 
 const RED = "#e4002b"
 const GREEN = "#16a34a"
@@ -41,19 +50,38 @@ function PriceTag({ offer }: { offer: OfferFields }) {
   )
 }
 
-export function OfferCard({ item }: { item: LiveItem }) {
+/** Footer that carries the store's chain logo (or a clean wordmark fallback). */
+function BrandFooter({ chain }: { chain: ChainBrand | null }) {
+  const accent = chain?.color ?? GREEN
+  return (
+    <div style={{ flex: "0 0 auto", marginTop: "4vmin", marginLeft: "-6vmin", marginRight: "-6vmin", borderTop: `0.8vmin solid ${accent}`, background: "#fff", display: "flex", alignItems: "center", justifyContent: "center", padding: "3vmin 6vmin", minHeight: "9vmin", boxSizing: "border-box" }}>
+      {chain?.logoUrl ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={chain.logoUrl} alt={chain.name} style={{ maxHeight: "9vmin", maxWidth: "70%", objectFit: "contain" }} />
+      ) : (
+        <span style={{ color: accent, fontWeight: 900, letterSpacing: "0.5vmin", fontSize: "5vmin", textTransform: "uppercase" }}>
+          {chain?.name ?? "Gange-Rolv"}
+        </span>
+      )}
+    </div>
+  )
+}
+
+export function OfferCard({ item, chain = null }: { item: LiveItem; chain?: ChainBrand | null }) {
   const offer = item.offer
   if (!offer) return null
   const period = formatPeriod(item.validFrom, item.validTo)
   const img = item.imageUrl
   const fine = [offer.enhetspris, offer.maks, offer.pant ? "+ pant" : null].filter(Boolean) as string[]
+  const badgeBg = chain?.color ?? RED
+  const badgeFg = chain?.brandFg ?? "#fff"
 
   return (
     <div style={{ position: "absolute", inset: 0, background: "#fff", color: INK, display: "flex", flexDirection: "column", padding: "6vmin 6vmin 0", boxSizing: "border-box", fontFamily: "Arial, Helvetica, sans-serif", overflow: "hidden" }}>
       {/* Badge + period */}
       <div style={{ flex: "0 0 auto", display: "flex", alignItems: "center", gap: "3vmin", flexWrap: "wrap" }}>
         {offer.badge && (
-          <span style={{ background: RED, color: "#fff", fontWeight: 900, fontSize: "5.5vmin", letterSpacing: "0.4vmin", padding: "1.6vmin 4vmin", borderRadius: "100vmin", textTransform: "uppercase" }}>{offer.badge}</span>
+          <span style={{ background: badgeBg, color: badgeFg, fontWeight: 900, fontSize: "5.5vmin", letterSpacing: "0.4vmin", padding: "1.6vmin 4vmin", borderRadius: "100vmin", textTransform: "uppercase" }}>{offer.badge}</span>
         )}
         {period && <span style={{ marginLeft: "auto", background: GREEN, color: "#fff", fontWeight: 800, fontSize: "3.4vmin", padding: "1.4vmin 3.2vmin", borderRadius: "100vmin" }}>{period}</span>}
       </div>
@@ -78,10 +106,7 @@ export function OfferCard({ item }: { item: LiveItem }) {
         {offer.rabatt ? <DiscountBubble rabatt={offer.rabatt} /> : offer.pris ? <PriceTag offer={offer} /> : null}
       </div>
 
-      {/* Brand bar */}
-      <div style={{ flex: "0 0 auto", marginTop: "4vmin", marginLeft: "-6vmin", marginRight: "-6vmin", background: GREEN, color: "#fff", textAlign: "center", padding: "2.5vmin", fontWeight: 900, letterSpacing: "0.5vmin", fontSize: "3.6vmin", textTransform: "uppercase" }}>
-        Gange-Rolv
-      </div>
+      <BrandFooter chain={chain} />
     </div>
   )
 }

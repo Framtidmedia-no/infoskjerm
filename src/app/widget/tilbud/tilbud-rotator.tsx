@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, type CSSProperties } from "react"
 import type { LiveItem, Block } from "@/lib/content/live"
-import { OfferCard } from "./offer-card"
+import { OfferCard, type ChainBrand } from "./offer-card"
 
 /**
  * Full-screen offer presentation: a left side panel with the heading, period and
@@ -157,7 +157,7 @@ function TickerOverlay({ messages }: { messages: string[] }) {
   )
 }
 
-export function TilbudRotator({ items, ticker, storeName }: { items: LiveItem[]; ticker: string[]; storeName: string | null }) {
+export function TilbudRotator({ items, ticker, storeName, chain = null }: { items: LiveItem[]; ticker: string[]; storeName: string | null; chain?: ChainBrand | null }) {
   const [i, setI] = useState(0)
   useEffect(() => {
     if (items.length <= 1) return
@@ -185,7 +185,7 @@ export function TilbudRotator({ items, ticker, storeName }: { items: LiveItem[];
       ) : item.offer ? (
         // Structured offer → full-bleed price card (no side panel).
         <div key={item.id} style={{ ...inset, animation: "grFade .6s ease-out" }}>
-          <OfferCard item={item} />
+          <OfferCard item={item} chain={chain} />
         </div>
       ) : (
         // Uploaded poster/PDF → side panel + media.

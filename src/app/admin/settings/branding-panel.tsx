@@ -1,8 +1,8 @@
 "use client"
 
-import { useState } from "react"
-import { Palette, CheckCircle2 } from "lucide-react"
-import { updateChainBranding } from "./actions"
+import { useRef, useState } from "react"
+import { Palette, CheckCircle2, ImagePlus, Loader2 } from "lucide-react"
+import { updateChainBranding, uploadChainLogo } from "./actions"
 
 interface Chain {
   id: string
@@ -10,6 +10,60 @@ interface Chain {
   color: string
   brand_light: string | null
   brand_fg: string | null
+  logo_url: string | null
+}
+
+/** Per-chain logo upload — the logo shown on the offer card on customer screens. */
+function LogoUploader({ chainId, name, initialUrl }: { chainId: string; name: string; initialUrl: string | null }) {
+  const inputRef = useRef<HTMLInputElement>(null)
+  const [url, setUrl] = useState<string | null>(initialUrl)
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  async function handleFile(file: File) {
+    setBusy(true)
+    setError(null)
+    const fd = new FormData()
+    fd.set("file", file)
+    const res = await uploadChainLogo(chainId, fd)
+    setBusy(false)
+    if (!res.ok) { setError(res.error); return }
+    setUrl(res.url)
+  }
+
+  return (
+    <div className="mb-4">
+      <label className="block text-xs font-medium text-zinc-500 mb-1.5">Kjedelogo (vises på tilbud på kundeskjerm)</label>
+      <div className="flex items-center gap-3">
+        <div className="w-28 h-14 rounded-lg border border-zinc-200 bg-zinc-50 flex items-center justify-center overflow-hidden shrink-0">
+          {url ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={url} alt={`${name} logo`} className="max-w-full max-h-full object-contain" />
+          ) : (
+            <span className="text-[11px] text-zinc-400">Ingen logo</span>
+          )}
+        </div>
+        <input
+          ref={inputRef}
+          type="file"
+          accept="image/png,image/jpeg,image/webp,image/svg+xml"
+          className="hidden"
+          onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFile(f); e.target.value = "" }}
+        />
+        <button
+          type="button"
+          onClick={() => inputRef.current?.click()}
+          disabled={busy}
+          className="inline-flex items-center gap-2 text-sm font-medium text-zinc-700 border border-zinc-200 px-3.5 py-2 rounded-lg hover:bg-zinc-50 transition-colors disabled:opacity-50"
+        >
+          {busy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ImagePlus className="w-3.5 h-3.5" />}
+          {busy ? "Laster opp..." : url ? "Bytt logo" : "Last opp logo"}
+        </button>
+        {error && <p className="text-xs text-red-500">{error}</p>}
+      </div>
+      <p className="text-[11px] text-zinc-400 mt-1.5">PNG, JPG, WEBP eller SVG · maks 5 MB · gjerne med gjennomsiktig bakgrunn</p>
+    </div>
+  )
 }
 
 interface BrandingPanelProps {
@@ -101,6 +155,8 @@ export function BrandingPanel({ chains }: BrandingPanelProps) {
                 {chain.name}
               </span>
             </div>
+
+            <LogoUploader chainId={chain.id} name={chain.name} initialUrl={chain.logo_url} />
 
             <div className="grid grid-cols-3 gap-4 mb-4">
               <ColorSwatch label="Primærfarge" value={v.color} onChange={(val) => update(chain.id, "color", val)} />
