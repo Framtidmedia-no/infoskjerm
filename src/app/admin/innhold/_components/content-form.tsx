@@ -31,9 +31,6 @@ const COLOR_PRESETS: { label: string; bg: string; fg: string }[] = [
   { label: "Marine", bg: "#0b1f3a", fg: "#ffffff" },
 ]
 
-// Text-card types that support custom background/text colours (StandardCard).
-const COLOR_TYPES: ContentType[] = ["news", "competition", "birthday"]
-
 const isoDate = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`
 
 /** Monday–Sunday of the current week + offsetWeeks (Norwegian week, Mon start). */
@@ -152,7 +149,9 @@ export function ContentForm({ stores, tags, initial, audience = "intern" }: { st
 
   const isOfferStruktur = type === "slide" && offerMode === "struktur"
   const isKlubb = type === "slide" && offerMode === "klubb"
-  const usesColors = COLOR_TYPES.includes(type)
+  // Utseende (bakgrunn/skrift) på alt innhold unntatt ticker, strukturert
+  // tilbudskort og kundeklubb (de har egne, faste design).
+  const usesColors = type !== "ticker" && !isOfferStruktur && !isKlubb
   const OFFER_MODES: { k: "struktur" | "plakat" | "klubb"; label: string }[] = [
     { k: "struktur", label: "Bygg tilbudskort" },
     { k: "plakat", label: "Last opp plakat / PDF" },

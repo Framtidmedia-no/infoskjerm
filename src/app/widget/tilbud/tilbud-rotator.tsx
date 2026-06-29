@@ -199,7 +199,7 @@ export function TilbudRotator({ items, ticker, storeName, chain = null, qr = {} 
         </div>
       ) : (
         // Customer poster/PDF slide → text on TOP, image/PDF below (portrait).
-        <div key={item.id} style={{ ...inset, display: "flex", flexDirection: "column", animation: "grFade .6s ease-out" }}>
+        <div key={item.id} style={{ ...inset, display: "flex", flexDirection: "column", animation: "grFade .6s ease-out", background: item.bgColor ?? undefined, color: item.textColor ?? undefined }}>
           <PosterHeader item={item} storeName={storeName} />
           <div style={{ flex: "1 1 auto", minHeight: 0, display: "flex", padding: "0 54px 54px", boxSizing: "border-box" }}>
             <Media item={item} />

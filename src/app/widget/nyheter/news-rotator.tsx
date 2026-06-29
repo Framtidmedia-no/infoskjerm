@@ -145,10 +145,11 @@ function bgImage(url: string): CSSProperties {
 }
 
 function StandardCard({ item }: { item: LiveItem }) {
+  // Base colour comes from the rotator wrapper; the background image (if any)
+  // overlays it dimmed, so a chosen colour always shows through.
   return (
     <>
-      {item.bgColor && <div style={{ position: "absolute", inset: 0, background: item.bgColor }} />}
-      {item.imageUrl && !item.bgColor && <div style={bgImage(item.imageUrl)} />}
+      {item.imageUrl && <div style={bgImage(item.imageUrl)} />}
       <div style={{ position: "absolute", inset: 0, padding: 70, boxSizing: "border-box", display: "flex", flexDirection: "column", color: item.textColor ?? "#fff" }}>
         {KICKER[item.type] && <Kicker>{KICKER[item.type]}</Kicker>}
         <h1 style={{ fontSize: 78, fontWeight: 900, margin: "0 0 14px", lineHeight: 1.03 }}>{item.title}</h1>
@@ -377,7 +378,7 @@ export function NewsRotator({ items, qr, ticker }: { items: LiveItem[]; qr: Reco
           Ingen publiserte nyheter
         </div>
       ) : (
-        <div key={item.id} style={{ ...contentInset, overflow: "hidden", animation: "grFade .6s ease-out" }}>
+        <div key={item.id} style={{ ...contentInset, overflow: "hidden", animation: "grFade .6s ease-out", background: item.bgColor ?? undefined, color: item.textColor ?? undefined }}>
           <Card item={item} qrUrl={qr[item.id]} />
         </div>
       )}
