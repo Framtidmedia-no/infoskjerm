@@ -70,6 +70,7 @@ export interface ContentInitial {
   bgColor?: string | null
   textColor?: string | null
   klubb?: { headline: string; subtext: string } | null
+  durationSeconds?: number | null
 }
 
 const EMPTY_OFFER: OfferFields = {
@@ -113,8 +114,8 @@ const IMAGE_TYPES: ContentType[] = ["news", "competition", "slide", "job", "birt
 
 // Which content types belong to each audience/menu.
 const AUDIENCE_TYPES: Record<Audience, ContentType[]> = {
-  // Kunde: tilbud, konkurranse + valgfri ticker (målrettet til valgte skjermer).
-  kunde: ["slide", "competition", "ticker"],
+  // Kunde: tilbud, konkurranse, artikkel/egenreklame + valgfri ticker.
+  kunde: ["slide", "competition", "news", "ticker"],
   // Internt kan også vise tilbud/plakat (f.eks. ukens tilbud til betjeningen).
   intern: ["news", "competition", "job", "birthday", "ticker", "slide"],
 }
@@ -144,6 +145,7 @@ export function ContentForm({ stores, tags, initial, audience = "intern" }: { st
   const [textColor, setTextColor] = useState(initial?.textColor ?? "")
   const [storeSearch, setStoreSearch] = useState("")
   const [chainF, setChainF] = useState("")
+  const [durationSeconds, setDurationSeconds] = useState<string>(initial?.durationSeconds ? String(initial.durationSeconds) : "")
   const [saving, setSaving] = useState(false)
   const [confirmNoEndDate, setConfirmNoEndDate] = useState(false)
 
@@ -319,6 +321,7 @@ export function ContentForm({ stores, tags, initial, audience = "intern" }: { st
         applyUrl: (type === "job" || type === "competition") ? applyUrl || null : null,
         bgColor: usesColors ? bgColor || null : null,
         textColor: usesColors ? textColor || null : null,
+        durationSeconds: durationSeconds ? Math.max(3, Math.min(600, Number(durationSeconds))) : null,
       },
       initial?.id
     )
@@ -495,13 +498,18 @@ export function ContentForm({ stores, tags, initial, audience = "intern" }: { st
                 <div className="space-y-3">
                   <div className="grid grid-cols-2 gap-2 max-w-md">
                     {imageUrls.map((url) => {
-                      const isPdf = url.toLowerCase().split("?")[0].endsWith(".pdf")
+                      const lower = url.toLowerCase().split("?")[0]
+                      const isPdf = lower.endsWith(".pdf")
+                      const isVid = /\.(mp4|webm|mov|m4v)$/.test(lower)
                       return (
                         <div key={url} className="relative rounded-xl overflow-hidden border border-zinc-200 group">
                           {isPdf ? (
                             <div className="w-full h-36 flex items-center justify-center bg-zinc-900 text-white gap-2 text-sm font-semibold">
                               <FileText className="w-5 h-5" /> PDF
                             </div>
+                          ) : isVid ? (
+                            // eslint-disable-next-line jsx-a11y/media-has-caption
+                            <video src={url} muted loop autoPlay playsInline className="w-full h-36 object-contain bg-zinc-900" />
                           ) : (
                             // eslint-disable-next-line @next/next/no-img-element
                             <img src={url} alt="" className={`w-full h-36 ${isMulti || imageMode === "plakat" || imageMode === "liten" ? "object-contain bg-zinc-900" : "object-cover"}`} />
@@ -534,12 +542,12 @@ export function ContentForm({ stores, tags, initial, audience = "intern" }: { st
 
                   {canAddMore && (
                     <div className="max-w-md">
-                      <MediaUploader maxFiles={MAX_IMAGES - imageUrls.length} accept={["image/jpeg", "image/png", "image/webp", "image/gif", "image/avif"]} onUpload={(files) => addImages(files.map((f) => f.url))} />
+                      <MediaUploader maxFiles={MAX_IMAGES - imageUrls.length} accept={["image/jpeg", "image/png", "image/webp", "image/gif", "image/avif", "video/mp4", "video/webm"]} onUpload={(files) => addImages(files.map((f) => f.url))} />
                     </div>
                   )}
                 </div>
               ) : (
-                <MediaUploader maxFiles={MAX_IMAGES} accept={["image/jpeg", "image/png", "image/webp", "image/gif", "image/avif", "application/pdf"]} onUpload={(files) => addImages(files.map((f) => f.url))} />
+                <MediaUploader maxFiles={MAX_IMAGES} accept={["image/jpeg", "image/png", "image/webp", "image/gif", "image/avif", "application/pdf", "video/mp4", "video/webm"]} onUpload={(files) => addImages(files.map((f) => f.url))} />
               )}
             </div>
           )}
@@ -712,6 +720,19 @@ export function ContentForm({ stores, tags, initial, audience = "intern" }: { st
               {(bgColor || textColor) && (
                 <button type="button" onClick={() => { setBgColor(""); setTextColor("") }} className="text-[10px] text-zinc-400 hover:text-zinc-700 mt-2">Nullstill til standard (mørk)</button>
               )}
+            </section>
+          )}
+
+          {/* Display time per item */}
+          {type !== "ticker" && (
+            <section className="rounded-xl border border-zinc-200 bg-white p-4">
+              <h3 className="text-xs font-semibold text-zinc-600 mb-2.5">Visningstid</h3>
+              <div className="flex items-center gap-2">
+                <input type="number" min={3} max={600} value={durationSeconds} onChange={(e) => setDurationSeconds(e.target.value)} placeholder="auto"
+                  className="w-24 text-sm border border-zinc-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-zinc-300" />
+                <span className="text-xs text-zinc-500">sekunder</span>
+              </div>
+              <p className="text-[10px] text-zinc-400 mt-1.5">Hvor lenge dette vises før skjermen bytter. Tom = standard for typen.</p>
             </section>
           )}
 

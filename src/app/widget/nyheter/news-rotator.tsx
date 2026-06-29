@@ -126,6 +126,12 @@ function PeriodChip({ item }: { item: LiveItem }) {
 /** Full-bleed media for poster mode — image (contain) or PDF page (iframe). */
 function MediaFull({ item }: { item: LiveItem }) {
   if (!item.imageUrl) return null
+  if (item.isVideo) {
+    return (
+      // eslint-disable-next-line jsx-a11y/media-has-caption
+      <video src={item.imageUrl} autoPlay muted loop playsInline style={{ flex: "1 1 auto", minHeight: 0, width: "100%", objectFit: "contain", borderRadius: 14, background: "#000" }} />
+    )
+  }
   if (item.isPdf) {
     return (
       <iframe
@@ -145,11 +151,15 @@ function bgImage(url: string): CSSProperties {
 }
 
 function StandardCard({ item }: { item: LiveItem }) {
-  // Base colour comes from the rotator wrapper; the background image (if any)
-  // overlays it dimmed, so a chosen colour always shows through.
+  // Base colour comes from the rotator wrapper; the background media (image or
+  // video) overlays it dimmed, so a chosen colour always shows through.
   return (
     <>
-      {item.imageUrl && <div style={bgImage(item.imageUrl)} />}
+      {item.imageUrl && item.isVideo && (
+        // eslint-disable-next-line jsx-a11y/media-has-caption
+        <video src={item.imageUrl} autoPlay muted loop playsInline style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", opacity: 0.22 }} />
+      )}
+      {item.imageUrl && !item.isVideo && <div style={bgImage(item.imageUrl)} />}
       <div style={{ position: "absolute", inset: 0, padding: 70, boxSizing: "border-box", display: "flex", flexDirection: "column", color: item.textColor ?? "#fff" }}>
         {KICKER[item.type] && <Kicker>{KICKER[item.type]}</Kicker>}
         <h1 style={{ fontSize: 78, fontWeight: 900, margin: "0 0 14px", lineHeight: 1.03 }}>{item.title}</h1>
@@ -353,8 +363,8 @@ export function NewsRotator({ items, qr, ticker }: { items: LiveItem[]; qr: Reco
   const [i, setI] = useState(0)
   useEffect(() => {
     if (items.length <= 1) return
-    const type = items[i % items.length]?.type
-    const secs = SECONDS[type] ?? DEFAULT_SECONDS
+    const it = items[i % items.length]
+    const secs = it?.durationSeconds ?? SECONDS[it?.type ?? ""] ?? DEFAULT_SECONDS
     const id = setTimeout(() => setI((v) => (v + 1) % items.length), secs * 1000)
     return () => clearTimeout(id)
   }, [i, items])

@@ -23,7 +23,19 @@ export interface ContentRow {
   target: { mode: "all" | "stores" | "tags" | "none"; count: number; names: string[] }
   storeIds: string[]
   tagIds: string[]
+  avdeling?: string | null
 }
+
+const AVDELINGER: { key: string; label: string }[] = [
+  { key: "felles", label: "Hele butikken" },
+  { key: "frukt", label: "Frukt & grønt" },
+  { key: "ferskvare", label: "Ferskvare" },
+  { key: "frys", label: "Frys" },
+  { key: "bakeri", label: "Bakeri" },
+  { key: "kjott-fisk", label: "Kjøtt & fisk" },
+  { key: "kasse", label: "Kasse" },
+  { key: "inngang", label: "Inngang" },
+]
 
 interface Option { id: string; name: string }
 
@@ -74,6 +86,7 @@ export function ContentListClient({ items, stores, tags, newHref = "/admin/innho
   const [typeF, setTypeF] = useState("")
   const [storeF, setStoreF] = useState("")
   const [tagF, setTagF] = useState("")
+  const [avdelingF, setAvdelingF] = useState("")
   const [page, setPage] = useState(0)
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [bulkBusy, setBulkBusy] = useState(false)
@@ -119,9 +132,10 @@ export function ContentListClient({ items, stores, tags, newHref = "/admin/innho
       // siden det faktisk vises på alle butikker.
       if (storeF && it.target.mode !== "all" && !it.storeIds.includes(storeF)) return false
       if (tagF && it.target.mode !== "all" && !it.tagIds.includes(tagF)) return false
+      if (avdelingF && (it.avdeling ?? "felles") !== avdelingF) return false
       return true
     })
-  }, [items, search, statusF, typeF, storeF, tagF])
+  }, [items, search, statusF, typeF, storeF, tagF, avdelingF])
 
   const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
   const current = Math.min(page, pageCount - 1)
@@ -131,7 +145,7 @@ export function ContentListClient({ items, stores, tags, newHref = "/admin/innho
     return (v: T) => { setter(v); setPage(0) }
   }
 
-  const hasFilters = search || statusF !== "all" || typeF || storeF || tagF
+  const hasFilters = search || statusF !== "all" || typeF || storeF || tagF || avdelingF
 
   return (
     <div className="space-y-4">
@@ -171,8 +185,12 @@ export function ContentListClient({ items, stores, tags, newHref = "/admin/innho
           <option value="">Alle tagger</option>
           {tags.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
         </select>
+        <select value={avdelingF} onChange={(e) => resetPage(setAvdelingF)(e.target.value)} className={selectCls}>
+          <option value="">Alle avdelinger</option>
+          {AVDELINGER.map((a) => <option key={a.key} value={a.key}>{a.label}</option>)}
+        </select>
         {hasFilters && (
-          <button onClick={() => { setSearch(""); setStatusF("all"); setTypeF(""); setStoreF(""); setTagF(""); setPage(0) }} className="text-xs text-zinc-400 hover:text-zinc-700 px-2">Nullstill</button>
+          <button onClick={() => { setSearch(""); setStatusF("all"); setTypeF(""); setStoreF(""); setTagF(""); setAvdelingF(""); setPage(0) }} className="text-xs text-zinc-400 hover:text-zinc-700 px-2">Nullstill</button>
         )}
       </div>
 

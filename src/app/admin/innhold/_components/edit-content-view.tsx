@@ -33,6 +33,7 @@ export async function EditContentView({ id }: { id: string }) {
     avdeling?: string | null
     bgColor?: string | null; textColor?: string | null
     klubb?: { headline: string; subtext: string } | null
+    durationSeconds?: number | null
   }
   const audience: Audience = body.audience === "kunde" || body.audience === "intern" ? body.audience : audienceForType(item.type as ContentType)
   const targetRows = targets ?? []
@@ -63,6 +64,7 @@ export async function EditContentView({ id }: { id: string }) {
     bgColor: body.bgColor ?? null,
     textColor: body.textColor ?? null,
     klubb: body.klubb ?? null,
+    durationSeconds: body.durationSeconds ?? null,
   }
 
   return <ContentForm stores={storeOptions} tags={(tags ?? []) as TagOption[]} initial={initial} audience={audience} />

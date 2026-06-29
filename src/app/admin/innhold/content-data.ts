@@ -90,7 +90,7 @@ export async function loadContentForAudience(audience: Audience): Promise<Conten
           ? tagIds.map((id) => tagName.get(id)).filter((x): x is string => !!x)
           : []
 
-      const body = (it.body ?? {}) as { imageUrl?: string | null }
+      const body = (it.body ?? {}) as { imageUrl?: string | null; avdeling?: string | null }
       return {
         id: it.id,
         title: it.title,
@@ -103,6 +103,7 @@ export async function loadContentForAudience(audience: Audience): Promise<Conten
         target: { mode, count: mode === "stores" ? storeIds.length : tagIds.length, names },
         storeIds,
         tagIds,
+        avdeling: body.avdeling ?? null,
       }
     })
 

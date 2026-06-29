@@ -48,18 +48,20 @@ export default async function TilbudWidgetPage({ searchParams }: { searchParams:
   const { store, avdeling } = await searchParams
   const supabase = createAdminClient()
 
-  const [slides, comps, storeRow, tickerItems] = await Promise.all([
+  const [slides, comps, articles, storeRow, tickerItems] = await Promise.all([
     fetchLiveContent(store ?? null, ["slide"], "kunde", avdeling),
     // Customer competitions — same flashy module as internal, shown on the screen.
     fetchLiveContent(store ?? null, ["competition"], "kunde", avdeling),
+    // Customer articles / egenreklame (text + image/video, text-top layout).
+    fetchLiveContent(store ?? null, ["news"], "kunde", avdeling),
     store
       ? supabase.from("stores").select("name, kundeklubb_enabled, kundeklubb_url, kundeklubb_headline, kundeklubb_subtext, chains(name, logo_url, color, brand_fg)").eq("id", store).maybeSingle()
       : Promise.resolve({ data: null }),
     // Opt-in customer ticker: only kunde-audience tickers targeted to this store.
     fetchLiveContent(store ?? null, ["ticker"], "kunde"),
   ])
-  // Competitions first (newest, attention-grabbing), then offers.
-  const items = [...(comps as LiveItem[]), ...(slides as LiveItem[])]
+  // Competitions first (attention-grabbing), then articles, then offers.
+  const items = [...(comps as LiveItem[]), ...(articles as LiveItem[]), ...(slides as LiveItem[])]
   const ticker = (tickerItems as LiveItem[]).map((t) => t.title.trim()).filter(Boolean)
 
   // QR codes: competitions (participation link) + kundeklubb (per-store sign-up).

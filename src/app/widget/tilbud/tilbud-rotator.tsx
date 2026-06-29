@@ -56,6 +56,12 @@ function RichBlocks({ blocks }: { blocks: Block[] }) {
 
 /** Poster (contain), PDF first page (iframe), or several images side by side. */
 function Media({ item }: { item: LiveItem }) {
+  if (item.isVideo && item.imageUrl) {
+    return (
+      // eslint-disable-next-line jsx-a11y/media-has-caption
+      <video src={item.imageUrl} autoPlay muted loop playsInline style={{ flex: "1 1 auto", minHeight: 0, width: "100%", objectFit: "contain", borderRadius: 18, background: "#000" }} />
+    )
+  }
   if (item.isPdf && item.imageUrl) {
     return (
       <iframe
@@ -154,7 +160,8 @@ export function TilbudRotator({ items, ticker, storeName, chain = null, qr = {} 
   useEffect(() => {
     if (items.length <= 1) return
     // PDF flyers (kundeavis) get longer so several pages show before advancing.
-    const secs = items[i % items.length]?.isPdf ? 45 : SECONDS
+    const it = items[i % items.length]
+    const secs = it?.durationSeconds ?? (it?.isPdf ? 45 : SECONDS)
     const id = setTimeout(() => setI((v) => (v + 1) % items.length), secs * 1000)
     return () => clearTimeout(id)
   }, [i, items])
