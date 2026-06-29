@@ -117,6 +117,10 @@ export default async function StoreKpiPage({ searchParams }: { searchParams: Pro
   const ytdOms = sum(data.weeks, "netto_omsetning")
   const ytdBud = sum(data.weeks, "budsjett_omsetning")
   const ytdFjor = sum(data.weeks, "netto_omsetning_fjoraaret")
+  const ytdBruttoPct = ratio(sum(data.weeks, "brutto_kr"), ytdOms)
+  const ytdLonnPct = ratio(sum(data.weeks, "lonn_kr"), ytdOms)
+  const ytdSvinnKr = sum(data.weeks, "svinn_total")
+  const ytdSvinnPct = ratio(ytdSvinnKr, ytdOms)
 
   const importedLabel = data.importedAt
     ? new Date(data.importedAt).toLocaleDateString("nb-NO", { day: "numeric", month: "long" })
@@ -146,10 +150,12 @@ export default async function StoreKpiPage({ searchParams }: { searchParams: Pro
         <Card label="Bruttomargin">
           <div style={{ fontSize: 64, fontWeight: 900 }}>{pct(brutto)}</div>
           <div style={{ fontSize: 24, color: MUTED }}>budsjett {pct(budBrutto)} · <Delta value={brutto !== null && budBrutto !== null ? brutto - budBrutto : null} suffix=" pp" /></div>
+          <div style={{ fontSize: 22, color: MUTED }}>hittil i år {pct(ytdBruttoPct)}</div>
         </Card>
-        <Card label="Lønnsandel">
+        <Card label="Lønn">
           <div style={{ fontSize: 64, fontWeight: 900 }}>{pct(lonn)}</div>
           <div style={{ fontSize: 24, color: MUTED }}>budsjett {pct(budLonn)} · <Delta value={lonn !== null && budLonn !== null ? lonn - budLonn : null} suffix=" pp" goodWhenPositive={false} /></div>
+          <div style={{ fontSize: 22, color: MUTED }}>hittil i år {pct(ytdLonnPct)}</div>
         </Card>
       </section>
 
@@ -157,7 +163,7 @@ export default async function StoreKpiPage({ searchParams }: { searchParams: Pro
       <section style={{ display: "flex", gap: 24, flex: "0 0 auto" }}>
         <Card label="Svinn · siste uke">
           <div style={{ fontSize: 56, fontWeight: 900 }}>{kr(svinn)} kr</div>
-          <div style={{ fontSize: 24, color: MUTED }}>{pct(ratio(svinn, oms))} av omsetning</div>
+          <div style={{ fontSize: 24, color: MUTED }}>{pct(ratio(svinn, oms))} av omsetning · hittil i år {pct(ytdSvinnPct)}</div>
         </Card>
         {data.svinn && (
           <Card label="Svinn kommentert · 10 uker" flex={1.4}>

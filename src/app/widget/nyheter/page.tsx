@@ -13,7 +13,7 @@ import { NewsRotator } from "./news-rotator"
 
 export const dynamic = "force-dynamic"
 
-const CARD_TYPES = ["news", "competition", "slide", "job", "birthday", "stats"]
+const CARD_TYPES = ["news", "competition", "slide", "job", "birthday"]
 
 function normalizeUrl(raw: string): string {
   const v = raw.trim()

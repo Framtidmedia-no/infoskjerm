@@ -22,6 +22,9 @@ export interface LiveItem {
   blocks: Block[]
   imageUrl: string | null
   imageMode: ImageMode
+  isPdf: boolean
+  validFrom: string | null
+  validTo: string | null
   author: string
   date: string
   contactPerson: string | null
@@ -151,6 +154,9 @@ export async function fetchLiveContent(storeId: string | null, types: string[]):
       blocks: htmlToBlocks(body.html ?? ""),
       imageUrl: body.imageUrl ?? null,
       imageMode: body.imageMode === "plakat" ? "plakat" : "bakgrunn",
+      isPdf: (body.imageUrl ?? "").toLowerCase().split("?")[0].endsWith(".pdf"),
+      validFrom: it.valid_from,
+      validTo: it.valid_to,
       author: it.created_by ? authorName.get(it.created_by) ?? "" : "",
       date: formatDate(it.published_at || it.created_at),
       contactPerson: body.contactPerson ?? null,

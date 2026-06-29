@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { RichTextEditor } from "@/components/admin/rich-text-editor"
 import { MediaUploader } from "@/components/admin/media-uploader"
@@ -8,8 +8,11 @@ import { Button } from "@/components/ui/button"
 import { saveContent, type ContentType, type TargetMode, type ImageMode } from "../actions"
 import { toast } from "sonner"
 import {
-  Newspaper, Trophy, ImageIcon, Briefcase, PartyPopper, BarChart3, Megaphone,
-  Store as StoreIcon, Tag, Globe, X, Calendar, Save, Send, ChevronLeft, Image as ImageLucide, Maximize2,
+  Dialog, DialogContent, DialogHeader, DialogFooter, DialogTitle, DialogDescription,
+} from "@/components/ui/dialog"
+import {
+  Newspaper, Trophy, ImageIcon, Briefcase, PartyPopper, Megaphone, FileText,
+  Store as StoreIcon, Tag, Globe, X, Calendar, Save, Send, ChevronLeft, Image as ImageLucide, Maximize2, CalendarOff,
 } from "lucide-react"
 import Link from "next/link"
 
@@ -40,7 +43,6 @@ const TYPES: { key: ContentType; label: string; icon: React.ElementType }[] = [
   { key: "slide", label: "Tilbud / annet", icon: ImageIcon },
   { key: "job", label: "Stilling", icon: Briefcase },
   { key: "birthday", label: "Gratulerer", icon: PartyPopper },
-  { key: "stats", label: "Salgstall", icon: BarChart3 },
   { key: "ticker", label: "Ticker", icon: Megaphone },
 ]
 
@@ -60,20 +62,37 @@ export function ContentForm({ stores, tags, initial }: { stores: StoreOption[]; 
   const [contactPerson, setContactPerson] = useState(initial?.contactPerson ?? "")
   const [applyUrl, setApplyUrl] = useState(initial?.applyUrl ?? "")
   const [imageMode, setImageMode] = useState<ImageMode>(initial?.imageMode ?? "bakgrunn")
-  const [statsValue, setStatsValue] = useState(initial?.statsValue ?? "")
-  const [statsChange, setStatsChange] = useState(initial?.statsChange ?? "")
   const [saving, setSaving] = useState(false)
+  const [confirmNoEndDate, setConfirmNoEndDate] = useState(false)
+
+  // Forhåndsutfyll fradato med dagens dato for nytt innhold (ikke ved redigering).
+  // Settes på klienten for å unngå SSR/klient-hydration-mismatch på datoen.
+  useEffect(() => {
+    if (!initial) {
+      const now = new Date()
+      const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`
+      setValidFrom((prev) => prev || today)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const usesImage = IMAGE_TYPES.includes(type)
-  const usesBody = type !== "ticker" && type !== "stats"
+  const usesBody = type !== "ticker"
+  const isPdfUrl = (imageUrl ?? "").toLowerCase().split("?")[0].endsWith(".pdf")
 
   const toggleStore = (id: string) => setStoreIds((p) => (p.includes(id) ? p.filter((x) => x !== id) : [...p, id]))
   const toggleTag = (id: string) => setTagIds((p) => (p.includes(id) ? p.filter((x) => x !== id) : [...p, id]))
 
-  async function handleSave(publish: boolean) {
+  function handleSave(publish: boolean) {
     if (!title.trim()) { toast.error("Skriv en tittel først"); return }
     if (targetMode === "stores" && storeIds.length === 0) { toast.error("Velg minst én butikk"); return }
     if (targetMode === "tags" && tagIds.length === 0) { toast.error("Velg minst én tagg"); return }
+    // Myk bekreftelse: publisering uten sluttdato = vises til det fjernes manuelt.
+    if (publish && !validTo) { setConfirmNoEndDate(true); return }
+    doSave(publish)
+  }
+
+  async function doSave(publish: boolean) {
     setSaving(true)
     const res = await saveContent(
       {
@@ -83,8 +102,6 @@ export function ContentForm({ stores, tags, initial }: { stores: StoreOption[]; 
         validFrom: validFrom || null, validTo: validTo || null, publish,
         contactPerson: type === "job" ? contactPerson || null : null,
         applyUrl: type === "job" ? applyUrl || null : null,
-        statsValue: type === "stats" ? statsValue || null : null,
-        statsChange: type === "stats" ? statsChange || null : null,
       },
       initial?.id
     )
@@ -139,50 +156,42 @@ export function ContentForm({ stores, tags, initial }: { stores: StoreOption[]; 
             </div>
           )}
 
-          {type === "stats" && (
-            <div className="rounded-xl border border-zinc-200 bg-white p-4 space-y-3">
-              <h3 className="flex items-center gap-1.5 text-xs font-semibold text-zinc-600"><BarChart3 className="w-3.5 h-3.5" /> Nøkkeltall</h3>
-              <div>
-                <label className="block text-[10px] text-zinc-400 mb-1">Tall / verdi</label>
-                <input type="text" value={statsValue} onChange={(e) => setStatsValue(e.target.value)} placeholder="f.eks. 142 000 kr"
-                  className="w-full text-sm border border-zinc-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-zinc-300" />
-              </div>
-              <div>
-                <label className="block text-[10px] text-zinc-400 mb-1">Endring (valgfritt)</label>
-                <input type="text" value={statsChange} onChange={(e) => setStatsChange(e.target.value)} placeholder="f.eks. +12% mot i fjor"
-                  className="w-full text-sm border border-zinc-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-zinc-300" />
-                <p className="text-[10px] text-zinc-400 mt-1">Start med + (grønn ▲) eller − (rød ▼) for fargekode.</p>
-              </div>
-            </div>
-          )}
-
           {usesImage && (
             <div>
-              <label className="block text-xs font-semibold text-zinc-600 mb-1.5">Bilde</label>
+              <label className="block text-xs font-semibold text-zinc-600 mb-1.5">Bilde / PDF</label>
               {imageUrl ? (
                 <div className="space-y-3">
                   <div className="relative rounded-xl overflow-hidden border border-zinc-200 group w-full max-w-sm">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={imageUrl} alt="" className={`w-full h-44 ${imageMode === "plakat" ? "object-contain bg-zinc-900" : "object-cover"}`} />
+                    {isPdfUrl ? (
+                      <div className="w-full h-44 flex items-center justify-center bg-zinc-900 text-white gap-2 text-sm font-semibold">
+                        <FileText className="w-5 h-5" /> PDF lastet opp
+                      </div>
+                    ) : (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={imageUrl} alt="" className={`w-full h-44 ${imageMode === "plakat" ? "object-contain bg-zinc-900" : "object-cover"}`} />
+                    )}
                     <button onClick={() => setImageUrl(null)} className="absolute top-2 right-2 w-7 h-7 rounded-full bg-black/60 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                       <X className="w-4 h-4" />
                     </button>
                   </div>
-                  <div>
-                    <label className="block text-[10px] text-zinc-400 mb-1">Bildevisning</label>
-                    <div className="flex gap-1.5">
-                      {([["bakgrunn", "Bakgrunn", ImageLucide], ["plakat", "Plakat (vis hele)", Maximize2]] as const).map(([mode, label, Icon]) => (
-                        <button key={mode} type="button" onClick={() => setImageMode(mode)}
-                          className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-medium border transition-all ${imageMode === mode ? "border-zinc-900 bg-zinc-900 text-white" : "border-zinc-200 text-zinc-600 hover:border-zinc-300"}`}>
-                          <Icon className="w-3 h-3" /> {label}
-                        </button>
-                      ))}
+                  {!isPdfUrl && (
+                    <div>
+                      <label className="block text-[10px] text-zinc-400 mb-1">Bildevisning</label>
+                      <div className="flex gap-1.5">
+                        {([["bakgrunn", "Bakgrunn", ImageLucide], ["plakat", "Plakat (vis hele)", Maximize2]] as const).map(([mode, label, Icon]) => (
+                          <button key={mode} type="button" onClick={() => setImageMode(mode)}
+                            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-medium border transition-all ${imageMode === mode ? "border-zinc-900 bg-zinc-900 text-white" : "border-zinc-200 text-zinc-600 hover:border-zinc-300"}`}>
+                            <Icon className="w-3 h-3" /> {label}
+                          </button>
+                        ))}
+                      </div>
+                      <p className="text-[10px] text-zinc-400 mt-1">{imageMode === "plakat" ? "Hele bildet vises uten klipp — for ferdige plakater." : "Bildet fyller kortet som dempet bakgrunn med tekst oppå."}</p>
                     </div>
-                    <p className="text-[10px] text-zinc-400 mt-1">{imageMode === "plakat" ? "Hele bildet vises uten klipp — for ferdige plakater." : "Bildet fyller kortet som dempet bakgrunn med tekst oppå."}</p>
-                  </div>
+                  )}
+                  {isPdfUrl && <p className="text-[10px] text-zinc-400">PDF vises i full størrelse (helside) på skjermen.</p>}
                 </div>
               ) : (
-                <MediaUploader maxFiles={1} onUpload={(files) => { if (files[0]) setImageUrl(files[0].url) }} />
+                <MediaUploader maxFiles={1} accept={["image/jpeg", "image/png", "image/webp", "image/gif", "application/pdf"]} onUpload={(files) => { if (files[0]) setImageUrl(files[0].url) }} />
               )}
             </div>
           )}
@@ -211,7 +220,7 @@ export function ContentForm({ stores, tags, initial }: { stores: StoreOption[]; 
             <h3 className="text-xs font-semibold text-zinc-600 mb-2.5">Type</h3>
             <div className="grid grid-cols-2 gap-1.5">
               {TYPES.map(({ key, label, icon: Icon }) => (
-                <button key={key} onClick={() => setType(key)}
+                <button key={key} onClick={() => { setType(key); if (key === "slide") setImageMode("plakat") }}
                   className={`flex items-center gap-1.5 px-2.5 py-2 rounded-lg text-xs font-medium border transition-all ${type === key ? "border-zinc-900 bg-zinc-900 text-white" : "border-zinc-200 text-zinc-600 hover:border-zinc-300"}`}>
                   <Icon className="w-3.5 h-3.5" /> {label}
                 </button>

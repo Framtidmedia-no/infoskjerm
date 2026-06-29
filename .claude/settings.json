@@ -66,7 +66,11 @@
       "Bash(node scripts/xibo/build-store-layouts.mjs)",
       "Bash(node -e ' *)",
       "Bash(cd ~/Documents/GitHub/Framtidmediatech/docs/compliance)",
-      "Bash(sed -n '1,120p' README.md)"
+      "Bash(sed -n '1,120p' README.md)",
+      "Bash(npx --yes supabase projects list)",
+      "Bash(xargs -I{} sh -c 'echo \"--- {} ---\"; head -20 {}')",
+      "Bash(npx --yes vercel env ls production)",
+      "Bash(node scripts/xibo/build-kpi-layouts.mjs)"
     ],
     "additionalDirectories": [
       "/Users/frlund3/Documents/GitHub/infoskjerm/src/app/preview/[id]",

@@ -83,6 +83,89 @@ export async function fetchStoreKpi(storeId: string): Promise<StoreKpi | null> {
   }
 }
 
+export interface StoreKpiRow {
+  storeName: string
+  uke: number
+  omsetning: number | null
+  budsjett: number | null
+  fjor: number | null
+  bruttoPct: number | null
+  lonnPct: number | null
+  svinnPct: number | null
+  ytdOmsetning: number
+}
+
+export interface AllStoresKpi {
+  year: number
+  latestWeek: number
+  stores: StoreKpiRow[]
+  total: { omsetning: number; budsjett: number; fjor: number; ytdOmsetning: number; ytdBudsjett: number; ytdFjor: number }
+}
+
+/** Aggregates the latest week + YTD per store for the all-stores overview. */
+export async function fetchAllStoresKpi(): Promise<AllStoresKpi | null> {
+  const supabase = createAdminClient()
+  const year = new Date().getFullYear()
+
+  const [{ data: stores }, { data: rows }] = await Promise.all([
+    supabase.from("stores").select("id, name"),
+    supabase
+      .from("store_kpi_week")
+      .select("store_id, uke, netto_omsetning, budsjett_omsetning, netto_omsetning_fjoraaret, brutto_kr, lonn_kr, svinn_total")
+      .eq("ar", year)
+      .order("uke", { ascending: true }),
+  ])
+  if (!stores || !rows || rows.length === 0) return null
+
+  const nameById = new Map(stores.map((s) => [s.id, s.name]))
+  const byStore = new Map<string, typeof rows>()
+  for (const r of rows) {
+    const list = byStore.get(r.store_id) ?? []
+    list.push(r)
+    byStore.set(r.store_id, list)
+  }
+
+  const out: StoreKpiRow[] = []
+  const total = { omsetning: 0, budsjett: 0, fjor: 0, ytdOmsetning: 0, ytdBudsjett: 0, ytdFjor: 0 }
+  let latestWeek = 0
+
+  for (const [storeId, list] of byStore) {
+    const name = nameById.get(storeId)
+    if (!name) continue
+    const last = list[list.length - 1]
+    latestWeek = Math.max(latestWeek, last.uke)
+    const ytd = list.reduce(
+      (a, w) => {
+        a.oms += w.netto_omsetning ?? 0
+        a.bud += w.budsjett_omsetning ?? 0
+        a.fjor += w.netto_omsetning_fjoraaret ?? 0
+        return a
+      },
+      { oms: 0, bud: 0, fjor: 0 }
+    )
+    out.push({
+      storeName: name,
+      uke: last.uke,
+      omsetning: last.netto_omsetning,
+      budsjett: last.budsjett_omsetning,
+      fjor: last.netto_omsetning_fjoraaret,
+      bruttoPct: ratio(last.brutto_kr, last.netto_omsetning),
+      lonnPct: ratio(last.lonn_kr, last.netto_omsetning),
+      svinnPct: ratio(last.svinn_total, last.netto_omsetning),
+      ytdOmsetning: ytd.oms,
+    })
+    total.omsetning += last.netto_omsetning ?? 0
+    total.budsjett += last.budsjett_omsetning ?? 0
+    total.fjor += last.netto_omsetning_fjoraaret ?? 0
+    total.ytdOmsetning += ytd.oms
+    total.ytdBudsjett += ytd.bud
+    total.ytdFjor += ytd.fjor
+  }
+
+  out.sort((a, b) => (diffPct(b.omsetning, b.budsjett) ?? -999) - (diffPct(a.omsetning, a.budsjett) ?? -999))
+  return { year, latestWeek, stores: out, total }
+}
+
 // ---------- formatting + derived helpers ----------
 
 /** Norwegian kr, compact for signage: ≥1M → "1,80 mill", else thousand-separated. */

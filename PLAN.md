@@ -64,7 +64,8 @@ De 16 butikk-layoutene er **planlagt** til display-gruppene (5–20). Når en Pi
 6. **Global default-layout er satt** til base-malen (DEFAULT_LAYOUT=layout 92) i Xibo-DB-en, så uplasserte skjermer viser base-malen umiddelbart. ⚠️ Layout-id endres ved base-rebuild — re-sett da via SSH:
    `ssh -i ~/.ssh/id_ed25519 root@157.180.73.205 "docker exec xibo-cms-db-1 mysql -ucms -p\$(docker exec xibo-cms-db-1 printenv MYSQL_PASSWORD) cms -e \"UPDATE setting SET value='<ny base-layout-id>' WHERE setting='DEFAULT_LAYOUT';\""`
 
-> **Neste store modul:** butikk-KPI-dashbord på ansatt-skjermer (driftstall fra Gange-Rolv Drift) — egen plan: `docs/superpowers/plans/2026-06-29-butikk-kpi-dashboard.md`.
+### ✅ Butikk-KPI-dashbord (ansatt-skjermer) — bygget
+Driftstall fra Gange-Rolv Drift, synket daglig (~14:00) til `store_kpi_week` + `store_svinn_kommentert` via `/api/cron/sync-kpi`. Fullskjerm-dashbord `/widget/butikk-kpi?store=` (omsetning vs budsjett/fjorår, bruttomargin, lønn%, svinn, **svinn kommentert/ikke**, SVG-trendgraf, hittil-i-år). 16 KPI-layouts (campaign 28–43) planlagt til egne **bakrom-grupper** «{butikk} – Bakrom» (21–36) — aldri på kundeskjermer. Plan: `docs/superpowers/plans/2026-06-29-butikk-kpi-dashboard.md`.
 
 ### 🟡 Resten
 - **DPA Framtid Tech ↔ Gange-Rolv** + org.nr i art.30-protokollen (markert `[FYLL INN]`).

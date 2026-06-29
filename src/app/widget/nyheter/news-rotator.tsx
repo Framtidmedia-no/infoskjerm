@@ -100,6 +100,41 @@ function Byline({ item }: { item: LiveItem }) {
   return <p style={{ fontSize: 24, color: "rgba(255,255,255,.5)", margin: "0 0 24px" }}>{parts.join(" · ")}</p>
 }
 
+function formatPeriod(from: string | null, to: string | null): string | null {
+  if (!from && !to) return null
+  const f = (d: string) => new Date(d).toLocaleDateString("nb-NO", { day: "numeric", month: "long" })
+  if (from && to) return `Gjelder ${f(from)} – ${f(to)}`
+  if (from) return `Gjelder fra ${f(from)}`
+  return `Gjelder til ${f(to!)}`
+}
+
+function PeriodChip({ item }: { item: LiveItem }) {
+  const label = formatPeriod(item.validFrom, item.validTo)
+  if (!label) return null
+  return (
+    <span style={{ display: "inline-block", alignSelf: "flex-start", background: "#16a34a", color: "#fff", fontSize: 26, fontWeight: 700, padding: "10px 24px", borderRadius: 9999, marginBottom: 20 }}>
+      {label}
+    </span>
+  )
+}
+
+/** Full-bleed media for poster mode — image (contain) or PDF page (iframe). */
+function MediaFull({ item }: { item: LiveItem }) {
+  if (!item.imageUrl) return null
+  if (item.isPdf) {
+    return (
+      <iframe
+        title={item.title}
+        src={`${item.imageUrl}#toolbar=0&navpanes=0&scrollbar=0&view=Fit`}
+        style={{ flex: "1 1 auto", minHeight: 0, width: "100%", border: "none", borderRadius: 14, background: "#fff" }}
+      />
+    )
+  }
+  return (
+    <div style={{ flex: "1 1 auto", minHeight: 0, backgroundImage: `url('${item.imageUrl}')`, backgroundSize: "contain", backgroundPosition: "center", backgroundRepeat: "no-repeat", borderRadius: 16 }} />
+  )
+}
+
 function bgImage(url: string): CSSProperties {
   return { position: "absolute", inset: 0, backgroundImage: `url('${url}')`, backgroundSize: "cover", backgroundPosition: "center", opacity: 0.22 }
 }
@@ -112,6 +147,7 @@ function StandardCard({ item }: { item: LiveItem }) {
         <Kicker>{KICKER[item.type] ?? "GANGE-ROLV"}</Kicker>
         <h1 style={{ fontSize: 78, fontWeight: 900, margin: "0 0 14px", lineHeight: 1.03 }}>{item.title}</h1>
         <Byline item={item} />
+        <PeriodChip item={item} />
         <ScrollText blocks={item.blocks} style={{ flex: "1 1 auto" }} />
       </div>
     </>
@@ -120,13 +156,13 @@ function StandardCard({ item }: { item: LiveItem }) {
 
 function PosterCard({ item }: { item: LiveItem }) {
   return (
-    <div style={{ position: "absolute", inset: 0, padding: 50, boxSizing: "border-box", display: "flex", flexDirection: "column", gap: 18 }}>
-      <div style={{ flex: "0 0 auto" }}>
+    <div style={{ position: "absolute", inset: 0, padding: 50, boxSizing: "border-box", display: "flex", flexDirection: "column", gap: 16 }}>
+      <div style={{ flex: "0 0 auto", display: "flex", flexDirection: "column" }}>
         <Kicker>{KICKER[item.type] ?? "GANGE-ROLV"}</Kicker>
-        <h1 style={{ fontSize: 58, fontWeight: 900, margin: "0 0 8px", lineHeight: 1.04 }}>{item.title}</h1>
-        <Byline item={item} />
+        <h1 style={{ fontSize: 58, fontWeight: 900, margin: "0 0 12px", lineHeight: 1.04 }}>{item.title}</h1>
+        <PeriodChip item={item} />
       </div>
-      <div style={{ flex: "1 1 auto", minHeight: 0, backgroundImage: `url('${item.imageUrl}')`, backgroundSize: "contain", backgroundPosition: "center", backgroundRepeat: "no-repeat", borderRadius: 16 }} />
+      <MediaFull item={item} />
     </div>
   )
 }
@@ -199,7 +235,8 @@ function StatsCard({ item }: { item: LiveItem }) {
 function Card({ item, qrUrl }: { item: LiveItem; qrUrl?: string }) {
   if (item.type === "stats") return <StatsCard item={item} />
   if (item.type === "job") return <JobCard item={item} qrUrl={qrUrl} />
-  if (item.imageMode === "plakat" && item.imageUrl) return <PosterCard item={item} />
+  // Posters & PDFs always show full (never as a cropped background).
+  if (item.imageUrl && (item.imageMode === "plakat" || item.isPdf)) return <PosterCard item={item} />
   return <StandardCard item={item} />
 }
 
