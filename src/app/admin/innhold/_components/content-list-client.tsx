@@ -3,11 +3,12 @@
 import { useState, useMemo } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { deleteContent, duplicateContent } from "../actions"
+import { deleteContent, duplicateContent, bulkSetStatus, bulkDeleteContent, bulkShiftPeriod } from "../actions"
 import { toast } from "sonner"
 import {
   Newspaper, Trophy, ImageIcon, Briefcase, PartyPopper, BarChart3, Megaphone, Globe, Store as StoreIcon, Tag,
   Copy, Trash2, Pencil, MoreVertical, Calendar, CalendarPlus, Search, ChevronLeft, ChevronRight, FileText,
+  Send, EyeOff, X, Check,
 } from "lucide-react"
 
 export interface ContentRow {
@@ -74,8 +75,26 @@ export function ContentListClient({ items, stores, tags, newHref = "/admin/innho
   const [storeF, setStoreF] = useState("")
   const [tagF, setTagF] = useState("")
   const [page, setPage] = useState(0)
+  const [selected, setSelected] = useState<Set<string>>(new Set())
+  const [bulkBusy, setBulkBusy] = useState(false)
 
   function closeMenu() { setMenuId(null); setConfirmId(null) }
+
+  function toggleSelect(id: string) {
+    setSelected((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id); else next.add(id)
+      return next
+    })
+  }
+
+  async function runBulk(fn: () => Promise<{ ok: boolean; error?: string }>, okMsg: string) {
+    setBulkBusy(true)
+    const res = await fn()
+    setBulkBusy(false)
+    if (res.ok) { toast.success(okMsg); setSelected(new Set()); router.refresh() }
+    else toast.error(res.error ?? "Feil")
+  }
 
   async function handleDuplicate(id: string, shiftDays = 0) {
     setBusyId(id); closeMenu()
@@ -155,7 +174,39 @@ export function ContentListClient({ items, stores, tags, newHref = "/admin/innho
         )}
       </div>
 
-      <p className="text-xs text-zinc-400">{filtered.length} {filtered.length === 1 ? "treff" : "treff"}</p>
+      <div className="flex items-center gap-3">
+        <p className="text-xs text-zinc-400">{filtered.length} treff</p>
+        {visible.length > 0 && (
+          <button
+            onClick={() => {
+              const ids = visible.map((v) => v.id)
+              const allSel = ids.every((id) => selected.has(id))
+              setSelected((prev) => {
+                const next = new Set(prev)
+                ids.forEach((id) => (allSel ? next.delete(id) : next.add(id)))
+                return next
+              })
+            }}
+            className="text-xs text-zinc-500 hover:text-zinc-900 font-medium"
+          >
+            {visible.every((v) => selected.has(v.id)) ? "Fjern valg på siden" : "Velg alle på siden"}
+          </button>
+        )}
+      </div>
+
+      {/* Bulk action bar */}
+      {selected.size > 0 && (
+        <div className="sticky top-2 z-20 flex flex-wrap items-center gap-2 rounded-xl bg-zinc-900 text-white px-3 py-2 shadow-lg">
+          <span className="text-xs font-semibold pl-1">{selected.size} valgt</span>
+          <div className="ml-auto flex flex-wrap items-center gap-1.5">
+            <button disabled={bulkBusy} onClick={() => runBulk(() => bulkSetStatus([...selected], true), "Publisert")} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-white/10 hover:bg-white/20 disabled:opacity-50"><Send className="w-3.5 h-3.5" /> Publiser</button>
+            <button disabled={bulkBusy} onClick={() => runBulk(() => bulkSetStatus([...selected], false), "Avpublisert")} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-white/10 hover:bg-white/20 disabled:opacity-50"><EyeOff className="w-3.5 h-3.5" /> Avpubliser</button>
+            <button disabled={bulkBusy} onClick={() => runBulk(() => bulkShiftPeriod([...selected], 7), "Forlenget +7 dager")} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-white/10 hover:bg-white/20 disabled:opacity-50"><CalendarPlus className="w-3.5 h-3.5" /> Forleng +7d</button>
+            <button disabled={bulkBusy} onClick={() => runBulk(() => bulkDeleteContent([...selected]), "Slettet")} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-red-600 hover:bg-red-700 disabled:opacity-50"><Trash2 className="w-3.5 h-3.5" /> Slett</button>
+            <button disabled={bulkBusy} onClick={() => setSelected(new Set())} className="p-1.5 rounded-lg hover:bg-white/10" aria-label="Avbryt valg"><X className="w-4 h-4" /></button>
+          </div>
+        </div>
+      )}
 
       {visible.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-zinc-300 bg-white p-12 text-center">
@@ -177,7 +228,15 @@ export function ContentListClient({ items, stores, tags, newHref = "/admin/innho
               : item.target.mode === "none" ? "Ikke målrettet"
               : item.target.names.slice(0, 2).join(", ") + (item.target.names.length > 2 ? ` +${item.target.names.length - 2}` : "")
             return (
-              <div key={item.id} className={`group relative rounded-2xl bg-white border border-zinc-200 overflow-hidden hover:shadow-lg hover:border-zinc-300 transition-all ${busyId === item.id ? "opacity-50" : ""}`}>
+              <div key={item.id} className={`group relative rounded-2xl bg-white border overflow-hidden hover:shadow-lg transition-all ${selected.has(item.id) ? "border-zinc-900 ring-2 ring-zinc-900" : "border-zinc-200 hover:border-zinc-300"} ${busyId === item.id ? "opacity-50" : ""}`}>
+                <button
+                  onClick={() => toggleSelect(item.id)}
+                  aria-label={selected.has(item.id) ? "Fjern fra valg" : "Velg"}
+                  aria-pressed={selected.has(item.id)}
+                  className={`absolute top-2.5 left-2.5 z-10 w-6 h-6 rounded-md border flex items-center justify-center transition-all ${selected.has(item.id) ? "bg-zinc-900 border-zinc-900 text-white" : "bg-white/85 border-zinc-300 text-transparent opacity-0 group-hover:opacity-100 focus:opacity-100"}`}
+                >
+                  <Check className="w-4 h-4" />
+                </button>
                 <Link href={`/admin/innhold/${item.id}`} className="block relative aspect-[16/9] overflow-hidden">
                   {item.imageUrl && (item.imageUrl).toLowerCase().split("?")[0].endsWith(".pdf") ? (
                     <div className="w-full h-full bg-zinc-900 flex flex-col items-center justify-center gap-1.5 text-white/70">
@@ -192,7 +251,7 @@ export function ContentListClient({ items, stores, tags, newHref = "/admin/innho
                       <TypeIcon className="w-10 h-10 text-white/40" />
                     </div>
                   )}
-                  <span className={`absolute top-2.5 left-2.5 inline-flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-full ${tm.badge} shadow-sm`}>
+                  <span className={`absolute bottom-2.5 left-2.5 inline-flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-full ${tm.badge} shadow-sm`}>
                     <TypeIcon className="w-3 h-3" /> {tm.label}
                   </span>
                   <span className={`absolute top-2.5 right-2.5 text-[10px] font-semibold px-2 py-1 rounded-full ${sm.color} shadow-sm`}>{sm.label}</span>
@@ -209,7 +268,7 @@ export function ContentListClient({ items, stores, tags, newHref = "/admin/innho
                 </div>
 
                 <div className="absolute bottom-2.5 right-2.5">
-                  <button onClick={() => setMenuId(menuId === item.id ? null : item.id)} className="w-7 h-7 rounded-lg flex items-center justify-center text-zinc-400 bg-white/80 hover:bg-zinc-100 hover:text-zinc-700 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <button onClick={() => setMenuId(menuId === item.id ? null : item.id)} aria-label="Handlinger" aria-haspopup="menu" className="w-7 h-7 rounded-lg flex items-center justify-center text-zinc-400 bg-white/80 hover:bg-zinc-100 hover:text-zinc-700 opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity">
                     <MoreVertical className="w-4 h-4" />
                   </button>
                   {menuId === item.id && (

@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/dialog"
 import {
   Newspaper, Trophy, ImageIcon, Briefcase, PartyPopper, Megaphone, FileText,
-  Store as StoreIcon, Tag, Globe, X, Calendar, Save, Send, ChevronLeft, Image as ImageLucide, Maximize2, PanelRight, CalendarOff,
+  Store as StoreIcon, Tag, Globe, X, Calendar, Save, Send, ChevronLeft, Image as ImageLucide, Maximize2, PanelRight, CalendarOff, Search,
 } from "lucide-react"
 import Link from "next/link"
 
@@ -142,6 +142,8 @@ export function ContentForm({ stores, tags, initial, audience = "intern" }: { st
   const [avdeling, setAvdeling] = useState(initial?.avdeling ?? "felles")
   const [bgColor, setBgColor] = useState(initial?.bgColor ?? "")
   const [textColor, setTextColor] = useState(initial?.textColor ?? "")
+  const [storeSearch, setStoreSearch] = useState("")
+  const [chainF, setChainF] = useState("")
   const [saving, setSaving] = useState(false)
   const [confirmNoEndDate, setConfirmNoEndDate] = useState(false)
 
@@ -192,6 +194,55 @@ export function ContentForm({ stores, tags, initial, audience = "intern" }: { st
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+  // Autosave: keep an unsaved draft in localStorage for NEW content only, so a
+  // half-written post survives an accidental navigation/refresh.
+  const draftKey = initial ? null : `infoskjerm:draft:${audience}`
+  const [restored, setRestored] = useState(false)
+
+  useEffect(() => {
+    if (!draftKey) return
+    try {
+      const raw = localStorage.getItem(draftKey)
+      if (!raw) return
+      const d = JSON.parse(raw)
+      if (d.title) setTitle(d.title)
+      if (d.type) setType(d.type)
+      if (d.bodyHtml) setBodyHtml(d.bodyHtml)
+      if (Array.isArray(d.imageUrls)) setImageUrls(d.imageUrls)
+      if (d.offer) setOffer(d.offer)
+      if (d.offerMode) setOfferMode(d.offerMode)
+      if (d.avdeling) setAvdeling(d.avdeling)
+      if (d.validFrom) setValidFrom(d.validFrom)
+      if (d.validTo) setValidTo(d.validTo)
+      if (d.targetMode) setTargetMode(d.targetMode)
+      if (Array.isArray(d.storeIds)) setStoreIds(d.storeIds)
+      if (Array.isArray(d.tagIds)) setTagIds(d.tagIds)
+      if (d.bgColor) setBgColor(d.bgColor)
+      if (d.textColor) setTextColor(d.textColor)
+      if (d.contactPerson) setContactPerson(d.contactPerson)
+      if (d.applyUrl) setApplyUrl(d.applyUrl)
+      setRestored(true)
+    } catch { /* ignore corrupt draft */ }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  useEffect(() => {
+    if (!draftKey) return
+    const hasContent = title.trim() || offer.varenavn.trim() || bodyHtml.trim() || imageUrls.length > 0
+    const id = setTimeout(() => {
+      try {
+        if (hasContent) localStorage.setItem(draftKey, JSON.stringify({ title, type, bodyHtml, imageUrls, offer, offerMode, avdeling, validFrom, validTo, targetMode, storeIds, tagIds, bgColor, textColor, contactPerson, applyUrl }))
+        else localStorage.removeItem(draftKey)
+      } catch { /* storage full/blocked — non-fatal */ }
+    }, 600)
+    return () => clearTimeout(id)
+  }, [draftKey, title, type, bodyHtml, imageUrls, offer, offerMode, avdeling, validFrom, validTo, targetMode, storeIds, tagIds, bgColor, textColor, contactPerson, applyUrl])
+
+  const discardDraft = () => {
+    if (draftKey) { try { localStorage.removeItem(draftKey) } catch {} }
+    window.location.reload()
+  }
+
   const usesImage = IMAGE_TYPES.includes(type)
   const usesBody = type !== "ticker" && !isOfferStruktur
   // Tilbud/annonser må alltid ha en gyldig periode (fra + til).
@@ -205,6 +256,23 @@ export function ContentForm({ stores, tags, initial, audience = "intern" }: { st
 
   const toggleStore = (id: string) => setStoreIds((p) => (p.includes(id) ? p.filter((x) => x !== id) : [...p, id]))
   const toggleTag = (id: string) => setTagIds((p) => (p.includes(id) ? p.filter((x) => x !== id) : [...p, id]))
+
+  // Store picker: search + chain filter + select-all over the filtered set.
+  const chains = Array.from(new Set(stores.map((s) => s.chain).filter(Boolean))) as string[]
+  const visibleStores = stores.filter((s) => {
+    if (chainF && s.chain !== chainF) return false
+    if (storeSearch) {
+      const q = storeSearch.toLowerCase()
+      if (!s.name.toLowerCase().includes(q) && !(s.city ?? "").toLowerCase().includes(q)) return false
+    }
+    return true
+  })
+  const allVisibleSelected = visibleStores.length > 0 && visibleStores.every((s) => storeIds.includes(s.id))
+  const toggleAllVisible = () => setStoreIds((prev) => {
+    const ids = visibleStores.map((s) => s.id)
+    if (ids.every((id) => prev.includes(id))) return prev.filter((id) => !ids.includes(id))
+    return Array.from(new Set([...prev, ...ids]))
+  })
 
   function handleSave(publish: boolean) {
     if (isOfferStruktur) {
@@ -244,6 +312,7 @@ export function ContentForm({ stores, tags, initial, audience = "intern" }: { st
     )
     setSaving(false)
     if (res.ok) {
+      if (draftKey) { try { localStorage.removeItem(draftKey) } catch {} }
       toast.success(publish ? "Publisert" : "Lagret som utkast")
       router.push(listHref)
     } else {
@@ -279,6 +348,13 @@ export function ContentForm({ stores, tags, initial, audience = "intern" }: { st
       <div className="flex-1 grid grid-cols-1 lg:grid-cols-3 gap-6 p-6 max-w-6xl">
         {/* Main column */}
         <div className="lg:col-span-2 space-y-5">
+          {restored && (
+            <div className="flex items-center gap-2 text-xs bg-amber-50 border border-amber-200 text-amber-800 rounded-lg px-3 py-2">
+              <Save className="w-3.5 h-3.5 flex-shrink-0" />
+              <span className="flex-1">Gjenopprettet et ulagret utkast.</span>
+              <button type="button" onClick={discardDraft} className="font-semibold hover:underline">Forkast</button>
+            </div>
+          )}
           {!isOfferStruktur && (
             <div>
               <input
@@ -390,7 +466,7 @@ export function ContentForm({ stores, tags, initial, audience = "intern" }: { st
                             // eslint-disable-next-line @next/next/no-img-element
                             <img src={url} alt="" className={`w-full h-36 ${isMulti || imageMode === "plakat" || imageMode === "liten" ? "object-contain bg-zinc-900" : "object-cover"}`} />
                           )}
-                          <button onClick={() => removeImage(url)} className="absolute top-2 right-2 w-7 h-7 rounded-full bg-black/60 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                          <button onClick={() => removeImage(url)} aria-label="Fjern bilde" className="absolute top-2 right-2 w-7 h-7 rounded-full bg-black/60 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity">
                             <X className="w-4 h-4" />
                           </button>
                         </div>
@@ -492,15 +568,37 @@ export function ContentForm({ stores, tags, initial, audience = "intern" }: { st
             {targetMode === "all" && <p className="text-[11px] text-zinc-400">Vises på alle butikkers skjermer.</p>}
 
             {targetMode === "stores" && (
-              <div className="max-h-56 overflow-y-auto space-y-0.5 -mx-1 px-1">
-                {stores.map((s) => (
-                  <label key={s.id} className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-zinc-50 cursor-pointer">
-                    <input type="checkbox" checked={storeIds.includes(s.id)} onChange={() => toggleStore(s.id)} className="rounded border-zinc-300" />
-                    <span className="text-xs text-zinc-700 flex-1 truncate">{s.name}</span>
-                    {s.city && <span className="text-[10px] text-zinc-400">{s.city}</span>}
-                  </label>
-                ))}
-                {storeIds.length > 0 && <p className="text-[10px] text-zinc-400 px-2 pt-1">{storeIds.length} valgt</p>}
+              <div className="space-y-2">
+                <div className="flex gap-1.5">
+                  <div className="relative flex-1">
+                    <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-zinc-400" />
+                    <input value={storeSearch} onChange={(e) => setStoreSearch(e.target.value)} placeholder="Søk butikk…"
+                      className="w-full text-xs border border-zinc-200 rounded-lg pl-7 pr-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-zinc-300" />
+                  </div>
+                  {chains.length > 1 && (
+                    <select value={chainF} onChange={(e) => setChainF(e.target.value)} className="text-xs border border-zinc-200 rounded-lg px-2 py-1.5 text-zinc-600 focus:outline-none focus:ring-1 focus:ring-zinc-300">
+                      <option value="">Alle kjeder</option>
+                      {chains.map((c) => <option key={c} value={c}>{c}</option>)}
+                    </select>
+                  )}
+                </div>
+                <div className="flex items-center justify-between px-1">
+                  <button type="button" onClick={toggleAllVisible} className="text-[11px] font-medium text-zinc-600 hover:text-zinc-900">
+                    {allVisibleSelected ? "Fjern alle (synlige)" : "Velg alle (synlige)"}
+                  </button>
+                  {storeIds.length > 0 && <span className="text-[11px] text-zinc-400">{storeIds.length} valgt</span>}
+                </div>
+                <div className="max-h-56 overflow-y-auto space-y-0.5 -mx-1 px-1">
+                  {visibleStores.length === 0 ? (
+                    <p className="text-[11px] text-zinc-400 px-2 py-2">Ingen butikker matcher.</p>
+                  ) : visibleStores.map((s) => (
+                    <label key={s.id} className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-zinc-50 cursor-pointer">
+                      <input type="checkbox" checked={storeIds.includes(s.id)} onChange={() => toggleStore(s.id)} className="rounded border-zinc-300" />
+                      <span className="text-xs text-zinc-700 flex-1 truncate">{s.name}</span>
+                      {s.city && <span className="text-[11px] text-zinc-400">{s.city}</span>}
+                    </label>
+                  ))}
+                </div>
               </div>
             )}
 

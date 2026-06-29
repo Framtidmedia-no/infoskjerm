@@ -5,6 +5,7 @@ import { fetchScreensByStore, type StoreScreen } from "@/lib/xibo/screens"
 import { fetchScreenInsight } from "@/lib/xibo/insight"
 import { ScreenPreview, type PreviewStore } from "./screen-preview"
 import { InsightPanel } from "./insight-panel"
+import { ContentStatus, type ContentStatusCounts } from "./content-status"
 
 /**
  * "Skjermsystem" — the CMS user's window into what each store's screen is
@@ -25,6 +26,24 @@ export default async function CmsDashboardPage() {
     .order("name")
 
   const list = stores ?? []
+
+  // Content health counts for the status strip.
+  const nowMs = Date.now()
+  const weekMs = nowMs + 7 * 86400000
+  const { data: contentRows } = await supabase.from("content_items").select("status, valid_to")
+  const counts: ContentStatusCounts = { live: 0, expiringSoon: 0, drafts: 0, expired: 0 }
+  for (const r of contentRows ?? []) {
+    if (r.status === "draft") counts.drafts++
+    if (r.status === "live") {
+      counts.live++
+      if (r.valid_to) {
+        const t = new Date(r.valid_to).getTime()
+        if (t < nowMs) counts.expired++
+        else if (t <= weekMs) counts.expiringSoon++
+      }
+    }
+  }
+
   // Flag stores that currently have active offers (so the Tilbud tab is labelled),
   // and read live screen status per store from the engine (empty until Pis connect).
   const [hasOffers, screensByStore, insight] = await Promise.all([
@@ -55,6 +74,7 @@ export default async function CmsDashboardPage() {
           <p className="text-sm text-zinc-500">Ingen butikker er satt opp ennå.</p>
         ) : (
           <div className="space-y-6">
+            <ContentStatus counts={counts} />
             <InsightPanel insight={insight} />
             <ScreenPreview stores={previewStores} screens={screens} />
           </div>

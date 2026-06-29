@@ -143,6 +143,45 @@ export async function saveContent(input: ContentInput, id?: string): Promise<Sav
   return { ok: true, id: contentId }
 }
 
+/** Publishes/unpublishes several items at once. */
+export async function bulkSetStatus(ids: string[], publish: boolean): Promise<SaveResult> {
+  const { supabase } = await requireRole([...AUTHOR_ROLES])
+  if (ids.length === 0) return { ok: true }
+  const { error } = await supabase
+    .from("content_items")
+    .update({ status: publish ? "live" : "draft", published_at: publish ? new Date().toISOString() : null, updated_at: new Date().toISOString() })
+    .in("id", ids)
+  if (error) return { ok: false, error: error.message }
+  revalidatePath("/admin/innhold")
+  return { ok: true }
+}
+
+/** Deletes several items (and their targets) at once. */
+export async function bulkDeleteContent(ids: string[]): Promise<SaveResult> {
+  const { supabase } = await requireRole([...AUTHOR_ROLES])
+  if (ids.length === 0) return { ok: true }
+  await supabase.from("content_targets").delete().in("content_item_id", ids)
+  const { error } = await supabase.from("content_items").delete().in("id", ids)
+  if (error) return { ok: false, error: error.message }
+  revalidatePath("/admin/innhold")
+  return { ok: true }
+}
+
+/** Shifts the validity period of several items by N days (e.g. extend +7). */
+export async function bulkShiftPeriod(ids: string[], days: number): Promise<SaveResult> {
+  const { supabase } = await requireRole([...AUTHOR_ROLES])
+  if (ids.length === 0) return { ok: true }
+  const { data: rows } = await supabase.from("content_items").select("id, valid_from, valid_to").in("id", ids)
+  for (const r of rows ?? []) {
+    await supabase
+      .from("content_items")
+      .update({ valid_from: shiftIso(r.valid_from, days), valid_to: shiftIso(r.valid_to, days), updated_at: new Date().toISOString() })
+      .eq("id", r.id)
+  }
+  revalidatePath("/admin/innhold")
+  return { ok: true }
+}
+
 export async function deleteContent(id: string): Promise<SaveResult> {
   const { supabase } = await requireRole([...AUTHOR_ROLES])
   await supabase.from("content_targets").delete().eq("content_item_id", id)
