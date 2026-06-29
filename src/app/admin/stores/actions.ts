@@ -13,7 +13,7 @@ async function requireUser() {
 
 export async function updateStoreKundeklubb(
   storeId: string,
-  settings: { enabled: boolean; url: string; headline: string; subtext: string }
+  settings: { enabled: boolean; url: string; headline: string; subtext: string; cta: string }
 ) {
   const { supabase, userId } = await requireUser()
   const { error } = await supabase
@@ -23,6 +23,7 @@ export async function updateStoreKundeklubb(
       kundeklubb_url: settings.url.trim() || null,
       kundeklubb_headline: settings.headline.trim() || null,
       kundeklubb_subtext: settings.subtext.trim() || null,
+      kundeklubb_cta: settings.cta.trim() || null,
     })
     .eq("id", storeId)
   if (error) return { ok: false, error: error.message }

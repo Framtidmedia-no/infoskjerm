@@ -186,7 +186,7 @@ export function TilbudRotator({ items, ticker, storeName, chain = null, qr = {} 
       ) : item.klubb ? (
         // Customer-club invite → full-bleed QR card (per-store sign-up link).
         <div key={item.id} style={{ ...inset, animation: "grFade .6s ease-out" }}>
-          <KundeklubbCard headline={item.klubb.headline} subtext={item.klubb.subtext} qrUrl={qr[item.id] ?? ""} accent={chain?.color || "#16a34a"} logoUrl={chain?.logoUrl ?? null} chainName={chain?.name ?? null} />
+          <KundeklubbCard headline={item.klubb.headline} subtext={item.klubb.subtext} cta={item.klubb.cta || undefined} qrUrl={qr[item.id] ?? ""} accent={chain?.color || "#16a34a"} logoUrl={chain?.logoUrl ?? null} chainName={chain?.name ?? null} />
         </div>
       ) : item.type === "competition" ? (
         // Customer competition → full-bleed flashy portrait card with QR.

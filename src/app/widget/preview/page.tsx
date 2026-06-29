@@ -35,7 +35,7 @@ interface PreviewData {
   contactPerson?: string | null
   statsValue?: string | null
   statsChange?: string | null
-  klubb?: { headline: string; subtext: string; url?: string } | null
+  klubb?: { headline: string; subtext: string; url?: string; cta?: string } | null
   chain?: { name: string; logoUrl: string | null; color: string; brandFg: string | null } | null
 }
 

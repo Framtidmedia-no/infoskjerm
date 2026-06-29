@@ -16,18 +16,19 @@ export function KundeklubbSettings({
   initial,
 }: {
   storeId: string
-  initial: { enabled: boolean; url: string; headline: string; subtext: string }
+  initial: { enabled: boolean; url: string; headline: string; subtext: string; cta: string }
 }) {
   const [enabled, setEnabled] = useState(initial.enabled)
   const [url, setUrl] = useState(initial.url)
   const [headline, setHeadline] = useState(initial.headline)
   const [subtext, setSubtext] = useState(initial.subtext)
+  const [cta, setCta] = useState(initial.cta)
   const [saving, setSaving] = useState(false)
 
   const save = async () => {
     if (enabled && !url.trim()) { toast.error("Legg inn URL-en QR-koden skal peke til"); return }
     setSaving(true)
-    const res = await updateStoreKundeklubb(storeId, { enabled, url, headline, subtext })
+    const res = await updateStoreKundeklubb(storeId, { enabled, url, headline, subtext, cta })
     setSaving(false)
     if (res.ok) toast.success("Kundeklubb lagret")
     else toast.error(res.error ?? "Noe gikk galt")
@@ -71,6 +72,10 @@ export function KundeklubbSettings({
           <label className="block text-[10px] text-zinc-400 mb-1 uppercase tracking-wide">Undertekst</label>
           <input value={subtext} onChange={(e) => setSubtext(e.target.value)} placeholder="Medlemspriser, bonus og ukens beste tilbud." className={field} />
         </div>
+        <div>
+          <label className="block text-[10px] text-zinc-400 mb-1 uppercase tracking-wide">Tekst under QR-kode</label>
+          <input value={cta} onChange={(e) => setCta(e.target.value)} placeholder="📱 Skann for å melde deg inn" className={field} />
+        </div>
       </div>
 
       <button onClick={save} disabled={saving} className="flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold text-white disabled:opacity-60" style={{ backgroundColor: "var(--brand-primary)" }}>
@@ -80,7 +85,7 @@ export function KundeklubbSettings({
       {enabled && (
         <div>
           <p className="text-[10px] text-zinc-400 uppercase tracking-wide mb-2">Forhåndsvisning</p>
-          <LivePreview portrait data={{ type: "slide", audience: "kunde", klubb: { headline, subtext, url } }} />
+          <LivePreview portrait data={{ type: "slide", audience: "kunde", klubb: { headline, subtext, url, cta } }} />
         </div>
       )}
     </div>

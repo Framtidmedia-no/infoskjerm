@@ -11,6 +11,7 @@ export function KundeklubbCard({
   accent,
   logoUrl,
   chainName,
+  cta = "📱 Skann for å melde deg inn",
 }: {
   headline: string
   subtext: string
@@ -18,6 +19,7 @@ export function KundeklubbCard({
   accent: string
   logoUrl: string | null
   chainName: string | null
+  cta?: string
 }) {
   return (
     <div style={{ margin: 0, width: "100%", height: "100%", position: "absolute", inset: 0, overflow: "hidden", color: "#fff", fontFamily: "Arial, Helvetica, sans-serif", background: `linear-gradient(160deg, ${accent}, #0a0a0a)`, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "8vmin", boxSizing: "border-box", textAlign: "center" }}>
@@ -39,7 +41,7 @@ export function KundeklubbCard({
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={qrUrl} alt="QR-kode for å melde deg inn" style={{ display: "block", width: "46vmin", height: "46vmin" }} />
       </div>
-      <p style={{ position: "relative", marginTop: "4vmin", fontSize: "5vmin", fontWeight: 900 }}>📱 Skann for å melde deg inn</p>
+      <p style={{ position: "relative", marginTop: "4vmin", fontSize: "5vmin", fontWeight: 900 }}>{cta}</p>
     </div>
   )
 }

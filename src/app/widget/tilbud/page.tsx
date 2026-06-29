@@ -31,16 +31,17 @@ interface StoreChainRow {
   kundeklubb_url: string | null
   kundeklubb_headline: string | null
   kundeklubb_subtext: string | null
+  kundeklubb_cta: string | null
   chains: { name: string; logo_url: string | null; color: string; brand_fg: string | null } | null
 }
 
 /** Synthetic LiveItem for the per-store customer-club card (settings, not CMS). */
-function klubbLiveItem(headline: string, subtext: string): LiveItem {
+function klubbLiveItem(headline: string, subtext: string, cta: string | null): LiveItem {
   return {
     id: "kundeklubb", type: "slide", title: headline, blocks: [], imageUrl: null, imageUrls: [],
     imageMode: "plakat", isPdf: false, isVideo: false, durationSeconds: null, pages: [], validFrom: null, validTo: null, author: "", date: "",
     contactPerson: null, applyUrl: null, statsValue: null, statsChange: null, offer: null,
-    avdeling: "felles", bgColor: null, textColor: null, klubb: { headline, subtext },
+    avdeling: "felles", bgColor: null, textColor: null, klubb: { headline, subtext, cta: cta || undefined },
   }
 }
 
@@ -55,7 +56,7 @@ export default async function TilbudWidgetPage({ searchParams }: { searchParams:
     // Customer articles / egenreklame (text + image/video, text-top layout).
     fetchLiveContent(store ?? null, ["news"], "kunde", avdeling),
     store
-      ? supabase.from("stores").select("name, kundeklubb_enabled, kundeklubb_url, kundeklubb_headline, kundeklubb_subtext, chains(name, logo_url, color, brand_fg)").eq("id", store).maybeSingle()
+      ? supabase.from("stores").select("name, kundeklubb_enabled, kundeklubb_url, kundeklubb_headline, kundeklubb_subtext, kundeklubb_cta, chains(name, logo_url, color, brand_fg)").eq("id", store).maybeSingle()
       : Promise.resolve({ data: null }),
     // Opt-in customer ticker: only kunde-audience tickers targeted to this store.
     fetchLiveContent(store ?? null, ["ticker"], "kunde"),
@@ -81,6 +82,7 @@ export default async function TilbudWidgetPage({ searchParams }: { searchParams:
     const klubbItem = klubbLiveItem(
       row.kundeklubb_headline || "Bli medlem – det er gratis",
       row.kundeklubb_subtext || "Medlemspriser, bonus og ukens beste tilbud.",
+      row.kundeklubb_cta,
     )
     items.push(klubbItem)
     qr[klubbItem.id] = await QRCode.toDataURL(normalizeUrl(row.kundeklubb_url), { margin: 1, width: 700, color: { dark: "#0a0a0a", light: "#ffffff" } }).catch(() => "")

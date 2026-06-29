@@ -94,6 +94,7 @@ export default async function StoreDetailPage({ params }: PageProps) {
                 url: store.kundeklubb_url ?? "",
                 headline: store.kundeklubb_headline ?? "Bli medlem – det er gratis",
                 subtext: store.kundeklubb_subtext ?? "Medlemspriser, bonus og ukens beste tilbud.",
+                cta: store.kundeklubb_cta ?? "📱 Skann for å melde deg inn",
               }}
             />
           </CardContent>

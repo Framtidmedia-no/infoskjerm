@@ -69,8 +69,8 @@ export interface LiveItem {
   bgColor: string | null
   /** Optional card text colour. null = default light-on-dark. */
   textColor: string | null
-  /** Customer-club invite (editable headline/subtext + optional QR target url). */
-  klubb: { headline: string; subtext: string; url?: string } | null
+  /** Customer-club invite (editable headline/subtext/cta + optional QR target url). */
+  klubb: { headline: string; subtext: string; url?: string; cta?: string } | null
 }
 
 interface Body {
@@ -87,7 +87,7 @@ interface Body {
   bgColor?: string | null
   textColor?: string | null
   pages?: string[]
-  klubb?: { headline: string; subtext: string; url?: string } | null
+  klubb?: { headline: string; subtext: string; url?: string; cta?: string } | null
   durationSeconds?: number | null
 }
 

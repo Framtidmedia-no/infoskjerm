@@ -25,7 +25,7 @@ export default async function KundeklubbWidget({ searchParams }: { searchParams:
   const { store } = await searchParams
   const supabase = createAdminClient()
   const { data } = store
-    ? await supabase.from("stores").select("id, name, kundeklubb_url, kundeklubb_headline, kundeklubb_subtext, chains(name, color, logo_url)").eq("id", store).maybeSingle()
+    ? await supabase.from("stores").select("id, name, kundeklubb_url, kundeklubb_headline, kundeklubb_subtext, kundeklubb_cta, chains(name, color, logo_url)").eq("id", store).maybeSingle()
     : { data: null }
 
   const chain = (data?.chains as unknown as ChainRow | null)
@@ -38,7 +38,7 @@ export default async function KundeklubbWidget({ searchParams }: { searchParams:
 
   return (
     <main style={{ margin: 0, width: "100%", height: "100vh", position: "relative", overflow: "hidden" }}>
-      <KundeklubbCard headline={headline} subtext={subtext} qrUrl={qr} accent={accent} logoUrl={logo} chainName={chain?.name ?? null} />
+      <KundeklubbCard headline={headline} subtext={subtext} cta={data?.kundeklubb_cta || undefined} qrUrl={qr} accent={accent} logoUrl={logo} chainName={chain?.name ?? null} />
     </main>
   )
 }
