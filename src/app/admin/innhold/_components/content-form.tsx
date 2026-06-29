@@ -115,7 +115,8 @@ const IMAGE_TYPES: ContentType[] = ["news", "competition", "slide", "job", "birt
 
 // Which content types belong to each audience/menu.
 const AUDIENCE_TYPES: Record<Audience, ContentType[]> = {
-  kunde: ["slide"],
+  // Kunde: tilbud + valgfri ticker (målrettet til valgte kundeskjermer).
+  kunde: ["slide", "ticker"],
   // Internt kan også vise tilbud/plakat (f.eks. ukens tilbud til betjeningen).
   intern: ["news", "competition", "job", "birthday", "ticker", "slide"],
 }

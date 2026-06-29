@@ -27,12 +27,15 @@ export default async function TilbudWidgetPage({ searchParams }: { searchParams:
   const { store, avdeling } = await searchParams
   const supabase = createAdminClient()
 
-  const [items, storeRow] = await Promise.all([
+  const [items, storeRow, tickerItems] = await Promise.all([
     fetchLiveContent(store ?? null, ["slide"], "kunde", avdeling),
     store
       ? supabase.from("stores").select("name, chains(name, logo_url, color, brand_fg)").eq("id", store).maybeSingle()
       : Promise.resolve({ data: null }),
+    // Opt-in customer ticker: only kunde-audience tickers targeted to this store.
+    fetchLiveContent(store ?? null, ["ticker"], "kunde"),
   ])
+  const ticker = (tickerItems as LiveItem[]).map((t) => t.title.trim()).filter(Boolean)
 
   const row = storeRow.data as unknown as StoreChainRow | null
   const storeName = row?.name ?? null
@@ -41,6 +44,6 @@ export default async function TilbudWidgetPage({ searchParams }: { searchParams:
     ? { name: chainRow.name, logoUrl: chainRow.logo_url, color: chainRow.color, brandFg: chainRow.brand_fg }
     : null
 
-  // Customer screens never show the ticker.
-  return <TilbudRotator items={items as LiveItem[]} ticker={[]} storeName={storeName} chain={chain} />
+  // Customer ticker only when explicitly created for these screens (opt-in).
+  return <TilbudRotator items={items as LiveItem[]} ticker={ticker} storeName={storeName} chain={chain} />
 }

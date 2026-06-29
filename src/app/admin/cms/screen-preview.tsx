@@ -139,7 +139,7 @@ export function ScreenPreview({
               </select>
               <ChevronDown className="w-3.5 h-3.5 text-zinc-400 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" />
             </div>
-            <span className="text-xs text-zinc-400">Stående — tilbud/kundeavis i full skjerm. Aldri interne nyheter/ticker.</span>
+            <span className="text-xs text-zinc-400">Stående — tilbud/kundeavis i full skjerm. Ticker kun når den er laget for kundeskjerm.</span>
           </>
         )}
         {flate === "intern" && (

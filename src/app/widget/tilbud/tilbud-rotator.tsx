@@ -114,8 +114,22 @@ function PosterHeader({ item, storeName }: { item: LiveItem; storeName: string |
   )
 }
 
+/** Continuous, reliable CSS marquee — each message a distinct segment, looping
+ *  seamlessly. Speed scales with total length. Same behaviour as the internal
+ *  screen ticker (only shown on customer screens when opted in). */
 function TickerOverlay({ messages }: { messages: string[] }) {
-  const line = messages.join("    ·    ")
+  const totalChars = messages.reduce((n, m) => n + m.length + 6, 0)
+  const dur = Math.max(24, Math.round(totalChars / 4))
+  const Segment = ({ k }: { k: string }) => (
+    <div style={{ display: "flex", alignItems: "center", flex: "0 0 auto" }} aria-hidden={k === "b"}>
+      {messages.map((m, p) => (
+        <span key={`${k}-${p}`} style={{ display: "inline-flex", alignItems: "center", whiteSpace: "nowrap", paddingRight: 72 }}>
+          <span style={{ width: 12, height: 12, borderRadius: 9999, background: "rgba(255,255,255,.55)", marginRight: 26, flex: "0 0 auto" }} />
+          <span style={{ fontSize: 30, fontWeight: 600 }}>{m}</span>
+        </span>
+      ))}
+    </div>
+  )
   return (
     <div style={{ position: "absolute", left: 0, right: 0, bottom: 0, height: TICKER_HEIGHT, display: "flex", alignItems: "center", overflow: "hidden", background: GREEN, color: "#fff" }}>
       <style>{`@keyframes gr-pulse{0%{box-shadow:0 0 0 0 rgba(255,255,255,.65)}70%{box-shadow:0 0 0 16px rgba(255,255,255,0)}100%{box-shadow:0 0 0 0 rgba(255,255,255,0)}}@keyframes gr-scroll{from{transform:translateX(0)}to{transform:translateX(-50%)}}`}</style>
@@ -124,9 +138,9 @@ function TickerOverlay({ messages }: { messages: string[] }) {
         <span>NYTT</span>
       </div>
       <div style={{ flex: "1 1 auto", overflow: "hidden", position: "relative", height: "100%" }}>
-        <div style={{ position: "absolute", top: 0, left: 0, height: "100%", display: "flex", alignItems: "center", whiteSpace: "nowrap", fontSize: 30, fontWeight: 600, animation: "gr-scroll 30s linear infinite", willChange: "transform" }}>
-          <span style={{ paddingRight: 80 }}>{line}</span>
-          <span style={{ paddingRight: 80 }}>{line}</span>
+        <div style={{ position: "absolute", top: 0, left: 0, height: "100%", display: "flex", alignItems: "center", animation: `gr-scroll ${dur}s linear infinite`, willChange: "transform" }}>
+          <Segment k="a" />
+          <Segment k="b" />
         </div>
       </div>
     </div>
