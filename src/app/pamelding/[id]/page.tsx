@@ -55,12 +55,25 @@ export default async function PameldingPage({
   const { store } = await searchParams
   const supabase = createAdminClient()
 
-  const { data: item } = await supabase
-    .from("content_items")
-    .select("id, title, type, status, body")
-    .eq("id", id)
-    .maybeSingle()
-  if (!item || item.type !== "invitation") notFound()
+  // The CMS live-preview points its QR here with a placeholder id, so scanning
+  // it shows a friendly sample page instead of a 404.
+  const isPreview = id === "forhandsvisning"
+
+  const { data: dbItem } = isPreview
+    ? { data: null }
+    : await supabase.from("content_items").select("id, title, type, status, body").eq("id", id).maybeSingle()
+  if (!isPreview && (!dbItem || dbItem.type !== "invitation")) notFound()
+
+  const item = dbItem ?? {
+    id: "forhandsvisning",
+    title: "Slik ser påmeldingssiden ut",
+    type: "invitation" as const,
+    status: "live" as const,
+    body: {
+      html: "<p>Dette er en forhåndsvisning. Når du publiserer invitasjonen og noen skanner QR-koden på skjermen, kommer de hit og kan melde seg på.</p>",
+      invitation: { eventDate: null, eventPlace: null, signupEnabled: true, signupDeadline: null },
+    } as InvBody,
+  }
 
   const body = (item.body ?? {}) as InvBody
   const inv = body.invitation ?? {}
