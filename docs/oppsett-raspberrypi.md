@@ -264,10 +264,18 @@ fjernaksess-løsningen for flåten. `rpi-connect` er forhåndsinstallert.
 ```bash
 sudo loginctl enable-linger frlund3   # Connect lever uten innlogget skrivebord (kiosk = konsoll!)
 rpi-connect on
-rpi-connect signin                     # skriver URL + kode → åpne i nettleser, logg inn på ORGANISASJONEN, bekreft
+
+# ✅ ANBEFALT (headless, rett i orgen, INGEN browser): org-auth-key fra Connect-konsollen
+#    (Framtid Tech AS → Provisioning → Create auth key). Nøkkel starter med rpoak_.
+rpi-connect signin --auth-key=rpoak_XXXX     # ligger i .env.local: RPI_CONNECT_ORG_AUTH_KEY
+
+#    Alternativ (interaktiv): rpi-connect signin → URL+kode → velg Framtid Tech AS i browser
 rpi-connect status                     # skal vise: Signed in + screen sharing/remote shell allowed
 ```
+> ⚠️ **Bruk org-auth-key (`--auth-key=rpoak_…`)** — ellers havner enheten i din PERSONLIGE
+> konto (skjedde for moa1/moa2 første gang) og må flyttes manuelt. Auth-key melder rett inn i orgen.
 > ⚠️ `enable-linger` er kritisk — uten den mister kiosken Connect så snart ingen er innlogget.
+> Allerede i feil konto? `rpi-connect signout` → `rpi-connect signin --auth-key=rpoak_…`.
 
 Etterpå: i Connect-konsollen **tagg enheten** med butikk + `gangerolv`.
 Connect for Organisations: ~$0,50/enhet/mnd (~$8/mnd for 16), bulk provisioning + Management API.
