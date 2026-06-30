@@ -318,7 +318,7 @@ export function ContentForm({ stores, tags, initial, audience = "intern" }: { st
         targetMode, storeIds, tagIds,
         validFrom: validFrom || null, validTo: validTo || null, publish,
         contactPerson: type === "job" ? contactPerson || null : null,
-        applyUrl: (type === "job" || type === "competition") ? applyUrl || null : null,
+        applyUrl: (type === "job" || type === "competition" || type === "news") ? applyUrl || null : null,
         bgColor: usesColors ? bgColor || null : null,
         textColor: usesColors ? textColor || null : null,
         durationSeconds: durationSeconds ? Math.max(3, Math.min(600, Number(durationSeconds))) : null,
@@ -350,7 +350,7 @@ export function ContentForm({ stores, tags, initial, audience = "intern" }: { st
     textColor: usesColors ? textColor || null : null,
     validFrom: validFrom || null,
     validTo: validTo || null,
-    applyUrl: (type === "job" || type === "competition") ? applyUrl || null : null,
+    applyUrl: (type === "job" || type === "competition" || type === "news") ? applyUrl || null : null,
     contactPerson: type === "job" ? contactPerson || null : null,
   }
 
@@ -575,6 +575,18 @@ export function ContentForm({ stores, tags, initial, audience = "intern" }: { st
                 <input type="text" value={applyUrl} onChange={(e) => setApplyUrl(e.target.value)} placeholder="gangerolv.no/konkurranse"
                   className="w-full text-sm border border-zinc-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-zinc-300" />
                 <p className="text-[10px] text-zinc-400 mt-1">Vises som QR-kode på skjermen så kundene kan delta direkte.</p>
+              </div>
+            </div>
+          )}
+
+          {type === "news" && (
+            <div className="rounded-xl border border-zinc-200 bg-white p-4 space-y-3">
+              <h3 className="flex items-center gap-1.5 text-xs font-semibold text-zinc-600"><Globe className="w-3.5 h-3.5" /> Lenke / QR-kode</h3>
+              <div>
+                <label className="block text-[10px] text-zinc-400 mb-1">Lenke for QR-kode (valgfri)</label>
+                <input type="text" value={applyUrl} onChange={(e) => setApplyUrl(e.target.value)} placeholder="gangerolvkjokkenet.no"
+                  className="w-full text-sm border border-zinc-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-zinc-300" />
+                <p className="text-[10px] text-zinc-400 mt-1">Vises som QR-kode nederst på artikkelen — kundene skanner for mer.</p>
               </div>
             </div>
           )}

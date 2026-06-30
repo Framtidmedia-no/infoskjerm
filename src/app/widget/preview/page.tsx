@@ -83,9 +83,9 @@ export default async function PreviewWidgetPage({ searchParams }: { searchParams
     klubb: data.klubb && data.klubb.headline ? data.klubb : null,
   }
 
-  // QR for competitions/jobs (participation link) + kundeklubb (sample sign-up).
+  // QR for competitions/jobs + articles with a link (applyUrl) + kundeklubb.
   const qr: Record<string, string> = {}
-  if ((type === "competition" || type === "job") && data.applyUrl?.trim()) {
+  if ((type === "competition" || type === "job" || type === "news") && data.applyUrl?.trim()) {
     try {
       qr.preview = await QRCode.toDataURL(normalizeUrl(data.applyUrl), { margin: 1, width: 360, color: { dark: "#0a0a0a", light: "#ffffff" } })
     } catch { /* best-effort */ }
