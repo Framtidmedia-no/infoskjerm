@@ -271,11 +271,14 @@ Connect for Organisations: ~$0,50/enhet/mnd (~$8/mnd for 16), bulk provisioning 
 
 | Hostnavn | Rolle | Display-id | Gruppe | Rotasjon | Auto-start | Emoji | Connect |
 |----------|-------|-----------|--------|----------|-----------|-------|---------|
-| `gr-eurospar-moa1` | **Kundeskjerm** | 1 | `EUROSPAR MOA` (id 9) | `right` (portrett) | ✅ | ✅ | ⬜ gjenstår |
+| `gr-eurospar-moa1` | **Kundeskjerm** | 1 | `EUROSPAR MOA` (id 9) | `right` (portrett) | ✅ | ✅ | ✅ signed in |
 | `gr-eurospar-moa2` | **Bakrom/intern** | 2 | `EUROSPAR MOA – Bakrom` (id 25) | `normal` | ⬜ | ⬜ | ⬜ |
 
-`gr-eurospar-moa1` viser alt perfekt (innhold, portrett, emojis i farger). Gjenstår: Connect (steg 8).
-`gr-eurospar-moa2` er av — fullføres med samme oppskrift (rotasjon `normal`).
+`gr-eurospar-moa1` er **100 % ferdig** (innhold, portrett, emojis, auto-start, Connect signed-in). Klar for butikk.
+`gr-eurospar-moa2` fullføres med samme oppskrift (rotasjon `normal` = liggende).
+
+> **Fjernaksess = Raspberry Pi Connect (Organisations), IKKE Tailscale.** Verifiser per Pi
+> med `rpi-connect status` → «Signed in: yes» + «Remote shell: allowed». moa1 ✅.
 
 ## Feilsøking (symptomer vi traff — og fiksen)
 
