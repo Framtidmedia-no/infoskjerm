@@ -8,6 +8,10 @@ on:
     - cron: "0 6 * * *"   # daglig 06:00 UTC — fanger opp ukens nye/endrede kundeavis
   workflow_dispatch:
 
+# Minste nødvendige rettigheter — jobben gjør kun checkout + Supabase-API via secrets.
+permissions:
+  contents: read
+
 jobs:
   render:
     runs-on: ubuntu-latest

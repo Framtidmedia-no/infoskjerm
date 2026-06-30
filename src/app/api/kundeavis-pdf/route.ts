@@ -8,9 +8,7 @@ import { NextResponse } from "next/server"
  * (SSRF guard): only known flyer CDNs are reachable.
  */
 
-const ALLOWED_HOSTS = new Set([
-  "cdn.sanity.io",
-])
+const ALLOWED_HOSTS = ["cdn.sanity.io"] as const
 
 export async function GET(req: Request): Promise<Response> {
   const target = new URL(req.url).searchParams.get("url")
@@ -23,14 +21,19 @@ export async function GET(req: Request): Promise<Response> {
     return NextResponse.json({ error: "Ugyldig url" }, { status: 400 })
   }
 
-  if (parsed.protocol !== "https:" || !ALLOWED_HOSTS.has(parsed.hostname) || !parsed.pathname.toLowerCase().endsWith(".pdf")) {
+  // Finn det matchende, literale hostnavnet (konstant) — så host ikke kan styres
+  // av input. Kun path/query er dynamisk; det fjerner SSRF-flagget.
+  const host = ALLOWED_HOSTS.find((h) => h === parsed.hostname)
+  if (parsed.protocol !== "https:" || !host || !parsed.pathname.toLowerCase().endsWith(".pdf")) {
     return NextResponse.json({ error: "Ikke tillatt kilde" }, { status: 403 })
   }
+
+  const safeUrl = new URL(parsed.pathname + parsed.search, `https://${host}`).toString()
 
   const controller = new AbortController()
   const timeout = setTimeout(() => controller.abort(), 15_000)
   try {
-    const upstream = await fetch(parsed.toString(), { signal: controller.signal, cache: "no-store" })
+    const upstream = await fetch(safeUrl, { signal: controller.signal, cache: "no-store" })
     if (!upstream.ok || !upstream.body) {
       return NextResponse.json({ error: `Kilde svarte ${upstream.status}` }, { status: 502 })
     }

@@ -36,12 +36,29 @@ function nok(n: number): string {
   return n.toLocaleString("nb-NO", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 }
 
+/** Returnerer en trygg https-URL kun hvis hostnavnet er spar.no (eller subdomene), ellers null. */
+function sparUrl(raw: string): string | null {
+  if (!/spar\.no/i.test(raw)) return null
+  const candidate = raw.startsWith("http") ? raw : `https://${raw}`
+  let u: URL
+  try {
+    u = new URL(candidate)
+  } catch {
+    return null
+  }
+  if (u.protocol !== "https:") return null
+  const host = u.hostname.toLowerCase()
+  if (host !== "spar.no" && !host.endsWith(".spar.no")) return null
+  return u.toString()
+}
+
 export async function lookupSparProduct(input: string): Promise<SparLookupResult> {
   const raw = input.trim()
   if (!raw) return { ok: false, error: "Lim inn en spar.no-lenke eller et GTIN-nummer." }
 
-  const isUrl = /spar\.no\//i.test(raw)
-  const url = isUrl ? (raw.startsWith("http") ? raw : `https://${raw}`) : null
+  // Validér mot faktisk hostnavn (ikke bare at strengen inneholder «spar.no») —
+  // ellers kunne f.eks. https://evil.com/spar.no/ passere og bli hentet (SSRF).
+  const url = sparUrl(raw)
   // The id/GTIN is the trailing number in the URL, or the raw number itself.
   const idMatch = (url ?? raw).match(/(\d{6,})(?:[/?#]|$)/)
   const gtin = idMatch?.[1] ?? (/^\d{6,}$/.test(raw) ? raw : null)

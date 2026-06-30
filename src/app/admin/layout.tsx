@@ -1,4 +1,8 @@
 import { Sidebar } from "@/components/admin/sidebar"
+import { MobileNav } from "@/components/admin/mobile-nav"
+import { PwaManager } from "@/components/pwa/pwa-manager"
+import { QuickCapture } from "@/components/pwa/quick-capture"
+import { BiometricLock } from "@/components/pwa/biometric-lock"
 import { ChainThemeProvider } from "@/components/admin/chain-theme-provider"
 import { createClient } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
@@ -28,21 +32,30 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       brandFg={chain?.brand_fg ?? undefined}
     >
       <div className="min-h-screen bg-[var(--background)]">
-        <div className="hidden md:block">
-          <Sidebar
-            user={{
-              email: user.email ?? "",
-              fullName: profile?.full_name ?? "Admin",
-              role,
-              chainName: chain?.name ?? null,
-              chainColor: chain?.color ?? null,
-            }}
-          />
-        </div>
-        <main className="md:ml-64 min-h-screen flex flex-col">
-          {children}
-        </main>
+        {(() => {
+          const navUser = {
+            email: user.email ?? "",
+            fullName: profile?.full_name ?? "Admin",
+            role,
+            chainName: chain?.name ?? null,
+            chainColor: chain?.color ?? null,
+          }
+          return (
+            <>
+              <div className="hidden md:block">
+                <Sidebar user={navUser} />
+              </div>
+              <MobileNav user={navUser} />
+              <main className="md:ml-64 min-h-screen flex flex-col">
+                {children}
+              </main>
+            </>
+          )
+        })()}
       </div>
+      <PwaManager />
+      <QuickCapture />
+      <BiometricLock />
       <Toaster richColors position="bottom-right" />
     </ChainThemeProvider>
   )
