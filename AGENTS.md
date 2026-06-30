@@ -11,6 +11,8 @@
 - Levering: `/widget/*`-sider (`tilbud`, `nyheter`, `vaer`, `butikk-kpi`, `kpi-oversikt`, `topbar`) embeddes av Xibo. Xibo-klient: `src/lib/xibo/`.
 - Ny widget: lag `/widget/<navn>` (leser Supabase, `?store=`) → kjør `scripts/xibo/build-widget-layout.mjs` mot butikkens skjermgruppe.
 
+**Fysiske skjermer (Raspberry Pi):** enhetsregister = **`docs/raspberry-enheter.md`** (kilden til sannhet for flåten); oppsett-oppskrift = `docs/oppsett-raspberrypi.md`. Xibo-serveren: root via `ssh root@157.180.73.205`.
+
 <!-- BEGIN:nextjs-agent-rules -->
 # This is NOT the Next.js you know
 

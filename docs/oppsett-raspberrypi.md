@@ -5,6 +5,8 @@ Steg-for-steg for å sette opp en Raspberry Pi som Xibo-spiller mot
 oppskriften vi gjentar for alle 16 butikkene. **Hele flyten er verifisert
 ende-til-ende på `gr-eurospar-moa1` (kundeskjerm) 2026-06-30.**
 
+> 📋 **Inventar over alle oppsatte Pi-er:** [raspberry-enheter.md](raspberry-enheter.md) (hostnavn, Xibo-ID, MAC, Connect-status).
+
 > 🔐 **Hemmeligheter:** ikke skriv faktiske passord inn i denne fila (den er i
 > git). Login-/WiFi-/DB-passord oppbevares utenfor repo (passordhvelv / `.env.local` /
 > `/opt/xibo/config.env` på serveren).
