@@ -65,9 +65,9 @@ export default async function TilbudWidgetPage({ searchParams }: { searchParams:
   const items = [...(comps as LiveItem[]), ...(articles as LiveItem[]), ...(slides as LiveItem[])]
   const ticker = (tickerItems as LiveItem[]).map((t) => t.title.trim()).filter(Boolean)
 
-  // QR codes: competitions (participation link) + kundeklubb (per-store sign-up).
+  // QR codes: competitions + articles with a link (applyUrl) + kundeklubb (per-store).
   const qr: Record<string, string> = {}
-  for (const it of comps as LiveItem[]) {
+  for (const it of [...(comps as LiveItem[]), ...(articles as LiveItem[])]) {
     if (it.applyUrl?.trim()) {
       try {
         qr[it.id] = await QRCode.toDataURL(normalizeUrl(it.applyUrl), { margin: 1, width: 360, color: { dark: "#0a0a0a", light: "#ffffff" } })
