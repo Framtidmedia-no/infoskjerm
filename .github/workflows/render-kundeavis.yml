@@ -1,0 +1,27 @@
+name: Render kundeavis (PDF → bilder)
+
+# Vercel-bundleren ødelegger native canvas + pdf-worker, så server-renderingen
+# kjører her (Node på Ubuntu, der pdfjs + @napi-rs/canvas virker). Den fyller
+# body.pages på kundeavis-item(er) som mangler ferdige sidebilder. Idempotent.
+on:
+  schedule:
+    - cron: "0 6 * * *"   # daglig 06:00 UTC — fanger opp ukens nye/endrede kundeavis
+  workflow_dispatch:
+
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: node scripts/render-kundeavis.mjs
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}

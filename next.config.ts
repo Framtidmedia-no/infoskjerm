@@ -29,15 +29,6 @@ const nextConfig: NextConfig = {
   // so its pdfjs/canvas internals load natively at runtime instead of being
   // webpacked (which breaks them).
   serverExternalPackages: ["pdf-to-img", "pdfjs-dist", "@napi-rs/canvas"],
-  // pdfjs loads its worker from a separate .mjs at runtime; Vercel's tracer
-  // doesn't follow that dynamic import, so force-include it in the cron function
-  // (otherwise: "Setting up fake worker failed: Cannot find module pdf.worker.mjs").
-  outputFileTracingIncludes: {
-    "/api/cron/sync-kundeavis": [
-      "./node_modules/pdfjs-dist/legacy/build/pdf.worker.mjs",
-      "./node_modules/pdfjs-dist/legacy/build/pdf.worker.min.mjs",
-    ],
-  },
   async headers() {
     return [
       {
