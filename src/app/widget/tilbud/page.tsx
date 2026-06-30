@@ -41,7 +41,7 @@ function klubbLiveItem(headline: string, subtext: string, cta: string | null): L
     id: "kundeklubb", type: "slide", title: headline, blocks: [], imageUrl: null, imageUrls: [],
     imageMode: "plakat", isPdf: false, isVideo: false, durationSeconds: null, pages: [], validFrom: null, validTo: null, author: "", date: "",
     contactPerson: null, applyUrl: null, statsValue: null, statsChange: null, offer: null,
-    avdeling: "felles", bgColor: null, textColor: null, klubb: { headline, subtext, cta: cta || undefined },
+    avdeling: "felles", bgColor: null, textColor: null, klubb: { headline, subtext, cta: cta || undefined }, invitation: null,
   }
 }
 
