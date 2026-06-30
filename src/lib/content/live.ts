@@ -98,13 +98,16 @@ interface Target {
 }
 
 function stripTags(s: string): string {
+  // Dekod entiteter FØRST (og &amp; sist for å unngå dobbel-unescaping), så
+  // strippes tagger TIL SLUTT — slik at f.eks. «&lt;script&gt;» som dekodes til
+  // «<script>» faktisk fjernes i stedet for å overleve saniteringen.
   return s
-    .replace(/<[^>]+>/g, "")
     .replace(/&nbsp;/gi, " ")
-    .replace(/&amp;/gi, "&")
     .replace(/&lt;/gi, "<")
     .replace(/&gt;/gi, ">")
     .replace(/&quot;/gi, '"')
+    .replace(/&amp;/gi, "&")
+    .replace(/<[^>]+>/g, "")
     .replace(/[ \t]+/g, " ")
     .trim()
 }

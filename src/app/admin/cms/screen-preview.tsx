@@ -82,11 +82,12 @@ export function ScreenPreview({
   if (!store) return <p className="text-sm text-zinc-500">Ingen butikker ennå.</p>
 
   const storeScreens = screens[store.id] ?? []
-  const tilbudSrc = `/widget/tilbud?store=${store.id}&avdeling=${avdeling}`
-  const kpiSrc = `/widget/butikk-kpi?store=${store.id}`
+  const sid = encodeURIComponent(store.id)
+  const tilbudSrc = `/widget/tilbud?store=${sid}&avdeling=${encodeURIComponent(avdeling)}`
+  const kpiSrc = `/widget/butikk-kpi?store=${sid}`
   const oversiktSrc = `/widget/kpi-oversikt`
-  const internInnholdSrc = `/widget/nyheter?store=${store.id}&flate=intern`
-  const kundeklubbSrc = `/widget/kundeklubb?store=${store.id}`
+  const internInnholdSrc = `/widget/nyheter?store=${sid}&flate=intern`
+  const kundeklubbSrc = `/widget/kundeklubb?store=${sid}`
   const kundeSrc = kundeView === "klubb" ? kundeklubbSrc : tilbudSrc
   const topbarSrc = `/widget/topbar?butikk=${encodeURIComponent(store.name)}&lat=${store.lat ?? ""}&lon=${store.lon ?? ""}&navn=${encodeURIComponent(store.city ?? "")}`
   // Internal "innhold" screen carries the top strip (store name + clock + date +
