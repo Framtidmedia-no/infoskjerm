@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Monitor } from "lucide-react"
 import { createClient } from "@/lib/supabase/server"
 import { BrandingPanel } from "./branding-panel"
+import { NotificationsCard } from "./notifications-card"
 import { requireRole } from "@/lib/admin/require-role"
 import Link from "next/link"
 
@@ -34,6 +35,8 @@ export default async function SettingsPage() {
             }))}
           />
         )}
+
+        <NotificationsCard />
 
         {/* Screens are managed by the screen engine (Xibo), not here */}
         <Card>
