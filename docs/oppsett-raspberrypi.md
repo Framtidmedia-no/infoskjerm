@@ -121,18 +121,14 @@ await api(`/displaygroup/<groupId>/display/assign`, { method: "POST", form: { "d
 Etter autorisering + tilordning: start spilleren på nytt på Pi-en (`arexibo ~/xibo`)
 → den laster ned og viser layouten. Status kan også ses i appens **Skjermsystem**.
 
-### Status — første Pi (EUROSPAR MOA)
-| Felt | Verdi |
-|------|-------|
-| Hostnavn | `gr-eurospar-moa1` |
-| Rolle | **Kundeskjerm** |
-| Xibo display-id | `1` |
-| Tilordnet gruppe | `EUROSPAR MOA` (id **9**) |
-| Bakrom-gruppe (neste Pi) | `EUROSPAR MOA – Bakrom` (id **25**) |
-| Connect | innmeldt (`rpi-connect signin`) |
+### Status — Pi-er satt opp (EUROSPAR MOA)
+| Hostnavn | Rolle | Display-id | Gruppe | Orientering | Connect |
+|----------|-------|-----------|--------|-------------|---------|
+| `gr-eurospar-moa1` | **Kundeskjerm** | 1 | `EUROSPAR MOA` (id **9**) | portrett | innmeldt |
+| `gr-eurospar-moa2` | **Bakrom/intern** | 2 | `EUROSPAR MOA – Bakrom` (id **25**) | liggende | (tas til slutt) |
 
-> **Konvensjon videre:** Pi nr. 2 på MOA = **bakrom** → hostnavn f.eks.
-> `gr-eurospar-moa2`, tilordnes `EUROSPAR MOA – Bakrom` (id 25), liggende skjerm.
+> **Konvensjon:** kundeskjerm → gruppe = butikknavnet (portrett); bakrom → `{butikk} – Bakrom` (liggende).
+> Begge skal testes på fysisk skjerm + få portrett-rotering (kunde) + systemd auto-start før golden image klones.
 
 ## 6. Fjernaksess + flåtestyring (16 butikker)
 
