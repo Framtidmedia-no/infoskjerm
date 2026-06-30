@@ -77,7 +77,7 @@ function reachCount(v: TargetValue, stores: StoreOption[]): number {
   return hit.size
 }
 
-function TargetPicker({ value, onChange, stores, tags, chosen = true }: { value: TargetValue; onChange: (v: TargetValue) => void; stores: StoreOption[]; tags: TagOption[]; chosen?: boolean }) {
+function TargetPicker({ value, onChange, stores, tags, chosen = true, canTargetAll = true }: { value: TargetValue; onChange: (v: TargetValue) => void; stores: StoreOption[]; tags: TagOption[]; chosen?: boolean; canTargetAll?: boolean }) {
   const [search, setSearch] = useState("")
   const visible = stores.filter((s) => !search || s.name.toLowerCase().includes(search.toLowerCase()) || (s.city ?? "").toLowerCase().includes(search.toLowerCase()))
   const reach = reachCount(value, stores)
@@ -86,7 +86,9 @@ function TargetPicker({ value, onChange, stores, tags, chosen = true }: { value:
   return (
     <>
       <div className="flex gap-1.5 mb-2">
-        {([["all", "Alle", Globe], ["stores", "Butikker", StoreIcon], ["tags", "Tagger", Tag]] as const).map(([m, l, Icon]) => (
+        {([["all", "Alle", Globe], ["stores", "Butikker", StoreIcon], ["tags", "Tagger", Tag]] as const)
+          .filter(([m]) => canTargetAll || m === "stores")
+          .map(([m, l, Icon]) => (
           <button key={m} type="button" onClick={() => onChange({ ...value, mode: m })} className={`flex-1 flex items-center justify-center gap-1 px-2 py-1.5 rounded-lg text-[11px] font-medium border ${chosen && value.mode === m ? "border-zinc-900 bg-zinc-50 text-zinc-900" : "border-zinc-200 text-zinc-500"}`}><Icon className="w-3 h-3" /> {l}</button>
         ))}
       </div>
@@ -120,7 +122,7 @@ function TargetPicker({ value, onChange, stores, tags, chosen = true }: { value:
   )
 }
 
-export function BulkImport({ stores, tags, initialLinks = "" }: { stores: StoreOption[]; tags: TagOption[]; initialLinks?: string }) {
+export function BulkImport({ stores, tags, initialLinks = "", canTargetAll = true }: { stores: StoreOption[]; tags: TagOption[]; initialLinks?: string; canTargetAll?: boolean }) {
   const router = useRouter()
   const [raw, setRaw] = useState(initialLinks)
   const [rows, setRows] = useState<Row[]>([])
@@ -131,7 +133,7 @@ export function BulkImport({ stores, tags, initialLinks = "" }: { stores: StoreO
   // Shared defaults applied to all.
   const [validFrom, setValidFrom] = useState("")
   const [validTo, setValidTo] = useState("")
-  const [targetMode, setTargetMode] = useState<TargetMode>("all")
+  const [targetMode, setTargetMode] = useState<TargetMode>(canTargetAll ? "all" : "stores")
   // Tving bevisst «Vis på»-valg (ingen «Alle» som standard) før masseutgivelse.
   const [targetChosen, setTargetChosen] = useState(false)
   const [storeIds, setStoreIds] = useState<string[]>([])
@@ -250,6 +252,7 @@ export function BulkImport({ stores, tags, initialLinks = "" }: { stores: StoreO
             <h3 className="text-xs font-semibold text-zinc-600 mb-2">Vis på (alle)</h3>
             <TargetPicker
               chosen={targetChosen}
+              canTargetAll={canTargetAll}
               value={{ mode: targetMode, storeIds, tagIds }}
               onChange={(v) => { setTargetMode(v.mode); setStoreIds(v.storeIds); setTagIds(v.tagIds); setTargetChosen(true) }}
               stores={stores}
@@ -348,7 +351,7 @@ export function BulkImport({ stores, tags, initialLinks = "" }: { stores: StoreO
                         />
                       </label>
                       {focused.target && (
-                        <TargetPicker value={focused.target} onChange={(v) => updateRow(focused.id, { target: v })} stores={stores} tags={tags} />
+                        <TargetPicker value={focused.target} onChange={(v) => updateRow(focused.id, { target: v })} stores={stores} tags={tags} canTargetAll={canTargetAll} />
                       )}
                     </div>
                   </>

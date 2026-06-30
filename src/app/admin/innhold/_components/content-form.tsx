@@ -139,7 +139,7 @@ const AUDIENCE_TYPES: Record<Audience, ContentType[]> = {
   intern: ["news", "competition", "job", "birthday", "invitation", "gallery", "ticker", "slide"],
 }
 
-export function ContentForm({ stores, tags, initial, audience = "intern", defaultType, listHref: listHrefProp, prefillImage }: { stores: StoreOption[]; tags: TagOption[]; initial?: ContentInitial; audience?: Audience; defaultType?: ContentType; listHref?: string; prefillImage?: string }) {
+export function ContentForm({ stores, tags, initial, audience = "intern", defaultType, listHref: listHrefProp, prefillImage, canTargetAll = true }: { stores: StoreOption[]; tags: TagOption[]; initial?: ContentInitial; audience?: Audience; defaultType?: ContentType; listHref?: string; prefillImage?: string; canTargetAll?: boolean }) {
   const router = useRouter()
   const allowedTypes = AUDIENCE_TYPES[audience]
   // defaultType locks the picker to one type (dedicated entry points, e.g. Invitasjoner).
@@ -149,7 +149,8 @@ export function ContentForm({ stores, tags, initial, audience = "intern", defaul
   const [type, setType] = useState<ContentType>(initial?.type ?? defaultType ?? allowedTypes[0])
   const [bodyHtml, setBodyHtml] = useState(initial?.bodyHtml ?? "")
   const [imageUrls, setImageUrls] = useState<string[]>(initial?.imageUrls?.length ? initial.imageUrls : initial?.imageUrl ? [initial.imageUrl] : prefillImage ? [prefillImage] : [])
-  const [targetMode, setTargetMode] = useState<TargetMode>(initial?.targetMode ?? "all")
+  // Butikk-roller (canTargetAll=false) kan kun målrette egne butikker — start på "stores".
+  const [targetMode, setTargetMode] = useState<TargetMode>(initial?.targetMode ?? (canTargetAll ? "all" : "stores"))
   // Kundeinnhold: tving et bevisst «Vis på»-valg (ingen «Alle» som standard), så
   // man ikke ved et uhell publiserer til alle kundeskjermer. Intern + redigering
   // beholder dagens oppførsel.
@@ -779,7 +780,10 @@ export function ContentForm({ stores, tags, initial, audience = "intern", defaul
           <section className="rounded-xl border border-zinc-200 bg-white p-4">
             <h3 className="text-xs font-semibold text-zinc-600 mb-2.5">Vis på</h3>
             <div className="flex gap-1.5 mb-3">
-              {([["all", "Alle", Globe], ["stores", "Butikker", StoreIcon], ["tags", "Tagger", Tag]] as const).map(([mode, label, Icon]) => (
+              {(([["all", "Alle", Globe], ["stores", "Butikker", StoreIcon], ["tags", "Tagger", Tag]] as const)
+                // Butikk-roller kan kun målrette egne butikker — skjul «Alle»/«Tagger».
+                .filter(([mode]) => canTargetAll || mode === "stores")
+              ).map(([mode, label, Icon]) => (
                 <button key={mode} onClick={() => { setTargetMode(mode); setTargetChosen(true) }}
                   className={`flex-1 flex items-center justify-center gap-1 px-2 py-1.5 rounded-lg text-[11px] font-medium border transition-all ${targetChosen && targetMode === mode ? "border-[var(--brand-primary)] bg-zinc-50 text-zinc-900" : "border-zinc-200 text-zinc-500"}`}>
                   <Icon className="w-3 h-3" /> {label}
