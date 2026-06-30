@@ -36,6 +36,7 @@ interface PreviewData {
   statsValue?: string | null
   statsChange?: string | null
   klubb?: { headline: string; subtext: string; url?: string; cta?: string } | null
+  invitation?: { eventDate?: string | null; eventPlace?: string | null; signupEnabled?: boolean; signupDeadline?: string | null } | null
   chain?: { name: string; logoUrl: string | null; color: string; brandFg: string | null } | null
 }
 
@@ -81,6 +82,14 @@ export default async function PreviewWidgetPage({ searchParams }: { searchParams
     bgColor: data.bgColor ?? null,
     textColor: data.textColor ?? null,
     klubb: data.klubb && data.klubb.headline ? data.klubb : null,
+    invitation: type === "invitation"
+      ? {
+          eventDate: data.invitation?.eventDate ?? null,
+          eventPlace: data.invitation?.eventPlace ?? null,
+          signupEnabled: data.invitation?.signupEnabled ?? true,
+          signupDeadline: data.invitation?.signupDeadline ?? null,
+        }
+      : null,
   }
 
   // QR for competitions/jobs (participation link) + kundeklubb (sample sign-up).
@@ -88,6 +97,11 @@ export default async function PreviewWidgetPage({ searchParams }: { searchParams
   if ((type === "competition" || type === "job") && data.applyUrl?.trim()) {
     try {
       qr.preview = await QRCode.toDataURL(normalizeUrl(data.applyUrl), { margin: 1, width: 360, color: { dark: "#0a0a0a", light: "#ffffff" } })
+    } catch { /* best-effort */ }
+  }
+  if (type === "invitation" && item.invitation?.signupEnabled !== false) {
+    try {
+      qr.preview = await QRCode.toDataURL(`${await getBaseUrl()}/pamelding/forhandsvisning`, { margin: 1, width: 360, color: { dark: "#0a0a0a", light: "#ffffff" } })
     } catch { /* best-effort */ }
   }
   if (item.klubb) {

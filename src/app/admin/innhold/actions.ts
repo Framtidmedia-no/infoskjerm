@@ -11,8 +11,20 @@ type AdminSupabase = Awaited<ReturnType<typeof requireRole>>["supabase"]
 
 const AUTHOR_ROLES = ["super_admin", "chain_manager", "area_manager", "store_manager", "store_employee"] as const
 
-export type ContentType = "news" | "competition" | "stats" | "weather" | "slide" | "job" | "birthday" | "ticker"
+export type ContentType = "news" | "competition" | "stats" | "weather" | "slide" | "job" | "birthday" | "ticker" | "invitation"
 export type TargetMode = "all" | "stores" | "tags"
+
+/** Invitasjon (arrangement): dato/sted + innebygd påmelding via QR-kode. */
+export interface InvitationFields {
+  /** ISO datetime (datetime-local) for når arrangementet starter. */
+  eventDate: string | null
+  /** Sted / lokale. */
+  eventPlace: string | null
+  /** Vis QR + innebygd påmeldingsside (/pamelding/<id>). */
+  signupEnabled: boolean
+  /** Påmeldingsfrist (ISO date), valgfri — vises på skjerm og landingsside. */
+  signupDeadline: string | null
+}
 export type ImageMode = "plakat" | "bakgrunn" | "liten"
 export type { Audience } from "./audience"
 
@@ -47,6 +59,8 @@ export interface ContentInput {
   textColor?: string | null
   /** Customer-club invite (slide): editable headline + subtext. */
   klubb?: { headline: string; subtext: string } | null
+  /** Invitation only: event date/place + built-in signup config. */
+  invitation?: InvitationFields | null
   /** Optional per-item display time in seconds. */
   durationSeconds?: number | null
 }
@@ -80,6 +94,7 @@ function buildBody(input: ContentInput): Json {
     ...(input.bgColor ? { bgColor: input.bgColor } : {}),
     ...(input.textColor ? { textColor: input.textColor } : {}),
     ...(input.type === "slide" && input.klubb ? { klubb: input.klubb } : {}),
+    ...(input.type === "invitation" && input.invitation ? { invitation: input.invitation } : {}),
     ...(input.durationSeconds ? { durationSeconds: input.durationSeconds } : {}),
   })) as Json
 }

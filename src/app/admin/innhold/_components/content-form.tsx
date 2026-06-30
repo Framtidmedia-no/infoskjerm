@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation"
 import { RichTextEditor } from "@/components/admin/rich-text-editor"
 import { MediaUploader } from "@/components/admin/media-uploader"
 import { Button } from "@/components/ui/button"
-import { saveContent, type ContentType, type TargetMode, type ImageMode, type Audience } from "../actions"
+import { saveContent, type ContentType, type TargetMode, type ImageMode, type Audience, type InvitationFields } from "../actions"
 import { lookupSparProduct } from "../spar-actions"
 import type { OfferFields } from "@/lib/content/live"
 import { LivePreview } from "./live-preview"
@@ -14,7 +14,7 @@ import {
   Dialog, DialogContent, DialogHeader, DialogFooter, DialogTitle, DialogDescription,
 } from "@/components/ui/dialog"
 import {
-  Newspaper, Trophy, ImageIcon, Briefcase, PartyPopper, Megaphone, FileText,
+  Newspaper, Trophy, ImageIcon, Briefcase, PartyPopper, Megaphone, FileText, Ticket, MapPin,
   Store as StoreIcon, Tag, Globe, X, Calendar, Save, Send, ChevronLeft, Image as ImageLucide, Maximize2, PanelRight, CalendarOff, Search,
 } from "lucide-react"
 import Link from "next/link"
@@ -70,7 +70,12 @@ export interface ContentInitial {
   bgColor?: string | null
   textColor?: string | null
   klubb?: { headline: string; subtext: string } | null
+  invitation?: InvitationFields | null
   durationSeconds?: number | null
+}
+
+const EMPTY_INVITATION: InvitationFields = {
+  eventDate: null, eventPlace: null, signupEnabled: true, signupDeadline: null,
 }
 
 const EMPTY_OFFER: OfferFields = {
@@ -107,26 +112,29 @@ const TYPES: { key: ContentType; label: string; icon: React.ElementType }[] = [
   { key: "slide", label: "Tilbud / annet", icon: ImageIcon },
   { key: "job", label: "Stilling", icon: Briefcase },
   { key: "birthday", label: "Gratulerer", icon: PartyPopper },
+  { key: "invitation", label: "Invitasjon", icon: Ticket },
   { key: "ticker", label: "Ticker", icon: Megaphone },
 ]
 
-const IMAGE_TYPES: ContentType[] = ["news", "competition", "slide", "job", "birthday"]
+const IMAGE_TYPES: ContentType[] = ["news", "competition", "slide", "job", "birthday", "invitation"]
 
 // Which content types belong to each audience/menu.
 const AUDIENCE_TYPES: Record<Audience, ContentType[]> = {
   // Kunde: tilbud, konkurranse, artikkel/egenreklame + valgfri ticker.
   kunde: ["slide", "competition", "news", "ticker"],
-  // Internt kan også vise tilbud/plakat (f.eks. ukens tilbud til betjeningen).
-  intern: ["news", "competition", "job", "birthday", "ticker", "slide"],
+  // Internt kan også vise tilbud/plakat (f.eks. ukens tilbud til betjeningen)
+  // og invitasjoner til arrangement (julebord, kurs …) med påmelding.
+  intern: ["news", "competition", "job", "birthday", "invitation", "ticker", "slide"],
 }
 
-export function ContentForm({ stores, tags, initial, audience = "intern" }: { stores: StoreOption[]; tags: TagOption[]; initial?: ContentInitial; audience?: Audience }) {
+export function ContentForm({ stores, tags, initial, audience = "intern", defaultType, listHref: listHrefProp }: { stores: StoreOption[]; tags: TagOption[]; initial?: ContentInitial; audience?: Audience; defaultType?: ContentType; listHref?: string }) {
   const router = useRouter()
   const allowedTypes = AUDIENCE_TYPES[audience]
-  const typeOptions = TYPES.filter((t) => allowedTypes.includes(t.key))
-  const listHref = audience === "kunde" ? "/admin/kundeinnhold" : "/admin/innhold"
+  // defaultType locks the picker to one type (dedicated entry points, e.g. Invitasjoner).
+  const typeOptions = TYPES.filter((t) => (defaultType ? t.key === defaultType : allowedTypes.includes(t.key)))
+  const listHref = listHrefProp ?? (audience === "kunde" ? "/admin/kundeinnhold" : "/admin/innhold")
   const [title, setTitle] = useState(initial?.title ?? "")
-  const [type, setType] = useState<ContentType>(initial?.type ?? allowedTypes[0])
+  const [type, setType] = useState<ContentType>(initial?.type ?? defaultType ?? allowedTypes[0])
   const [bodyHtml, setBodyHtml] = useState(initial?.bodyHtml ?? "")
   const [imageUrls, setImageUrls] = useState<string[]>(initial?.imageUrls?.length ? initial.imageUrls : initial?.imageUrl ? [initial.imageUrl] : [])
   const [targetMode, setTargetMode] = useState<TargetMode>(initial?.targetMode ?? "all")
@@ -141,6 +149,7 @@ export function ContentForm({ stores, tags, initial, audience = "intern" }: { st
   const [offer, setOffer] = useState<OfferFields>(initial?.offer ?? EMPTY_OFFER)
   const [klubb, setKlubb] = useState(initial?.klubb ?? { headline: "Bli medlem – det er gratis", subtext: "Medlemspriser, bonus og ukens beste tilbud." })
   const [avdeling, setAvdeling] = useState(initial?.avdeling ?? "felles")
+  const [invitation, setInvitation] = useState<InvitationFields>(initial?.invitation ?? EMPTY_INVITATION)
   const [bgColor, setBgColor] = useState(initial?.bgColor ?? "")
   const [textColor, setTextColor] = useState(initial?.textColor ?? "")
   const [storeSearch, setStoreSearch] = useState("")
@@ -207,7 +216,7 @@ export function ContentForm({ stores, tags, initial, audience = "intern" }: { st
 
   // Autosave: keep an unsaved draft in localStorage for NEW content only, so a
   // half-written post survives an accidental navigation/refresh.
-  const draftKey = initial ? null : `infoskjerm:draft:${audience}`
+  const draftKey = initial ? null : `infoskjerm:draft:${audience}${defaultType ? `:${defaultType}` : ""}`
   const [restored, setRestored] = useState(false)
 
   useEffect(() => {
@@ -312,6 +321,7 @@ export function ContentForm({ stores, tags, initial, audience = "intern" }: { st
         imageUrls: usesImage ? imageUrls : [],
         offer: isOfferStruktur ? offer : null,
         klubb: isKlubb ? klubb : null,
+        invitation: type === "invitation" ? invitation : null,
         avdeling: (type === "slide" || type === "competition") ? avdeling : null,
         // 2+ images always render full-page (side by side), so force plakat-style.
         imageMode: usesImage ? (type === "slide" || isMulti ? "plakat" : imageMode) : "bakgrunn",
@@ -345,6 +355,7 @@ export function ContentForm({ stores, tags, initial, audience = "intern" }: { st
     imageUrls,
     imageMode: (type === "slide" || isMulti ? "plakat" : imageMode) as ImageMode,
     offer: isOfferStruktur ? offer : null,
+    invitation: type === "invitation" ? invitation : null,
     avdeling,
     bgColor: usesColors ? bgColor || null : null,
     textColor: usesColors ? textColor || null : null,
@@ -592,6 +603,38 @@ export function ContentForm({ stores, tags, initial, audience = "intern" }: { st
                 <input type="text" value={applyUrl} onChange={(e) => setApplyUrl(e.target.value)} placeholder="gangerolv.no/stillinger"
                   className="w-full text-sm border border-zinc-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-zinc-300" />
               </div>
+            </div>
+          )}
+
+          {type === "invitation" && (
+            <div className="rounded-xl border border-zinc-200 bg-white p-4 space-y-3">
+              <h3 className="flex items-center gap-1.5 text-xs font-semibold text-zinc-600"><Ticket className="w-3.5 h-3.5" /> Arrangement</h3>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[10px] text-zinc-400 mb-1">Dato og tid</label>
+                  <input type="datetime-local" value={invitation.eventDate ?? ""} onChange={(e) => setInvitation((p) => ({ ...p, eventDate: e.target.value || null }))}
+                    className="w-full text-sm border border-zinc-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-zinc-300" />
+                </div>
+                <div>
+                  <label className="block text-[10px] text-zinc-400 mb-1 flex items-center gap-1"><MapPin className="w-3 h-3" /> Sted</label>
+                  <input type="text" value={invitation.eventPlace ?? ""} onChange={(e) => setInvitation((p) => ({ ...p, eventPlace: e.target.value || null }))} placeholder="Kantina, 2. etg."
+                    className="w-full text-sm border border-zinc-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-zinc-300" />
+                </div>
+              </div>
+              <label className="flex items-center gap-2 text-xs font-medium text-zinc-700">
+                <input type="checkbox" checked={invitation.signupEnabled} onChange={(e) => setInvitation((p) => ({ ...p, signupEnabled: e.target.checked }))} className="rounded border-zinc-300" />
+                Vis QR-kode for påmelding på skjermen
+              </label>
+              {invitation.signupEnabled && (
+                <>
+                  <div>
+                    <label className="block text-[10px] text-zinc-400 mb-1">Påmeldingsfrist (valgfri)</label>
+                    <input type="date" value={invitation.signupDeadline ?? ""} onChange={(e) => setInvitation((p) => ({ ...p, signupDeadline: e.target.value || null }))}
+                      className="w-full text-sm border border-zinc-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-zinc-300" />
+                  </div>
+                  <p className="text-[10px] text-zinc-400">QR-koden tar de ansatte til en innebygd påmeldingsside. Svarene ser du under <strong>Kampanjer → Invitasjoner</strong>.</p>
+                </>
+              )}
             </div>
           )}
         </div>

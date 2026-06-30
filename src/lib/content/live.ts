@@ -71,6 +71,16 @@ export interface LiveItem {
   textColor: string | null
   /** Customer-club invite (editable headline/subtext/cta + optional QR target url). */
   klubb: { headline: string; subtext: string; url?: string; cta?: string } | null
+  /** Invitation (event): date/place + built-in signup config. null for other types. */
+  invitation: InvitationData | null
+}
+
+/** Parsed invitation fields off the content body. */
+export interface InvitationData {
+  eventDate: string | null
+  eventPlace: string | null
+  signupEnabled: boolean
+  signupDeadline: string | null
 }
 
 interface Body {
@@ -88,6 +98,7 @@ interface Body {
   textColor?: string | null
   pages?: string[]
   klubb?: { headline: string; subtext: string; url?: string; cta?: string } | null
+  invitation?: { eventDate?: string | null; eventPlace?: string | null; signupEnabled?: boolean; signupDeadline?: string | null } | null
   durationSeconds?: number | null
 }
 
@@ -159,7 +170,7 @@ export async function fetchLiveContent(storeId: string | null, types: string[], 
     .from("content_items")
     .select("id, type, title, body, created_by, created_at, published_at, valid_from, valid_to, content_targets(target_all, store_id, tag_id)")
     .eq("status", "live")
-    .in("type", types as ("news" | "competition" | "stats" | "weather" | "slide" | "job" | "birthday" | "ticker")[])
+    .in("type", types as ("news" | "competition" | "stats" | "weather" | "slide" | "job" | "birthday" | "ticker" | "invitation")[])
     .order("published_at", { ascending: false, nullsFirst: false })
 
   if (!items || items.length === 0) return []
@@ -241,6 +252,14 @@ export async function fetchLiveContent(storeId: string | null, types: string[], 
       bgColor: body.bgColor ?? null,
       textColor: body.textColor ?? null,
       klubb: body.klubb && body.klubb.headline ? body.klubb : null,
+      invitation: it.type === "invitation"
+        ? {
+            eventDate: body.invitation?.eventDate ?? null,
+            eventPlace: body.invitation?.eventPlace ?? null,
+            signupEnabled: body.invitation?.signupEnabled ?? true,
+            signupDeadline: body.invitation?.signupDeadline ?? null,
+          }
+        : null,
     }
   })
 }
