@@ -20,9 +20,6 @@ import { loadEnv, getToken, makeApi, topbarUri, buildLayout } from "./lib.mjs"
 const ALWAYS_DAYPART_ID = 2
 const NAME_PREFIX = "Gange-Rolv Internt – "
 const GROUP_SUFFIX = " – Bakrom"
-// Bakrom roterer mellom flere layouts → kort dwell (maks 10s). Den interne
-// nyhets-/ticker-rotatoren går videre selv, så toppsaken + ticker vises i 10s før neste layout.
-const DWELL_SECONDS = 10
 
 const env = loadEnv()
 const APP_URL = env.NEXT_PUBLIC_APP_URL || "https://infoskjerm-seven.vercel.app"
