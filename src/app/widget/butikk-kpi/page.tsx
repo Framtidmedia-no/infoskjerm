@@ -1,5 +1,6 @@
 import { fetchStoreKpi, kr, pct, ratio, diffPct, sum, type WeekKpi } from "@/lib/content/kpi"
 import { CountUp } from "./count-up"
+import { AutoReload } from "@/app/widget/_shared/auto-reload"
 
 /**
  * Staff-only KPI dashboard for a store — operational figures synced daily from
@@ -129,6 +130,7 @@ export default async function StoreKpiPage({ searchParams }: { searchParams: Pro
 
   return (
     <main style={frame}>
+      <AutoReload />
       {/* Header */}
       <header style={{ display: "flex", alignItems: "baseline", gap: 24 }}>
         <h1 style={{ fontSize: 52, fontWeight: 900, margin: 0 }}>{data.storeName}</h1>
