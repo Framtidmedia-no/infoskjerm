@@ -4,7 +4,7 @@ import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import { cn } from "@/lib/utils"
 import {
-  Store, Monitor, Users, Settings, ChevronRight, LogOut, Newspaper, Megaphone, ScrollText,
+  Store, Monitor, Tv, Users, Settings, ChevronRight, LogOut, Newspaper, Megaphone, ScrollText,
 } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 
@@ -36,6 +36,7 @@ const navGroups: NavGroup[] = [
   {
     label: "Oversikt",
     items: [
+      { href: "/admin/skjermer", label: "Skjermer", icon: Tv, roles: ["super_admin", "chain_manager", "area_manager", "store_manager"], matchPrefix: true },
       { href: "/admin/cms", label: "Skjermsystem", icon: Monitor, roles: ["super_admin", "chain_manager", "area_manager", "store_manager"], matchPrefix: true },
     ],
   },
