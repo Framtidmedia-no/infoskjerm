@@ -59,7 +59,7 @@ function Media({ item }: { item: LiveItem }) {
   if (item.isVideo && item.imageUrl) {
     return (
       // eslint-disable-next-line jsx-a11y/media-has-caption
-      <video src={item.imageUrl} autoPlay muted loop playsInline style={{ flex: "1 1 auto", minHeight: 0, width: "100%", objectFit: "contain", borderRadius: 18, background: "#000" }} />
+      <video src={item.imageUrl} autoPlay muted loop playsInline style={{ flex: "1 1 auto", minHeight: 0, width: "100%", objectFit: "contain", borderRadius: 18, background: item.bgColor ?? "transparent" }} />
     )
   }
   if (item.isPdf && item.imageUrl) {

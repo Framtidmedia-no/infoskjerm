@@ -263,6 +263,9 @@ export function ContentListClient({ items, stores, tags, newHref = "/admin/innho
                       <FileText className="w-9 h-9" />
                       <span className="text-[11px] font-semibold tracking-wide">PDF</span>
                     </div>
+                  ) : item.imageUrl && /\.(mp4|webm|mov|m4v)$/.test(item.imageUrl.toLowerCase().split("?")[0]) ? (
+                    // eslint-disable-next-line jsx-a11y/media-has-caption
+                    <video src={`${item.imageUrl}#t=1`} muted playsInline preload="metadata" className="w-full h-full object-contain bg-zinc-50" />
                   ) : item.imageUrl ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img src={item.imageUrl} alt="" className="w-full h-full object-contain bg-zinc-50 p-1" />
