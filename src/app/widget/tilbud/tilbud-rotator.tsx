@@ -13,7 +13,7 @@ import { KundeklubbCard } from "@/app/widget/_shared/kundeklubb-card"
  * only when there are active ticker messages. Rotates through active offers.
  */
 
-const SECONDS = 18
+const SECONDS = 10
 const TICKER_HEIGHT = 96
 const GREEN = "#16a34a"
 

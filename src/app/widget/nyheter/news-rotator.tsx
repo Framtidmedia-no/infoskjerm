@@ -15,8 +15,8 @@ const KICKER: Record<string, string> = {
 }
 
 // Seconds per card by type (longer for ones you read/scan).
-const SECONDS: Record<string, number> = { stats: 12, job: 20, competition: 16 }
-const DEFAULT_SECONDS = 16
+const SECONDS: Record<string, number> = { stats: 10, job: 10, competition: 10 }
+const DEFAULT_SECONDS = 10
 
 const frame: CSSProperties = {
   margin: 0,
