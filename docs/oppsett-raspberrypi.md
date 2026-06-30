@@ -60,7 +60,7 @@ oppsettet, og vi får eksakt oppskrift å automatisere). Testet på Pi 4 Model B
 ```bash
 # 1) System + bygge-avhengigheter (Qt6 WebEngine er stor – tar litt nedlasting)
 sudo apt update
-sudo apt install -y git cmake g++ cargo pkg-config libdbus-1-dev libzmq3-dev qt6-webengine-dev
+sudo apt install -y git cmake g++ cargo pkg-config libdbus-1-dev libzmq3-dev qt6-webengine-dev libudev-dev
 
 # 2) Sjekk Rust ≥ 1.75 (Arexibo krever det)
 cargo --version
@@ -101,13 +101,34 @@ Når spilleren har koblet til, dukker den opp som **uautorisert Display** i Xibo
    - Avdelingsskjerm (valgfritt): `EUROSPAR MOA – <Avdeling>` (bygges med `scripts/xibo/build-avdeling-screen.mjs`)
 3. Verifiser at den henter layouten (Skjermsystem-previewen i appen viser status).
 
-## 6. Fleet / drift (16 butikker)
+## 6. Fjernaksess + flåtestyring (16 butikker)
 
-- **Hostnavn-konvensjon:** `gr-<butikk><nr>`.
-- **Fjernaksess:** SSH funker bare lokalt. For butikker bak NAT bruk **Raspberry Pi
-  Connect** (`rpi-connect on`) eller **Tailscale** — settes opp i golden image.
+To slags «oppdatering» — hold dem adskilt:
+
+| Hva | Hvordan | Status |
+|-----|---------|--------|
+| **Innhold** (tilbud, konkurranse, kundeavis, kundeklubb, reboot, skjermbilder) | Via appen + **Xibo** (Pi-en ringer ut → NAT er ikke noe problem) | ✅ allerede løst |
+| **OS/spiller** (apt, ny Arexibo, feilsøking, shell) | **Raspberry Pi Connect for Organisations** | settes opp i golden image |
+
+### Fjernaksess: Raspberry Pi Connect for Organisations (valgt)
+- **$0,50/enhet/mnd** (~$8/mnd for 16). 4 ukers gratis prøveperiode.
+- Gir **nettleser-basert skjerm + shell** til hver Pi bak butikkens NAT.
+- **Device tagging** per butikk + søk/filter → «alltid finne dem».
+- **Bulk provisioning** + **Management API** for utrulling/oppdatering.
+- Personal-planen (gratis) har enhetsgrense + mangler flåte-funksjoner → ikke nok for 16.
+- Installer på Pi: `rpi-connect on` + logg inn/knytt til organisasjonen (auth-flyt).
+
+**Gratis-alternativ:** Tailscale (gratis VPN → shell) + Xibo-skjermbilder. Funker, men mindre «butikk-vennlig» enn Connect.
+
+### Auto-start (systemd)
+Lag en **systemd-tjeneste** så Arexibo starter ved boot og restarter ved kræsj
+(selvhelbredende ved strømbrudd). *(Kommandoer fylles inn etter første oppsett.)*
+
+### Konvensjoner
+- **Hostnavn:** `gr-<butikk><nr>` (f.eks. `gr-eurospar-moa1`).
 - **Skjerm-orientering:** kundeskjerm = **portrett (1080×1920)**; bakrom = liggende.
-- Når vei A/B er bestemt: lag et **klone-script** så resten av butikkene settes opp likt.
+- **Golden image:** når Arexibo + Connect + systemd er på plass og verifisert,
+  klon SD-kortet → resten av butikkene blir ren kopi (bare hostnavn + Xibo-gruppe per butikk).
 
 ---
 
