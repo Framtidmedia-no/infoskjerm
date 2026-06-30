@@ -81,7 +81,7 @@ function Media({ item }: { item: LiveItem }) {
       <div style={{ flex: "1 1 auto", minHeight: 0, position: "relative", borderRadius: 18, overflow: "hidden" }}>
         <div style={{ position: "absolute", inset: 0, backgroundImage: `url('${url}')`, backgroundSize: "cover", backgroundPosition: "center", filter: "blur(48px) brightness(0.45)", transform: "scale(1.25)" }} />
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={url} alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "contain" }} />
+        <img src={url} alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "contain", animation: "grTbKen 15s ease-in-out infinite alternate" }} />
       </div>
     )
   }
@@ -105,7 +105,7 @@ function PosterHeader({ item, storeName }: { item: LiveItem; storeName: string |
   const period = formatPeriod(item.validFrom, item.validTo)
   return (
     <div style={{ flex: "0 0 auto", padding: "64px 60px 24px", display: "flex", flexDirection: "column" }}>
-      <p style={{ color: GREEN, fontWeight: "bold", letterSpacing: 4, fontSize: 26, margin: 0, textTransform: "uppercase" }}>Tilbud</p>
+      <p style={{ color: GREEN, fontWeight: "bold", letterSpacing: 4, fontSize: 26, margin: 0, textTransform: "uppercase" }}>{item.type === "news" ? "Aktuelt" : "Tilbud"}</p>
       {storeName && <p style={{ fontSize: 22, color: "rgba(255,255,255,.5)", margin: "10px 0 0", textTransform: "uppercase", letterSpacing: 1 }}>{storeName}</p>}
       <h1 style={{ fontSize: 78, fontWeight: 900, margin: "16px 0 0", lineHeight: 1.03 }}>{item.title}</h1>
       {item.blocks.length > 0 && (
@@ -178,7 +178,7 @@ export function TilbudRotator({ items, ticker, storeName, chain = null, qr = {} 
 
   return (
     <main style={frame}>
-      <style>{"@keyframes grFade{from{opacity:0}to{opacity:1}}"}</style>
+      <style>{"@keyframes grFade{from{opacity:0}to{opacity:1}}@keyframes grTbKen{from{transform:scale(1)}to{transform:scale(1.07)}}"}</style>
       {!item ? (
         <div style={{ ...inset, display: "flex", alignItems: "center", justifyContent: "center", color: "rgba(255,255,255,.4)", fontSize: 34 }}>
           Ingen aktive tilbud

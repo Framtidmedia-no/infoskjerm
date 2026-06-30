@@ -23,8 +23,12 @@ export function KundeklubbCard({
 }) {
   return (
     <div style={{ margin: 0, width: "100%", height: "100%", position: "absolute", inset: 0, overflow: "hidden", color: "#fff", fontFamily: "Arial, Helvetica, sans-serif", background: `linear-gradient(160deg, ${accent}, #0a0a0a)`, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "8vmin", boxSizing: "border-box", textAlign: "center" }}>
+      <style>{`@keyframes grKkPop{0%{transform:scale(.7);opacity:0}100%{transform:scale(1);opacity:1}}@keyframes grKkGlow{0%,100%{box-shadow:0 3vmin 8vmin rgba(0,0,0,.3)}50%{box-shadow:0 3vmin 11vmin rgba(255,255,255,.55)}}@keyframes grKkFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-2vmin)}}`}</style>
       <div style={{ position: "absolute", top: "-14vmin", right: "-10vmin", width: "44vmin", height: "44vmin", borderRadius: "50%", background: "rgba(255,255,255,.08)" }} />
       <div style={{ position: "absolute", bottom: "-18vmin", left: "-12vmin", width: "54vmin", height: "54vmin", borderRadius: "50%", background: "rgba(0,0,0,.15)" }} />
+      {([["10%", "16%", 0], ["84%", "22%", 1.2], ["14%", "78%", 2], ["86%", "70%", 0.7]] as const).map(([left, top, d], i) => (
+        <span key={i} style={{ position: "absolute", left, top, fontSize: "6vmin", opacity: 0.7, animation: `grKkFloat ${3 + (i % 2)}s ease-in-out ${d}s infinite`, pointerEvents: "none" }}>✨</span>
+      ))}
 
       {logoUrl ? (
         // eslint-disable-next-line @next/next/no-img-element
@@ -37,7 +41,7 @@ export function KundeklubbCard({
       <h1 style={{ position: "relative", margin: "2vmin 0 0", fontSize: "11vmin", fontWeight: 900, lineHeight: 1.02 }}>{headline}</h1>
       {subtext && <p style={{ position: "relative", margin: "3vmin 0 0", fontSize: "4.6vmin", maxWidth: "82%", opacity: 0.85 }}>{subtext}</p>}
 
-      <div style={{ position: "relative", marginTop: "6vmin", background: "#fff", padding: "4vmin", borderRadius: "4vmin", boxShadow: "0 3vmin 8vmin rgba(0,0,0,.3)" }}>
+      <div style={{ position: "relative", marginTop: "6vmin", background: "#fff", padding: "4vmin", borderRadius: "4vmin", boxShadow: "0 3vmin 8vmin rgba(0,0,0,.3)", animation: "grKkPop .6s cubic-bezier(.2,1.5,.4,1) both, grKkGlow 2.8s ease-in-out 0.8s infinite" }}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={qrUrl} alt="QR-kode for å melde deg inn" style={{ display: "block", width: "46vmin", height: "46vmin" }} />
       </div>

@@ -149,12 +149,12 @@ export default async function StoreKpiPage({ searchParams }: { searchParams: Pro
           </div>
         </Card>
         <Card label="Bruttomargin">
-          <div style={{ fontSize: 64, fontWeight: 900 }}>{pct(brutto)}</div>
+          <div style={{ fontSize: 64, fontWeight: 900 }}><CountUp value={brutto} suffix=" %" digits={1} /></div>
           <div style={{ fontSize: 24, color: MUTED }}>budsjett {pct(budBrutto)} · <Delta value={brutto !== null && budBrutto !== null ? brutto - budBrutto : null} suffix=" pp" /></div>
           <div style={{ fontSize: 22, color: MUTED }}>hittil i år {pct(ytdBruttoPct)}</div>
         </Card>
         <Card label="Lønn">
-          <div style={{ fontSize: 64, fontWeight: 900 }}>{pct(lonn)}</div>
+          <div style={{ fontSize: 64, fontWeight: 900 }}><CountUp value={lonn} suffix=" %" digits={1} /></div>
           <div style={{ fontSize: 24, color: MUTED }}>budsjett {pct(budLonn)} · <Delta value={lonn !== null && budLonn !== null ? lonn - budLonn : null} suffix=" pp" goodWhenPositive={false} /></div>
           <div style={{ fontSize: 22, color: MUTED }}>hittil i år {pct(ytdLonnPct)}</div>
         </Card>
@@ -163,7 +163,7 @@ export default async function StoreKpiPage({ searchParams }: { searchParams: Pro
       {/* Svinn + svinn kommentert */}
       <section style={{ display: "flex", gap: 24, flex: "0 0 auto" }}>
         <Card label="Svinn · siste uke">
-          <div style={{ fontSize: 56, fontWeight: 900 }}>{kr(svinn)} kr</div>
+          <div style={{ fontSize: 56, fontWeight: 900 }}><CountUp value={svinn} /> kr</div>
           <div style={{ fontSize: 24, color: MUTED }}>{pct(ratio(svinn, oms))} av omsetning · hittil i år {pct(ytdSvinnPct)}</div>
         </Card>
         {data.svinn && (
