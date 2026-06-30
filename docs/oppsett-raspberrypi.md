@@ -7,6 +7,22 @@ oppskriften vi gjentar for alle 16 butikkene.
 > 🔐 **Hemmeligheter:** ikke skriv faktiske passord inn i denne fila (den er i
 > git). Login-/WiFi-passord oppbevares utenfor repo (passordhvelv / spør Frank).
 
+## ✅ Standard sjekkliste per Pi (ingen hoppes over)
+
+Gå gjennom ALLE for hver skjerm — også de det er lett å glemme (markert ⚠️):
+
+- [ ] **1.** Skriv minnekort (hostnavn `gr-<butikk><nr>`, land `NO`, SSH, WiFi)
+- [ ] **2.** På nett + SSH inn
+- [ ] **3.** ⚠️ **WiFi tilkoblet** (`nmcli device status` → `wlan0 connected`)
+- [ ] **4.** Arexibo bygd + installert
+- [ ] **5.** Autorisert + tilordnet riktig Xibo-gruppe (Claude via API)
+- [ ] **6.** ⚠️ **Auto-start (systemd kiosk)** — booter rett inn i spilleren
+- [ ] **7.** ⚠️ **Raspberry Pi Connect innmeldt** (`rpi-connect signin` + linger) — *lett å glemme!*
+- [ ] **8.** Verifisert på fysisk skjerm (riktig layout, riktig orientering)
+
+> 🔁 **Claude:** påminn ALLTID om steg 6 + 7 før en Pi regnes som ferdig — de er
+> de to vi har glemt før.
+
 ---
 
 ## 1. Skriv minnekortet (Raspberry Pi Imager)
@@ -122,10 +138,15 @@ Etter autorisering + tilordning: start spilleren på nytt på Pi-en (`arexibo ~/
 → den laster ned og viser layouten. Status kan også ses i appens **Skjermsystem**.
 
 ### Status — Pi-er satt opp (EUROSPAR MOA)
-| Hostnavn | Rolle | Display-id | Gruppe | Orientering | Connect |
-|----------|-------|-----------|--------|-------------|---------|
-| `gr-eurospar-moa1` | **Kundeskjerm** | 1 | `EUROSPAR MOA` (id **9**) | portrett | innmeldt |
-| `gr-eurospar-moa2` | **Bakrom/intern** | 2 | `EUROSPAR MOA – Bakrom` (id **25**) | liggende | (tas til slutt) |
+| Hostnavn | Rolle | Display-id | Gruppe | Orientering | Auto-start | Connect (fjernaksess) |
+|----------|-------|-----------|--------|-------------|-----------|------------------------|
+| `gr-eurospar-moa1` | **Kundeskjerm** | 1 | `EUROSPAR MOA` (id **9**) | portrett | ⬜ gjenstår | ⬜ verifiser `rpi-connect status` + linger |
+| `gr-eurospar-moa2` | **Bakrom/intern** | 2 | `EUROSPAR MOA – Bakrom` (id **25**) | liggende | ✅ systemd kiosk | ⬜ gjøres nå (`rpi-connect signin`) |
+
+> **Connect = fjernaksess «uansett hvor den er».** En Pi som er signed-in i Connect
+> dialer UT til Raspberry Pis sky → remote shell + skjerm fra hvilken som helst
+> nettleser, selv bak butikkens NAT. Ikke ferdig før `rpi-connect status` viser
+> «Signed in» (steg 7).
 
 > **Konvensjon:** kundeskjerm → gruppe = butikknavnet (portrett); bakrom → `{butikk} – Bakrom` (liggende).
 > Begge skal testes på fysisk skjerm + få portrett-rotering (kunde) + systemd auto-start før golden image klones.
@@ -171,7 +192,30 @@ To slags «oppdatering» — hold dem adskilt:
 - **Device tagging** per butikk + søk/filter → «alltid finne dem».
 - **Bulk provisioning** + **Management API** for utrulling/oppdatering.
 - Personal-planen (gratis) har enhetsgrense + mangler flåte-funksjoner → ikke nok for 16.
-- Installer på Pi: `rpi-connect on` + logg inn/knytt til organisasjonen (auth-flyt).
+
+#### Meld inn en Pi i Connect (⚠️ obligatorisk steg 7 — lett å glemme!)
+
+Kjør på Pi-en (over SSH). `rpi-connect` er forhåndsinstallert på Desktop-imaget:
+
+```bash
+# 1) La brukertjenesten kjøre selv uten innlogget skrivebord (kiosk booter til konsoll!)
+sudo loginctl enable-linger frlund3
+
+# 2) Slå på Connect
+rpi-connect on
+
+# 3) Logg inn → skriver ut en URL + kode. Åpne URL-en i nettleser (Mac),
+#    logg inn på ORGANISASJONEN og bekreft koden.
+rpi-connect signin
+
+# 4) Verifiser
+rpi-connect status        # skal vise: Signed in + Screen sharing/Remote shell allowed
+```
+
+> Uten `enable-linger` mister Connect tilkoblingen så snart ingen er innlogget —
+> kritisk for en kiosk som booter til konsoll uten skrivebordssesjon.
+
+Etterpå: i Connect-konsollen **tagg enheten** med butikk + `gangerolv` så vi alltid finner den.
 
 **Gratis-alternativ:** Tailscale (gratis VPN → shell) + Xibo-skjermbilder. Funker, men mindre «butikk-vennlig» enn Connect.
 
