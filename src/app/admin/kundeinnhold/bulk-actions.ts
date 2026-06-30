@@ -47,6 +47,10 @@ export interface BulkOfferRow {
   /** Optional per-row period override (else the shared period is used). */
   validFrom?: string | null
   validTo?: string | null
+  /** Optional per-row visibility override (else the shared targeting is used). */
+  targetMode?: TargetMode | null
+  storeIds?: string[] | null
+  tagIds?: string[] | null
 }
 
 export interface BulkShared {
@@ -77,9 +81,9 @@ export async function bulkCreateOffers(
       imageMode: "plakat",
       offer: row.offer,
       avdeling: row.avdeling || "felles",
-      targetMode: shared.targetMode,
-      storeIds: shared.storeIds,
-      tagIds: shared.tagIds,
+      targetMode: row.targetMode ?? shared.targetMode,
+      storeIds: row.targetMode ? (row.storeIds ?? []) : shared.storeIds,
+      tagIds: row.targetMode ? (row.tagIds ?? []) : shared.tagIds,
       validFrom: row.validFrom ?? shared.validFrom,
       validTo: row.validTo ?? shared.validTo,
       publish,

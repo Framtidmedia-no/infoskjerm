@@ -85,7 +85,7 @@ export function MediaUploader({ onUpload, maxFiles = 10, accept = ["image/jpeg",
   const formatHint = [
     accept.some((a) => a.startsWith("image/")) ? "JPG, PNG, WEBP, GIF" : null,
     hasPdf ? "PDF" : null,
-    hasVideo ? "MP4/WEBM-video" : null,
+    hasVideo ? "MP4/WEBM/MOV-video" : null,
   ].filter(Boolean).join(" · ") + " — maks 50 MB per fil"
   const isVideoUrl = (u: string) => /\.(mp4|webm|mov|m4v)$/.test(u.toLowerCase().split("?")[0])
 
