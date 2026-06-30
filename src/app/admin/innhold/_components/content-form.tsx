@@ -150,6 +150,10 @@ export function ContentForm({ stores, tags, initial, audience = "intern", defaul
   const [bodyHtml, setBodyHtml] = useState(initial?.bodyHtml ?? "")
   const [imageUrls, setImageUrls] = useState<string[]>(initial?.imageUrls?.length ? initial.imageUrls : initial?.imageUrl ? [initial.imageUrl] : prefillImage ? [prefillImage] : [])
   const [targetMode, setTargetMode] = useState<TargetMode>(initial?.targetMode ?? "all")
+  // Kundeinnhold: tving et bevisst «Vis på»-valg (ingen «Alle» som standard), så
+  // man ikke ved et uhell publiserer til alle kundeskjermer. Intern + redigering
+  // beholder dagens oppførsel.
+  const [targetChosen, setTargetChosen] = useState<boolean>(audience !== "kunde" || !!initial)
   const [storeIds, setStoreIds] = useState<string[]>(initial?.storeIds ?? [])
   const [tagIds, setTagIds] = useState<string[]>(initial?.tagIds ?? [])
   const [validFrom, setValidFrom] = useState(initial?.validFrom ?? "")
@@ -249,7 +253,7 @@ export function ContentForm({ stores, tags, initial, audience = "intern", defaul
       if (d.avdeling) setAvdeling(d.avdeling)
       if (d.validFrom) setValidFrom(d.validFrom)
       if (d.validTo) setValidTo(d.validTo)
-      if (d.targetMode) setTargetMode(d.targetMode)
+      if (d.targetMode) { setTargetMode(d.targetMode); setTargetChosen(true) }
       if (Array.isArray(d.storeIds)) setStoreIds(d.storeIds)
       if (Array.isArray(d.tagIds)) setTagIds(d.tagIds)
       if (d.bgColor) setBgColor(d.bgColor)
@@ -320,6 +324,7 @@ export function ContentForm({ stores, tags, initial, audience = "intern", defaul
     } else if (isKlubb) {
       if (!klubb.headline.trim()) { toast.error("Skriv en overskrift"); return }
     } else if (!title.trim()) { toast.error("Skriv en tittel først"); return }
+    if (!targetChosen) { toast.error("Velg hvor innholdet skal vises (Vis på)"); return }
     if (targetMode === "stores" && storeIds.length === 0) { toast.error("Velg minst én butikk"); return }
     if (targetMode === "tags" && tagIds.length === 0) { toast.error("Velg minst én tagg"); return }
     // Tilbud/annonser MÅ ha både fra- og til-dato — de skal aldri gå evig.
@@ -775,18 +780,23 @@ export function ContentForm({ stores, tags, initial, audience = "intern", defaul
             <h3 className="text-xs font-semibold text-zinc-600 mb-2.5">Vis på</h3>
             <div className="flex gap-1.5 mb-3">
               {([["all", "Alle", Globe], ["stores", "Butikker", StoreIcon], ["tags", "Tagger", Tag]] as const).map(([mode, label, Icon]) => (
-                <button key={mode} onClick={() => setTargetMode(mode)}
-                  className={`flex-1 flex items-center justify-center gap-1 px-2 py-1.5 rounded-lg text-[11px] font-medium border transition-all ${targetMode === mode ? "border-[var(--brand-primary)] bg-zinc-50 text-zinc-900" : "border-zinc-200 text-zinc-500"}`}>
+                <button key={mode} onClick={() => { setTargetMode(mode); setTargetChosen(true) }}
+                  className={`flex-1 flex items-center justify-center gap-1 px-2 py-1.5 rounded-lg text-[11px] font-medium border transition-all ${targetChosen && targetMode === mode ? "border-[var(--brand-primary)] bg-zinc-50 text-zinc-900" : "border-zinc-200 text-zinc-500"}`}>
                   <Icon className="w-3 h-3" /> {label}
                 </button>
               ))}
             </div>
 
-            <p className={`text-[11px] font-medium mb-2 ${reach === 0 ? "text-red-500" : "text-emerald-600"}`}>
-              → Vises på {reach} av {stores.length} butikker
-            </p>
-
-            {targetMode === "all" && <p className="text-[11px] text-zinc-400">Vises på alle butikkers skjermer.</p>}
+            {targetChosen ? (
+              <>
+                <p className={`text-[11px] font-medium mb-2 ${reach === 0 ? "text-red-500" : "text-emerald-600"}`}>
+                  → Vises på {reach} av {stores.length} butikker
+                </p>
+                {targetMode === "all" && <p className="text-[11px] text-zinc-400">Vises på alle butikkers skjermer.</p>}
+              </>
+            ) : (
+              <p className="text-[11px] font-medium mb-2 text-amber-600">Velg hvor innholdet skal vises før du publiserer.</p>
+            )}
 
             {targetMode === "stores" && (
               <div className="space-y-2">

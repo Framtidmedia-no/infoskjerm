@@ -77,7 +77,7 @@ function reachCount(v: TargetValue, stores: StoreOption[]): number {
   return hit.size
 }
 
-function TargetPicker({ value, onChange, stores, tags }: { value: TargetValue; onChange: (v: TargetValue) => void; stores: StoreOption[]; tags: TagOption[] }) {
+function TargetPicker({ value, onChange, stores, tags, chosen = true }: { value: TargetValue; onChange: (v: TargetValue) => void; stores: StoreOption[]; tags: TagOption[]; chosen?: boolean }) {
   const [search, setSearch] = useState("")
   const visible = stores.filter((s) => !search || s.name.toLowerCase().includes(search.toLowerCase()) || (s.city ?? "").toLowerCase().includes(search.toLowerCase()))
   const reach = reachCount(value, stores)
@@ -87,10 +87,12 @@ function TargetPicker({ value, onChange, stores, tags }: { value: TargetValue; o
     <>
       <div className="flex gap-1.5 mb-2">
         {([["all", "Alle", Globe], ["stores", "Butikker", StoreIcon], ["tags", "Tagger", Tag]] as const).map(([m, l, Icon]) => (
-          <button key={m} type="button" onClick={() => onChange({ ...value, mode: m })} className={`flex-1 flex items-center justify-center gap-1 px-2 py-1.5 rounded-lg text-[11px] font-medium border ${value.mode === m ? "border-zinc-900 bg-zinc-50 text-zinc-900" : "border-zinc-200 text-zinc-500"}`}><Icon className="w-3 h-3" /> {l}</button>
+          <button key={m} type="button" onClick={() => onChange({ ...value, mode: m })} className={`flex-1 flex items-center justify-center gap-1 px-2 py-1.5 rounded-lg text-[11px] font-medium border ${chosen && value.mode === m ? "border-zinc-900 bg-zinc-50 text-zinc-900" : "border-zinc-200 text-zinc-500"}`}><Icon className="w-3 h-3" /> {l}</button>
         ))}
       </div>
-      <p className={`text-[11px] font-medium ${reach === 0 ? "text-red-500" : "text-emerald-600"}`}>→ {reach} av {stores.length} butikker</p>
+      {chosen
+        ? <p className={`text-[11px] font-medium ${reach === 0 ? "text-red-500" : "text-emerald-600"}`}>→ {reach} av {stores.length} butikker</p>
+        : <p className="text-[11px] font-medium text-amber-600">Velg hvor tilbudene skal vises før du publiserer.</p>}
       {value.mode === "stores" && (
         <div className="mt-2">
           <div className="relative mb-1"><Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-zinc-400" /><input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Søk butikk…" className="w-full text-xs border border-zinc-200 rounded-lg pl-7 pr-2 py-1.5" /></div>
@@ -130,6 +132,8 @@ export function BulkImport({ stores, tags, initialLinks = "" }: { stores: StoreO
   const [validFrom, setValidFrom] = useState("")
   const [validTo, setValidTo] = useState("")
   const [targetMode, setTargetMode] = useState<TargetMode>("all")
+  // Tving bevisst «Vis på»-valg (ingen «Alle» som standard) før masseutgivelse.
+  const [targetChosen, setTargetChosen] = useState(false)
   const [storeIds, setStoreIds] = useState<string[]>([])
   const [tagIds, setTagIds] = useState<string[]>([])
   const [defAvdeling, setDefAvdeling] = useState("felles")
@@ -173,6 +177,7 @@ export function BulkImport({ stores, tags, initialLinks = "" }: { stores: StoreO
   async function save(publish: boolean) {
     if (ready.length === 0) { toast.error("Ingen varer med varenavn å lagre"); return }
     if (publish && (!validFrom || !validTo)) { toast.error("Sett fra- og til-dato før publisering"); return }
+    if (!targetChosen) { toast.error("Velg hvor tilbudene skal vises (Vis på)"); return }
     if (targetMode === "stores" && storeIds.length === 0) { toast.error("Velg minst én butikk"); return }
     if (targetMode === "tags" && tagIds.length === 0) { toast.error("Velg minst én tagg"); return }
     const emptyOverride = ready.find((r) => r.target && r.target.mode !== "all" && (r.target.mode === "stores" ? r.target.storeIds.length === 0 : r.target.tagIds.length === 0))
@@ -244,8 +249,9 @@ export function BulkImport({ stores, tags, initialLinks = "" }: { stores: StoreO
           <div>
             <h3 className="text-xs font-semibold text-zinc-600 mb-2">Vis på (alle)</h3>
             <TargetPicker
+              chosen={targetChosen}
               value={{ mode: targetMode, storeIds, tagIds }}
-              onChange={(v) => { setTargetMode(v.mode); setStoreIds(v.storeIds); setTagIds(v.tagIds) }}
+              onChange={(v) => { setTargetMode(v.mode); setStoreIds(v.storeIds); setTagIds(v.tagIds); setTargetChosen(true) }}
               stores={stores}
               tags={tags}
             />
