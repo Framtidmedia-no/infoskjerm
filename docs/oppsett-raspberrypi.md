@@ -46,12 +46,12 @@ docker exec xibo-cms-memcached-1 sh -c 'echo flush_all | nc -w1 localhost 11211'
 Gå gjennom ALLE for hver skjerm — også de det er lett å glemme (markert ⚠️):
 
 - [ ] **1.** Skriv minnekort (hostnavn `gr-<butikk><nr>`, land `NO`, SSH, WiFi)
-- [ ] **2.** På nett + SSH inn (Claude legger inn nøkkel for passordløs aksess)
+- [ ] **2.** På nett + ⚠️ **Claude legger inn SSH-nøkkel** (`ssh-copy-id` — MÅ gjøres på HVER Pi)
 - [ ] **3.** ⚠️ **WiFi tilkoblet** (`nmcli device status` → `wlan0 connected`)
 - [ ] **4.** Arexibo bygd + installert
 - [ ] **5.** ⚠️ **Skjerm-avhengigheter:** `xinit` + **emoji-font** (ellers tofu-bokser □)
 - [ ] **6.** Autorisert + tilordnet riktig Xibo-gruppe (Claude via API)
-- [ ] **7.** ⚠️ **Auto-start (systemd kiosk)** — booter rett inn i spilleren, riktig rotasjon
+- [ ] **7.** ⚠️ **Auto-start (getty-autologin kiosk + fbdev fjernet)** — booter rett inn, riktige farger, riktig rotasjon
 - [ ] **8.** ⚠️ **Raspberry Pi Connect innmeldt** (`rpi-connect signin` + linger) — *lett å glemme!*
 - [ ] **9.** Verifisert på fysisk skjerm (riktig layout, orientering, emojis i farger)
 
@@ -82,7 +82,15 @@ Gå gjennom ALLE for hver skjerm — også de det er lett å glemme (markert ⚠
 
 - **Enklest = ethernet-kabel** (Pi → ruter). Da får den IP umiddelbart, uten WiFi-trøbbel.
 - Finn IP-en i **ruterens enhetsliste** (se etter hostnavnet), eller prøv `<hostname>.local`.
-- Claude legger inn passordløs nøkkel én gang (`ssh-copy-id`), deretter `ssh frlund3@<ip>` uten passord.
+- ⚠️ **ALLTID steg 1 på HVER ny Pi — Claude legger inn passordløs SSH-nøkkel** (gjøres per enhet, nøkkelen følger ikke med):
+  ```bash
+  # askpass-triks så ssh-copy-id kan kjøres ikke-interaktivt (passord fra hvelv)
+  ASK=$(mktemp); printf '#!/bin/sh\nprintf "%%s\\n" "<pi-passord>"\n' > "$ASK"; chmod +x "$ASK"
+  SSH_ASKPASS="$ASK" SSH_ASKPASS_REQUIRE=force DISPLAY=:0 \
+    ssh-copy-id -o StrictHostKeyChecking=accept-new -i ~/.ssh/id_ed25519.pub frlund3@gr-<butikk><nr>.local
+  rm -f "$ASK"
+  ```
+  Deretter `ssh frlund3@<ip|.local>` uten passord. **Uten dette kan ikke Claude gjøre resten.**
 - Inne når du ser: `frlund3@gr-<butikk>:~ $`
 
 ### Vanlige fallgruver
@@ -178,30 +186,39 @@ kundeinnhold et `avdeling`-felt (`felles`, `frukt`, `ferskvare`, `frys`, `bakeri
 Gjøre om til avdelingsskjerm: `node scripts/xibo/build-avdeling-screen.mjs "EUROSPAR MOA" frukt`,
 deretter flytt Pi-en til den nye gruppa. `gr-eurospar-moa1` står nå på id 9 → **hele butikken**.
 
-## 7. Auto-start (systemd kiosk) — VERIFISERT OPPSKRIFT
+## 7. Auto-start (getty-autologin kiosk) — VERIFISERT OPPSKRIFT
 
 Målet: Pi-en booter **rett inn i spilleren** i fullskjerm, riktig rotert, og
-restarter seg selv ved kræsj/strømbrudd. Arexibo er en QtWebEngine-app som må kjøre
-i en X-sesjon. Vi kjører en **egen, ren X-server med kun arexibo** (ingen skrivebord).
+restarter seg selv ved kræsj/strømbrudd. Arexibo (QtWebEngine) må kjøre i en X-sesjon.
 
-**Tre fallgruver vi løste (ikke endre uten å forstå hvorfor):**
-1. En systemd-tjeneste som `User=frlund3` eier ingen virtuell konsoll → X feiler med
-   `xf86OpenConsole: Cannot open virtual console 2 (Permission denied)`.
-   **Fix:** `PAMName=login` + `TTYPath` (logind lager en ekte sesjon som eier VT-en) + `-keeptty` (X gjenbruker den TTY-en).
-2. Wayland-skrivebordet okkuperer skjermen → boot til **konsoll** (`do_boot_behaviour B1`).
-3. X må få startes av brukeren → `/etc/X11/Xwrapper.config: allowed_users=anybody`.
+> ⚠️ **VIKTIG — ikke bruk en bar systemd-tjeneste til å starte X.** Vi prøvde det
+> (`PAMName=login`+`TTYPath`+`-keeptty`) og det funket på én Pi ved flaks, men feilet
+> på neste med `systemd-logind returned paused fd for drm node` → `no screens found`.
+> Årsak: en systemd-startet X-sesjon blir ikke garantert den **aktive seat0-sesjonen**,
+> så logind «pauser» DRM-håndtaket. **Riktig metode = getty-autologin på tty1** (gir en
+> ekte aktiv seat0-sesjon) + start X derfra. Da eier X skjermen og restart skjer ved at
+> getty re-spawner login → loopen starter X på nytt (selvhelbredende).
+
+**To fallgruver vi løste (ikke endre uten å forstå hvorfor):**
+1. **Paused DRM fd / no screens** → bruk getty-autologin (under), ikke bar systemd-tjeneste.
+2. **Rosa/feil farger** → `fbdev`-driveren griper primærskjermen og dens fargekart feiler
+   (`FBIOPUTCMAP: Invalid argument`). **Fix: fjern fbdev** så X tvinges til `modeset(0)` (vc4).
+   (Kan også gi `Caught signal 6 (Aborted)` når glamor + fbdev kolliderer.)
 
 ```bash
-# a) Tillat at X startes av tjenesten
+# a) Fjern fbdev → modesetting/vc4 blir primær (riktige farger, ingen krasj)
+sudo apt-get purge -y xserver-xorg-video-fbdev
+
+# b) Tillat at brukeren starter X
 printf 'allowed_users=anybody\nneeds_root_rights=yes\n' | sudo tee /etc/X11/Xwrapper.config
 
-# b) Boot til konsoll (ikke skrivebord)
-sudo raspi-config nonint do_boot_behaviour B1
+# c) Konsoll-AUTOLOGIN (getty logger inn frlund3 på tty1 = aktiv seat0)
+sudo raspi-config nonint do_boot_behaviour B2
 
-# c) Rotasjon per rolle (kundeskjerm=portrett, bakrom=liggende)
-echo right > ~/.kiosk-rotate        # kunde: right (portrett). bakrom: echo normal. opp-ned: left.
+# d) Rotasjon per rolle
+echo right > ~/.kiosk-rotate        # kunde = right (portrett). bakrom = normal. opp-ned = left.
 
-# d) Kiosk-launcher: roter, så start arexibo
+# e) Kiosk-launcher: roter, så start arexibo
 cat > ~/kiosk.sh <<'SH'
 #!/bin/sh
 ROT=$(cat /home/frlund3/.kiosk-rotate 2>/dev/null || echo normal)
@@ -210,47 +227,33 @@ exec /usr/bin/arexibo /home/frlund3/xibo
 SH
 chmod +x ~/kiosk.sh
 
-# e) systemd-tjeneste
-sudo tee /etc/systemd/system/arexibo.service >/dev/null <<'UNIT'
-[Unit]
-Description=Arexibo Xibo-spiller (kiosk)
-After=systemd-user-sessions.service network-online.target getty@tty2.service
-Wants=network-online.target
-Conflicts=getty@tty2.service
+# f) Start kiosken fra bash_profile på tty1, self-healing loop.
+#    tty-guarden hindrer at SSH-sesjoner (pts) trigger kiosken.
+cat > ~/.bash_profile <<'SH'
+[ -f ~/.profile ] && . ~/.profile
+if [ "$(tty)" = "/dev/tty1" ] && [ -z "$DISPLAY" ]; then
+  while :; do
+    startx /home/frlund3/kiosk.sh -- vt1 -nolisten tcp -s 0 -dpms >/home/frlund3/kiosk-x.log 2>&1
+    sleep 3
+  done
+fi
+SH
 
-[Service]
-Type=simple
-User=frlund3
-PAMName=login
-TTYPath=/dev/tty2
-TTYReset=yes
-TTYVHangup=yes
-StandardInput=tty
-StandardOutput=journal
-StandardError=journal
-UtmpIdentifier=tty2
-UtmpMode=user
-ExecStart=/usr/bin/xinit /home/frlund3/kiosk.sh -- :0 vt2 -keeptty -nolisten tcp -s 0 -dpms
-Restart=always
-RestartSec=10
-Environment=NO_AT_BRIDGE=1
+# g) (hvis en gammel systemd-arexibo finnes fra tidligere forsøk: fjern den)
+sudo systemctl disable --now arexibo.service 2>/dev/null; sudo rm -f /etc/systemd/system/arexibo.service
 
-[Install]
-WantedBy=multi-user.target
-UNIT
-
-# f) aktiver + reboot
-sudo systemctl daemon-reload && sudo systemctl enable arexibo.service && sudo reboot
+sudo reboot
 ```
 
-**Verifiser etter boot:**
+**Verifiser etter boot (via SSH):**
 ```bash
-systemctl is-active arexibo                                   # active
-systemctl show arexibo -p NRestarts --value                  # 0 (stabil, ikke loop)
-journalctl -u arexibo -b | grep -iE "collection successful|showing layout"
+pgrep -a Xorg; pgrep -a arexibo                              # begge skal kjøre
+grep -cE FBIOPUTCMAP ~/.local/share/xorg/Xorg.0.log         # 0 (ingen fbdev-fargefeil)
+grep -E "modeset\(0\)|paused fd|no screens" ~/.local/share/xorg/Xorg.0.log | tail
+grep -iE "collection successful|showing layout" ~/kiosk-x.log | tail
 ```
-Skjermen skal vise riktig layout i fullskjerm. Feilsøke? Kjør med debug:
-`arexibo --debug ~/xibo` via wrapper, eller se **Feilsøking** under.
+Skjermen skal vise riktig layout i fullskjerm med riktige farger. Restart kiosken uten
+reboot: `sudo pkill Xorg` (loopen starter den igjen). Debug: `arexibo --debug ~/xibo`.
 
 ## 8. Raspberry Pi Connect — fjernaksess «uansett hvor den er» (⚠️ obligatorisk)
 
@@ -273,11 +276,12 @@ Connect for Organisations: ~$0,50/enhet/mnd (~$8/mnd for 16), bulk provisioning 
 
 | Hostnavn | Rolle | Display-id | Gruppe | Rotasjon | Auto-start | Emoji | Connect |
 |----------|-------|-----------|--------|----------|-----------|-------|---------|
-| `gr-eurospar-moa1` | **Kundeskjerm** | 1 | `EUROSPAR MOA` (id 9) | `right` (portrett) | ✅ | ✅ | ✅ signed in |
-| `gr-eurospar-moa2` | **Bakrom/intern** | 2 | `EUROSPAR MOA – Bakrom` (id 25) | `normal` | ⬜ | ⬜ | ⬜ |
+| `gr-eurospar-moa1` | **Kundeskjerm** | 1 | `EUROSPAR MOA` (id 9) | `right` (portrett) | ✅* | ✅ | ✅ signed in |
+| `gr-eurospar-moa2` | **Bakrom/intern** | 2 | `EUROSPAR MOA – Bakrom` (id 25) | `normal` | ✅ getty | ✅ | ✅ signed in |
 
-`gr-eurospar-moa1` er **100 % ferdig** (innhold, portrett, emojis, auto-start, Connect signed-in). Klar for butikk.
-`gr-eurospar-moa2` fullføres med samme oppskrift (rotasjon `normal` = liggende).
+`gr-eurospar-moa2` er **ferdig** (getty-autologin, fbdev fjernet → riktige farger, Connect signed-in).
+\* `gr-eurospar-moa1` kjører fortsatt den gamle systemd-metoden (fungerer, men bør **migreres til getty-autologin
++ fbdev-fjerning** for robusthet/parity — gjøres neste gang den er på).
 
 > **Fjernaksess = Raspberry Pi Connect (Organisations), IKKE Tailscale.** Verifiser per Pi
 > med `rpi-connect status` → «Signed in: yes» + «Remote shell: allowed». moa1 ✅.
@@ -286,19 +290,23 @@ Connect for Organisations: ~$0,50/enhet/mnd (~$8/mnd for 16), bulk provisioning 
 
 | Symptom i logg/skjerm | Årsak | Fix |
 |-----------------------|-------|-----|
-| `setting up XMR ZMQ connection ... No address associated with hostname`, `Using ZMQ XMR at tcp://cms.example.org:9505` | CMS XMR Public Address er placeholder | Sett `XMR_PUB_ADDRESS` i CMS-DB (se topp-seksjonen) — engangs |
-| `xf86OpenConsole: Cannot open virtual console 2 (Permission denied)` | systemd-tjeneste eier ingen VT | `PAMName=login` + `TTYPath=/dev/tty2` + `-keeptty` i unit (steg 7) |
-| Tjeneste `activating (auto-restart)`, arexibo exit 0, ingen logg | (etter VT-fix) arexibo kveler på XMR, men logger ikke uten tty | kjør `arexibo --debug ~/xibo` via wrapper for å se ekte feil |
-| Emojis = tomme bokser □ | mangler emoji-font | `sudo apt install -y fonts-noto-color-emoji` + `fc-cache -f` + restart arexibo |
-| Portrett-layout vises som smal stripe (`scale: ... result 607x1080`) | skjerm liggende, layout portrett | roter: `echo right > ~/.kiosk-rotate` (steg 7) |
+| `setting up XMR ZMQ connection ... No address associated with hostname`, `tcp://cms.example.org:9505` | CMS XMR Public Address er placeholder | Sett `XMR_PUB_ADDRESS` i CMS-DB (se topp-seksjonen) — engangs |
+| `systemd-logind returned paused fd for drm node` → `no screens found` | X startet av bar systemd-tjeneste blir ikke aktiv seat0-sesjon | Bruk **getty-autologin** (steg 7), ikke systemd-tjeneste |
+| **Rosa/feil farger** på skjermen, `FBIOPUTCMAP: Invalid argument` i Xorg-loggen | `fbdev` griper primærskjermen med ødelagt fargekart | `sudo apt-get purge -y xserver-xorg-video-fbdev` → modeset(0)/vc4 primær |
+| `Caught signal 6 (Aborted)` i Xorg etter `glamor initialized` | fbdev + glamor kolliderer | samme: fjern fbdev (steg 7a) |
+| `xf86OpenConsole: Cannot open virtual console (Permission denied)` | X startet uten aktiv login-sesjon på VT-en | getty-autologin (steg 7) gir sesjon som eier tty1 |
+| arexibo exit 0, ingen logg under kjøring | logger ikke uten tty | `arexibo --debug ~/xibo` for ekte feil |
+| Emojis = tomme bokser □ | mangler emoji-font | `sudo apt install -y fonts-noto-color-emoji` + `fc-cache -f` + restart |
+| Portrett-layout som smal stripe (`scale: ... result 607x1080`) | skjerm liggende, layout portrett | `echo right > ~/.kiosk-rotate` (steg 7d) |
 | WiFi-radio død | mangler land-kode | `sudo raspi-config nonint do_wifi_country NO` |
 
 ## Konvensjoner + golden image
 - **Hostnavn:** `gr-<butikk><nr>` (kunde = `1`, bakrom = `2`).
 - **Rotasjon:** kunde = `right` (portrett 1080×1920); bakrom = `normal` (liggende). Justeres i `~/.kiosk-rotate`.
-- **Golden image:** når en Pi er komplett (Arexibo + skjerm-deps + systemd + Connect) og verifisert,
-  klon SD-kortet. Per klon endres bare: hostnavn, `~/.kiosk-rotate`, WiFi (`kundenett`),
-  ny Xibo-registrering (`rm ~/xibo/cms.json` → re-registrer) + autoriser/tilordne, ny Connect-signin.
+- **Skjerm/X:** fbdev FJERNET (modeset/vc4 primær), getty-autologin (B2), kiosk via `~/.bash_profile`-loop.
+- **Golden image:** når en Pi er komplett (Arexibo + skjerm-deps + getty-kiosk + fbdev fjernet + Connect) og
+  verifisert, klon SD-kortet. Per klon endres bare: hostnavn, `~/.kiosk-rotate`, WiFi (`kundenett`),
+  ny Xibo-registrering (`rm ~/xibo/cms.json` → re-registrer) + autoriser/tilordne, ny Connect-signin (+ SSH-nøkkel).
 
 ---
 

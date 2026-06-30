@@ -11,10 +11,11 @@ hostnavn, rolle, Xibo-ID, MAC, Connect-status. Oppsett-oppskriften ligger i
 
 | Butikk | Hostnavn | Rolle | Xibo-ID | Xibo-gruppe (id) | Rotasjon | Auto-start | Connect | Satt opp |
 |--------|----------|-------|---------|------------------|----------|-----------|---------|----------|
-| EUROSPAR MOA | `gr-eurospar-moa1` | Kundeskjerm | 1 | EUROSPAR MOA (9) | `right` (portrett) | ✅ | ✅ | 2026-06-30 |
-| EUROSPAR MOA | `gr-eurospar-moa2` | Bakrom/intern | 2 | EUROSPAR MOA – Bakrom (25) | `normal` | ⬜ | ⬜ | (påbegynt) |
+| EUROSPAR MOA | `gr-eurospar-moa1` | Kundeskjerm | 1 | EUROSPAR MOA (9) | `right` (portrett) | ✅* | ✅ | 2026-06-30 |
+| EUROSPAR MOA | `gr-eurospar-moa2` | Bakrom/intern | 2 | EUROSPAR MOA – Bakrom (25) | `normal` | ✅ getty | ✅ | 2026-06-30 |
 
-Status: **1 / 32 skjermer ferdig** (16 butikker × ~2 skjermer). Oppdater raden når en Pi fullføres.
+Status: **2 / 32 skjermer ferdig** (16 butikker × ~2 skjermer). Oppdater raden når en Pi fullføres.
+\* moa1 kjører gammel systemd-kiosk (fungerer) — migreres til getty-autologin + fbdev-fjerning ved neste påkobling.
 
 ## Tekniske detaljer per enhet
 
@@ -26,11 +27,11 @@ Status: **1 / 32 skjermer ferdig** (16 butikker × ~2 skjermer). Oppdater raden 
 - Rotasjon `right` (portrett 1080×1920) · viser hele butikken (`/widget/tilbud?store=…`)
 - Connect: signed in (remote shell + screen allowed, linger on)
 
-**`gr-eurospar-moa2` — Bakrom/intern** ⬜ påbegynt
-- Xibo: display-id **2**, gruppe «EUROSPAR MOA – Bakrom» (25) — autorisert + tilordnet
+**`gr-eurospar-moa2` — Bakrom/intern** ✅ ferdig
+- Xibo: display-id **2**, gruppe «EUROSPAR MOA – Bakrom» (25), viser layout 163
 - MAC: wlan0 `88:a2:9e:f2:e0:18`
-- Gjenstår: skjerm-deps (xinit+emoji), auto-start (`normal`/liggende), Connect-innmelding
-- GUID hentes neste gang den er på.
+- Rotasjon `normal` (liggende) · getty-autologin-kiosk · fbdev fjernet (riktige farger) · Connect signed-in
+- ⚠️ Bakrom-layouten viser foreløpig **kun én KPI-side** — skal fylles med mer internt innhold.
 
 ## Felles fakta (gjelder alle)
 
