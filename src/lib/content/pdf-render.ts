@@ -1,5 +1,12 @@
 import { createRequire } from "node:module"
-import { createCanvas, type Canvas, type SKRSContext2D } from "@napi-rs/canvas"
+import { createCanvas, DOMMatrix, ImageData, Path2D, type Canvas, type SKRSContext2D } from "@napi-rs/canvas"
+
+// pdfjs needs DOMMatrix/ImageData/Path2D globals; on Vercel its own attempt to
+// load them from canvas fails (pnpm path), so provide them from @napi-rs/canvas.
+const globals = globalThis as unknown as Record<string, unknown>
+globals.DOMMatrix ??= DOMMatrix
+globals.ImageData ??= ImageData
+globals.Path2D ??= Path2D
 
 /**
  * Server-side PDF page rasteriser (kundeavis pre-render). Uses pdfjs-dist v4 (the
