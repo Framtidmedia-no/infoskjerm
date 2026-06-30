@@ -1,30 +1,30 @@
 "use client"
 
 import { useRef, useState } from "react"
-import { Camera, X, Loader2, ImageUp, Check } from "lucide-react"
+import { useRouter } from "next/navigation"
+import { Camera, X, Loader2, ImageUp, ArrowRight } from "lucide-react"
 import { toast } from "sonner"
 import { createClient } from "@/lib/supabase/client"
-import { saveContent } from "@/app/admin/innhold/actions"
 
 /**
- * Mobil hurtig-flyt: knips et bilde (plakat/hylletilbud) → last opp til storage
- * → opprett et kundeskjerm-oppslag (slide, plakat, alle butikker) som utkast
- * eller publisert. Finjuster siden i den fulle editoren ved behov.
+ * Mobil hurtig-flyt: knips et bilde → last opp til storage → åpne den fulle
+ * editoren med bildet ferdig vedlagt. Der velger du type (Tilbud/varekort,
+ * Konkurranse, Nyhet, Galleri …) og fyller alle felt (pris, førpris, periode,
+ * vis på …). Ingen duplisering av editoren — kun et raskt inngangspunkt.
  * Vises kun på mobil (md:hidden) som en flytende kamera-knapp.
  */
 export function QuickCapture() {
+  const router = useRouter()
   const fileRef = useRef<HTMLInputElement>(null)
   const [open, setOpen] = useState(false)
   const [preview, setPreview] = useState<string | null>(null)
   const [file, setFile] = useState<File | null>(null)
-  const [title, setTitle] = useState("")
   const [busy, setBusy] = useState(false)
 
   const reset = () => {
     setOpen(false)
     setPreview(null)
     setFile(null)
-    setTitle("")
     setBusy(false)
   }
 
@@ -36,12 +36,8 @@ export function QuickCapture() {
     setOpen(true)
   }
 
-  const submit = async (publish: boolean) => {
+  const proceed = async () => {
     if (!file) return
-    if (!title.trim()) {
-      toast.error("Gi oppslaget en tittel.")
-      return
-    }
     setBusy(true)
     try {
       const supabase = createClient()
@@ -54,34 +50,15 @@ export function QuickCapture() {
       })
       if (upErr) {
         toast.error("Opplasting feilet: " + upErr.message)
+        setBusy(false)
         return
       }
       const { data: { publicUrl } } = supabase.storage.from("media").getPublicUrl(path)
-
-      const res = await saveContent({
-        title: title.trim(),
-        type: "slide",
-        bodyHtml: "",
-        imageUrl: publicUrl,
-        imageUrls: [publicUrl],
-        imageMode: "plakat",
-        audience: "kunde",
-        targetMode: "all",
-        storeIds: [],
-        tagIds: [],
-        validFrom: null,
-        validTo: null,
-        publish,
-        avdeling: "felles",
-      })
-
-      if (!res.ok) {
-        toast.error(res.error || "Kunne ikke lagre.")
-        return
-      }
-      toast.success(publish ? "Tilbud publisert 🎉" : "Lagret som utkast")
+      // Åpne den fulle editoren med bildet vedlagt — velg type + fyll alle felt der.
+      router.push(`/admin/kundeinnhold/ny?image=${encodeURIComponent(publicUrl)}`)
       reset()
-    } finally {
+    } catch {
+      toast.error("Noe gikk galt under opplasting.")
       setBusy(false)
     }
   }
@@ -116,14 +93,14 @@ export function QuickCapture() {
             <button onClick={reset} aria-label="Avbryt" className="p-1.5 -ml-1.5 rounded-lg text-zinc-500 hover:bg-zinc-100">
               <X className="w-5 h-5" />
             </button>
-            <span className="text-sm font-semibold text-zinc-900">Nytt hurtig-tilbud</span>
+            <span className="text-sm font-semibold text-zinc-900">Nytt tilbud</span>
             <span className="w-8" />
           </header>
 
           <div className="flex-1 overflow-y-auto p-4 space-y-4">
             {preview && (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={preview} alt="Forhåndsvisning" className="w-full max-h-72 object-contain rounded-2xl bg-zinc-50 border border-zinc-200" />
+              <img src={preview} alt="Forhåndsvisning" className="w-full max-h-80 object-contain rounded-2xl bg-zinc-50 border border-zinc-200" />
             )}
             <button
               onClick={() => fileRef.current?.click()}
@@ -131,34 +108,20 @@ export function QuickCapture() {
             >
               <ImageUp className="w-4 h-4" /> Ta nytt bilde
             </button>
-
-            <div>
-              <label className="block text-xs font-medium text-zinc-600 mb-1">Tittel</label>
-              <input
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                placeholder="F.eks. Dagens tilbud — jordbær"
-                className="w-full border border-zinc-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-300"
-              />
-              <p className="text-xs text-zinc-400 mt-1.5">Vises på alle kundeskjermer som fullskjerm-plakat. Du kan finjustere i editoren etterpå.</p>
-            </div>
+            <p className="text-xs text-zinc-400 text-center px-4">
+              Neste steg: velg type (tilbud/varekort, nyhet, galleri …) og fyll inn pris, førpris, periode og hvor det skal vises.
+            </p>
           </div>
 
-          <div className="shrink-0 border-t border-zinc-100 p-4 pb-[max(1rem,env(safe-area-inset-bottom))] flex gap-2">
+          <div className="shrink-0 border-t border-zinc-100 p-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
             <button
-              onClick={() => submit(false)}
+              onClick={proceed}
               disabled={busy}
-              className="flex-1 flex items-center justify-center gap-1.5 text-sm font-medium text-zinc-700 border border-zinc-200 rounded-xl py-3 disabled:opacity-50"
-            >
-              {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : null} Lagre utkast
-            </button>
-            <button
-              onClick={() => submit(true)}
-              disabled={busy}
-              className="flex-1 flex items-center justify-center gap-1.5 text-sm font-semibold text-white rounded-xl py-3 disabled:opacity-50"
+              className="w-full flex items-center justify-center gap-1.5 text-sm font-semibold text-white rounded-xl py-3 disabled:opacity-60"
               style={{ backgroundColor: "var(--brand-primary, #18181b)" }}
             >
-              {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />} Publiser
+              {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <ArrowRight className="w-4 h-4" />}
+              {busy ? "Laster opp …" : "Fortsett til detaljer"}
             </button>
           </div>
         </div>

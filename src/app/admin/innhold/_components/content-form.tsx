@@ -139,7 +139,7 @@ const AUDIENCE_TYPES: Record<Audience, ContentType[]> = {
   intern: ["news", "competition", "job", "birthday", "invitation", "gallery", "ticker", "slide"],
 }
 
-export function ContentForm({ stores, tags, initial, audience = "intern", defaultType, listHref: listHrefProp }: { stores: StoreOption[]; tags: TagOption[]; initial?: ContentInitial; audience?: Audience; defaultType?: ContentType; listHref?: string }) {
+export function ContentForm({ stores, tags, initial, audience = "intern", defaultType, listHref: listHrefProp, prefillImage }: { stores: StoreOption[]; tags: TagOption[]; initial?: ContentInitial; audience?: Audience; defaultType?: ContentType; listHref?: string; prefillImage?: string }) {
   const router = useRouter()
   const allowedTypes = AUDIENCE_TYPES[audience]
   // defaultType locks the picker to one type (dedicated entry points, e.g. Invitasjoner).
@@ -148,7 +148,7 @@ export function ContentForm({ stores, tags, initial, audience = "intern", defaul
   const [title, setTitle] = useState(initial?.title ?? "")
   const [type, setType] = useState<ContentType>(initial?.type ?? defaultType ?? allowedTypes[0])
   const [bodyHtml, setBodyHtml] = useState(initial?.bodyHtml ?? "")
-  const [imageUrls, setImageUrls] = useState<string[]>(initial?.imageUrls?.length ? initial.imageUrls : initial?.imageUrl ? [initial.imageUrl] : [])
+  const [imageUrls, setImageUrls] = useState<string[]>(initial?.imageUrls?.length ? initial.imageUrls : initial?.imageUrl ? [initial.imageUrl] : prefillImage ? [prefillImage] : [])
   const [targetMode, setTargetMode] = useState<TargetMode>(initial?.targetMode ?? "all")
   const [storeIds, setStoreIds] = useState<string[]>(initial?.storeIds ?? [])
   const [tagIds, setTagIds] = useState<string[]>(initial?.tagIds ?? [])
