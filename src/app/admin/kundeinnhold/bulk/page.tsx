@@ -1,0 +1,17 @@
+import { requireRole } from "@/lib/admin/require-role"
+import { loadStoreOptions } from "../../innhold/store-options"
+import type { TagOption } from "../../innhold/_components/content-form"
+import { BulkImport } from "./bulk-import"
+
+export const dynamic = "force-dynamic"
+
+const AUTHOR_ROLES = ["super_admin", "chain_manager", "area_manager", "store_manager", "store_employee"] as const
+
+export default async function BulkOfferPage() {
+  const { supabase } = await requireRole([...AUTHOR_ROLES])
+  const [storeOptions, { data: tags }] = await Promise.all([
+    loadStoreOptions(supabase),
+    supabase.from("tags").select("id, name, color").order("name"),
+  ])
+  return <BulkImport stores={storeOptions} tags={(tags ?? []) as TagOption[]} />
+}
