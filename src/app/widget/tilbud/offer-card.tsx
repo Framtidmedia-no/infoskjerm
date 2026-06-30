@@ -91,7 +91,7 @@ export function OfferCard({ item, chain = null }: { item: LiveItem; chain?: Chai
     // screen on signage, a small box in the CMS live preview) — cqmin == vmin
     // when it fills the viewport, so the on-screen look is unchanged.
     <div style={{ position: "absolute", inset: 0, background: "#fff", containerType: "size", overflow: "hidden" }}>
-    <style>{`@keyframes grOcShine{0%{transform:translateX(-60%) skewX(-14deg)}100%{transform:translateX(260%) skewX(-14deg)}}@keyframes grOcPop{from{transform:rotate(-8deg) scale(.55);opacity:0}to{transform:rotate(-8deg) scale(1);opacity:1}}@keyframes grOcGlow{0%,100%{box-shadow:0 1.5cqmin 5cqmin rgba(0,0,0,.22)}50%{box-shadow:0 1.5cqmin 7cqmin rgba(228,0,43,.5)}}@keyframes grOcKen{from{transform:scale(1)}to{transform:scale(1.07)}}`}</style>
+    <style>{`@keyframes grOcShine{0%{transform:translateX(-60%) skewX(-14deg)}100%{transform:translateX(260%) skewX(-14deg)}}@keyframes grOcPop{from{transform:rotate(-8deg) scale(.55);opacity:0}to{transform:rotate(-8deg) scale(1);opacity:1}}@keyframes grOcGlow{0%,100%{box-shadow:0 1.5cqmin 5cqmin rgba(0,0,0,.22)}50%{box-shadow:0 1.5cqmin 7cqmin rgba(228,0,43,.5)}}@keyframes grOcKen{from{transform:scale(1)}to{transform:scale(1.07)}}@keyframes grOcWobble{0%,100%{transform:rotate(-4deg)}50%{transform:rotate(-8deg)}}`}</style>
     {/* Soft moving shine sweep for a premium feel. */}
     <div style={{ position: "absolute", top: 0, bottom: 0, left: 0, width: "34cqmin", background: "linear-gradient(90deg,transparent,rgba(0,0,0,.07),transparent)", animation: "grOcShine 4.5s ease-in-out infinite", pointerEvents: "none", zIndex: 5 }} />
     <div style={{ position: "absolute", inset: 0, background: "#fff", color: INK, display: "flex", flexDirection: "column", padding: "5cqmin 5cqmin 0", boxSizing: "border-box", fontFamily: "Arial, Helvetica, sans-serif", overflow: "hidden" }}>
@@ -105,7 +105,7 @@ export function OfferCard({ item, chain = null }: { item: LiveItem; chain?: Chai
       <div style={{ flex: "1 1 auto", minHeight: 0, position: "relative", margin: "3cqmin 0" }}>
         {img && <div style={{ position: "absolute", inset: 0, backgroundImage: `url('${img}')`, backgroundSize: "contain", backgroundPosition: "center", backgroundRepeat: "no-repeat", animation: "grOcKen 14s ease-in-out infinite alternate" }} />}
         {offer.badge && (
-          <div style={{ position: "absolute", top: "9cqmin", left: "-1cqmin", background: RED, color: "#fff", fontWeight: 900, fontSize: "5.5cqmin", letterSpacing: "0.3cqmin", padding: "1.6cqmin 4.5cqmin", borderRadius: "1.5cqmin", textTransform: "uppercase", transform: "rotate(-4deg)", boxShadow: "0 1cqmin 3cqmin rgba(0,0,0,.18)" }}>
+          <div style={{ position: "absolute", top: "9cqmin", left: "-1cqmin", background: RED, color: "#fff", fontWeight: 900, fontSize: "5.5cqmin", letterSpacing: "0.3cqmin", padding: "1.6cqmin 4.5cqmin", borderRadius: "1.5cqmin", textTransform: "uppercase", transform: "rotate(-4deg)", transformOrigin: "left center", boxShadow: "0 1cqmin 3cqmin rgba(0,0,0,.18)", animation: "grOcWobble 3.2s ease-in-out infinite" }}>
             {offer.badge}
           </div>
         )}
