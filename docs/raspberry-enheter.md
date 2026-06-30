@@ -11,11 +11,11 @@ hostnavn, rolle, Xibo-ID, MAC, Connect-status. Oppsett-oppskriften ligger i
 
 | Butikk | Hostnavn | Rolle | Xibo-ID | Xibo-gruppe (id) | Rotasjon | Auto-start | Connect | Satt opp |
 |--------|----------|-------|---------|------------------|----------|-----------|---------|----------|
-| EUROSPAR MOA | `gr-eurospar-moa1` | Kundeskjerm | 1 | EUROSPAR MOA (9) | `right` (portrett) | ✅* | ✅ | 2026-06-30 |
-| EUROSPAR MOA | `gr-eurospar-moa2` | Bakrom/intern | 2 | EUROSPAR MOA – Bakrom (25) | `normal` | ✅ getty | ✅ | 2026-06-30 |
+| EUROSPAR MOA | `gr-eurospar-moa1` | Kundeskjerm | 1 | EUROSPAR MOA (9) | `right` (portrett) | ✅ getty | ✅ org | 2026-06-30 |
+| EUROSPAR MOA | `gr-eurospar-moa2` | Bakrom/intern | 2 | EUROSPAR MOA – Bakrom (25) | `normal` | ✅ getty | ✅ org | 2026-06-30 |
 
 Status: **2 / 32 skjermer ferdig** (16 butikker × ~2 skjermer). Oppdater raden når en Pi fullføres.
-\* moa1 kjører gammel systemd-kiosk (fungerer) — migreres til getty-autologin + fbdev-fjerning ved neste påkobling.
+Begge MOA-skjermer kjører nå **getty-autologin + fbdev fjernet** (riktige farger) og er meldt inn i **Framtid Tech AS** (org-auth-key, headless).
 
 ## Tekniske detaljer per enhet
 
