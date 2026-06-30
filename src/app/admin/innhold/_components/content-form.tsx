@@ -557,12 +557,12 @@ export function ContentForm({ stores, tags, initial, audience = "intern" }: { st
 
                   {canAddMore && (
                     <div className="max-w-md">
-                      <MediaUploader maxFiles={MAX_IMAGES - imageUrls.length} accept={["image/jpeg", "image/png", "image/webp", "image/gif", "image/avif", "video/mp4", "video/webm"]} onUpload={(files) => addImages(files.map((f) => f.url))} />
+                      <MediaUploader maxFiles={MAX_IMAGES - imageUrls.length} accept={["image/jpeg", "image/png", "image/webp", "image/gif", "image/avif", "video/mp4", "video/webm", "video/quicktime"]} onUpload={(files) => addImages(files.map((f) => f.url))} />
                     </div>
                   )}
                 </div>
               ) : (
-                <MediaUploader maxFiles={MAX_IMAGES} accept={["image/jpeg", "image/png", "image/webp", "image/gif", "image/avif", "application/pdf", "video/mp4", "video/webm"]} onUpload={(files) => addImages(files.map((f) => f.url))} />
+                <MediaUploader maxFiles={MAX_IMAGES} accept={["image/jpeg", "image/png", "image/webp", "image/gif", "image/avif", "application/pdf", "video/mp4", "video/webm", "video/quicktime"]} onUpload={(files) => addImages(files.map((f) => f.url))} />
               )}
             </div>
           )}
