@@ -1,4 +1,5 @@
 import { fetchStoreKpi, kr, pct, ratio, diffPct, sum, type WeekKpi } from "@/lib/content/kpi"
+import { CountUp } from "./count-up"
 
 /**
  * Staff-only KPI dashboard for a store — operational figures synced daily from
@@ -139,7 +140,7 @@ export default async function StoreKpiPage({ searchParams }: { searchParams: Pro
       <section style={{ display: "flex", gap: 24, flex: "0 0 auto" }}>
         <Card label="Omsetning · siste uke" flex={1.6}>
           <div style={{ display: "flex", alignItems: "flex-end", gap: 16 }}>
-            <span style={{ fontSize: 96, fontWeight: 900, lineHeight: 0.9, letterSpacing: -2 }}>{kr(oms)}</span>
+            <span style={{ fontSize: 96, fontWeight: 900, lineHeight: 0.9, letterSpacing: -2 }}><CountUp value={oms} /></span>
             <span style={{ fontSize: 34, color: MUTED, marginBottom: 8 }}>kr</span>
           </div>
           <div style={{ display: "flex", gap: 28, fontSize: 28, marginTop: 6 }}>

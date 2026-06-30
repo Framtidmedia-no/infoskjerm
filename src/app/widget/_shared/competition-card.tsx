@@ -66,6 +66,10 @@ export function CompetitionCard({ item, qrUrl, portrait = false }: { item: LiveI
       <div style={{ position: "absolute", top: -140, right: -100, width: 460, height: 460, borderRadius: "50%", background: "rgba(255,255,255,.08)" }} />
       <div style={{ position: "absolute", bottom: -180, left: -120, width: 560, height: 560, borderRadius: "50%", background: "rgba(0,0,0,.12)" }} />
       <div style={{ position: "absolute", top: 0, bottom: 0, left: 0, width: 240, background: "linear-gradient(90deg,transparent,rgba(255,255,255,.16),transparent)", animation: "grcShine 7s linear infinite" }} />
+      {/* Floating sparkles for extra life. */}
+      {([["12%", "18%", 0], ["78%", "26%", 1.1], ["32%", "72%", 2], ["88%", "64%", 0.6], ["60%", "12%", 1.6]] as const).map(([left, top, d], i) => (
+        <span key={i} style={{ position: "absolute", left, top, fontSize: 46, opacity: 0.85, animation: `grcFloat ${4 + (i % 3)}s ease-in-out ${d}s infinite`, pointerEvents: "none" }}>{i % 2 ? "✨" : "🎊"}</span>
+      ))}
       {portrait ? (
         <div style={{ position: "absolute", inset: 0, padding: pad, display: "flex", flexDirection: "column", gap: 34, boxSizing: "border-box" }}>
           {badge}
