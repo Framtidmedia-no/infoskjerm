@@ -38,6 +38,8 @@ interface Row {
   offer: OfferFields
   imageUrl: string | null
   avdeling: string
+  validFrom?: string | null
+  validTo?: string | null
 }
 
 const EMPTY_OFFER: OfferFields = { varenavn: "", vareinfo: null, badge: null, pris: null, rabatt: null, forpris: null, tag: null, enhetspris: null, maks: null, pant: false }
@@ -113,7 +115,7 @@ export function BulkImport({ stores, tags }: { stores: StoreOption[]; tags: TagO
     if (targetMode === "tags" && tagIds.length === 0) { toast.error("Velg minst én tagg"); return }
     setSaving(true)
     const shared: BulkShared = { validFrom: validFrom || null, validTo: validTo || null, targetMode, storeIds, tagIds }
-    const res = await bulkCreateOffers(ready.map((r) => ({ offer: r.offer, imageUrl: r.imageUrl, avdeling: r.avdeling })), shared, publish)
+    const res = await bulkCreateOffers(ready.map((r) => ({ offer: r.offer, imageUrl: r.imageUrl, avdeling: r.avdeling, validFrom: r.validFrom ?? null, validTo: r.validTo ?? null })), shared, publish)
     setSaving(false)
     if (res.ok) {
       toast.success(`${res.created} tilbud ${publish ? "publisert" : "lagret som utkast"}${res.failed ? ` · ${res.failed} feilet` : ""}`)
@@ -257,6 +259,14 @@ export function BulkImport({ stores, tags }: { stores: StoreOption[]; tags: TagO
                         {BADGES.map((b) => <option key={b} value={b}>{b || "Ingen merkelapp"}</option>)}
                       </select>
                       <label className="flex items-center gap-2 text-xs text-zinc-700"><input type="checkbox" checked={focused.offer.pant} onChange={(e) => updateOffer(focused.id, { pant: e.target.checked })} className="rounded border-zinc-300" /> + pant</label>
+                    </div>
+                    <div className="mt-3 pt-3 border-t border-zinc-100">
+                      <p className="text-[10px] text-zinc-400 mb-1.5">Egen periode for denne (valgfri — ellers brukes felles)</p>
+                      <div className="flex items-center gap-2">
+                        <input type="date" value={focused.validFrom ?? ""} onChange={(e) => updateRow(focused.id, { validFrom: e.target.value || null })} className="text-xs border border-zinc-200 rounded-lg px-2 py-1.5" />
+                        <span className="text-zinc-400 text-xs">→</span>
+                        <input type="date" value={focused.validTo ?? ""} onChange={(e) => updateRow(focused.id, { validTo: e.target.value || null })} className="text-xs border border-zinc-200 rounded-lg px-2 py-1.5" />
+                      </div>
                     </div>
                   </>
                 ) : <p className="text-xs text-zinc-400">Velg en rad for å redigere og forhåndsvise.</p>}

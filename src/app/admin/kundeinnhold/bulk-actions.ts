@@ -44,6 +44,9 @@ export interface BulkOfferRow {
   offer: OfferFields
   imageUrl: string | null
   avdeling: string
+  /** Optional per-row period override (else the shared period is used). */
+  validFrom?: string | null
+  validTo?: string | null
 }
 
 export interface BulkShared {
@@ -77,8 +80,8 @@ export async function bulkCreateOffers(
       targetMode: shared.targetMode,
       storeIds: shared.storeIds,
       tagIds: shared.tagIds,
-      validFrom: shared.validFrom,
-      validTo: shared.validTo,
+      validFrom: row.validFrom ?? shared.validFrom,
+      validTo: row.validTo ?? shared.validTo,
       publish,
     }
     const res = await saveContent(input)
