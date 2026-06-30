@@ -6,13 +6,18 @@ export const dynamic = "force-dynamic"
 
 const AUTHOR_ROLES = ["super_admin", "chain_manager", "area_manager", "store_manager", "store_employee"] as const
 
-export default async function NewCustomerContentPage() {
+export default async function NewCustomerContentPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ image?: string }>
+}) {
   const { supabase } = await requireRole([...AUTHOR_ROLES])
+  const { image } = await searchParams
 
   const [storeOptions, { data: tags }] = await Promise.all([
     loadStoreOptions(supabase),
     supabase.from("tags").select("id, name, color").order("name"),
   ])
 
-  return <ContentForm stores={storeOptions} tags={(tags ?? []) as TagOption[]} audience="kunde" />
+  return <ContentForm stores={storeOptions} tags={(tags ?? []) as TagOption[]} audience="kunde" prefillImage={image} />
 }
