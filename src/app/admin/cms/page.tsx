@@ -6,6 +6,7 @@ import { fetchScreenInsight } from "@/lib/xibo/insight"
 import { ScreenPreview, type PreviewStore } from "./screen-preview"
 import { InsightPanel } from "./insight-panel"
 import { ContentStatus, type ContentStatusCounts } from "./content-status"
+import { RefreshKpiButton } from "./refresh-kpi-button"
 
 /**
  * "Skjermsystem" — the CMS user's window into what each store's screen is
@@ -68,7 +69,11 @@ export default async function CmsDashboardPage() {
 
   return (
     <div className="flex flex-col flex-1">
-      <Topbar title="Skjermsystem" subtitle="Forhåndsvis og styr hva som vises på hver butikks skjerm" />
+      <Topbar
+        title="Skjermsystem"
+        subtitle="Forhåndsvis og styr hva som vises på hver butikks skjerm"
+        actions={<RefreshKpiButton />}
+      />
       <div className="flex-1 p-6 max-w-5xl">
         {previewStores.length === 0 ? (
           <p className="text-sm text-zinc-500">Ingen butikker er satt opp ennå.</p>

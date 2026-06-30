@@ -1,4 +1,5 @@
 import { fetchAllStoresKpi, kr, pct, diffPct, type StoreKpiRow } from "@/lib/content/kpi"
+import { AutoReload } from "@/app/widget/_shared/auto-reload"
 
 /**
  * Staff/HQ overview: all stores' key figures side by side, ranked by performance
@@ -121,6 +122,7 @@ export default async function KpiOverviewPage({ searchParams }: { searchParams: 
 
   return (
     <main style={frame}>
+      <AutoReload />
       {/* Header + chain total */}
       <header style={{ display: "flex", alignItems: "flex-end", gap: 28 }}>
         <div>
