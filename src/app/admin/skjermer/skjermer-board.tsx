@@ -6,13 +6,17 @@ import { MonitorOff } from "lucide-react"
 import { useTenantConfig } from "@/components/admin/tenant-config-provider"
 import { StoreKioskInline } from "./store-kiosk-inline"
 import type { StoreScreen, ScreenRole } from "@/lib/xibo/screens"
+import type { Flate } from "./actions"
+
+/** Xibo-skjerm + hva den er satt opp mot i vår admin (flate + avdeling). */
+export type BoardScreen = StoreScreen & { assignedFlate?: Flate; assignedAvdeling?: string }
 
 export interface BoardStore {
   id: string
   name: string
   chainName: string
   chainColor: string
-  screens: StoreScreen[]
+  screens: BoardScreen[]
   hasKioskPassword: boolean
 }
 
@@ -42,8 +46,17 @@ function Stat({ label, value, tone }: { label: string; value: number; tone?: "ok
 }
 
 export function SkjermerBoard({ stores }: { stores: BoardStore[] }) {
-  const { unitLabel } = useTenantConfig()
+  const { unitLabel, avdelinger, avdelingerIntern } = useTenantConfig()
   const [filter, setFilter] = useState<Filter>("alle")
+
+  // Hva skjermen er SATT OPP mot i admin: «Kundeskjerm · Frukt & grønt» osv.
+  const assignmentLabel = (sc: BoardScreen): string | null => {
+    if (!sc.assignedFlate) return null
+    const flateLabel = sc.assignedFlate === "intern" ? "Internskjerm" : "Kundeskjerm"
+    const list = sc.assignedFlate === "intern" ? avdelingerIntern : avdelinger
+    const avd = list.find((a) => a.key === (sc.assignedAvdeling ?? "felles"))?.label ?? sc.assignedAvdeling
+    return avd ? `${flateLabel} · ${avd}` : flateLabel
+  }
 
   const all = stores.flatMap((s) => s.screens)
   const online = all.filter((s) => s.online).length
@@ -120,7 +133,9 @@ export function SkjermerBoard({ stores }: { stores: BoardStore[] }) {
                       <p className="text-[11px] text-zinc-400">
                         {sc.online ? "Pålogget" : "Frakoblet"} · sist sett {sc.lastSeen ?? "aldri"}
                       </p>
-                      {sc.currentLayout && <p className="text-[11px] text-zinc-400 truncate">Viser: {sc.currentLayout}</p>}
+                      {assignmentLabel(sc)
+                        ? <p className="text-[11px] font-medium text-zinc-600 truncate">Satt opp: {assignmentLabel(sc)}</p>
+                        : sc.currentLayout && <p className="text-[11px] text-zinc-400 truncate">Viser: {sc.currentLayout}</p>}
                     </div>
                   </div>
                 ))
