@@ -3,8 +3,42 @@
 import { revalidatePath } from "next/cache"
 import { logAudit } from "@/lib/admin/audit"
 import { requireRole } from "@/lib/admin/require-role"
+import { hashKioskPassword } from "@/lib/kiosk/auth"
 
 const STORE_ROLES = ["super_admin", "chain_manager", "area_manager"] as const
+
+/**
+ * Setter (eller fjerner, ved tomt passord) kiosk-passordet for en enhet.
+ * RLS på stores sikrer at brukeren kun kan endre egne enheter. Passordet
+ * hashes server-side; klartekst lagres aldri.
+ */
+export async function setKioskPassword(
+  storeId: string,
+  password: string,
+): Promise<{ ok: boolean; error?: string }> {
+  const { supabase, userId, tenantId } = await requireRole([...STORE_ROLES])
+  const trimmed = password.trim()
+  const hash = trimmed ? hashKioskPassword(trimmed) : null
+  // store_tags-mønster: verifiser at enheten tilhører aktiv tenant før id-only update.
+  const { data: owned } = await supabase.from("stores").select("id").eq("id", storeId).eq("tenant_id", tenantId).maybeSingle()
+  if (!owned) return { ok: false, error: "Ikke funnet" }
+  // Ny kolonne (031) er ikke i den genererte Database-typen ennå → cast.
+  const { error } = await (supabase.from("stores") as unknown as {
+    update: (v: Record<string, unknown>) => { eq: (c: string, v: string) => Promise<{ error: { message: string } | null }> }
+  })
+    .update({ kiosk_password_hash: hash })
+    .eq("id", storeId)
+  if (error) return { ok: false, error: error.message }
+  await logAudit({
+    userId,
+    action: "store.kiosk_password",
+    entityType: "store",
+    entityId: storeId,
+    summary: trimmed ? "Satte kiosk-passord" : "Fjernet kiosk-passord",
+  })
+  revalidatePath(`/admin/stores/${storeId}`)
+  return { ok: true }
+}
 
 export async function updateStoreKundeklubb(
   storeId: string,

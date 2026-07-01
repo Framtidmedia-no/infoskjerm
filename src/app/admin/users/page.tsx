@@ -1,5 +1,6 @@
 import { getUsersWithDetails } from "@/lib/admin/queries"
 import { requireRole } from "@/lib/admin/require-role"
+import { getTenantConfig } from "@/lib/tenant/config"
 import { Topbar } from "@/components/admin/topbar"
 import { Card, CardContent } from "@/components/ui/card"
 import { Shield, Building2, LayoutGrid, UserCircle, Network } from "lucide-react"
@@ -27,14 +28,16 @@ function AccessCell({
   userId,
   allStores,
   storeIds,
+  unitLabelPlural,
 }: {
   role: UserRole
   userId: string
   allStores: { id: string; name: string }[]
   storeIds: string[]
+  unitLabelPlural: string
 }) {
   if (role === "super_admin" || role === "chain_manager") {
-    return <span className="text-xs text-zinc-500">Alle butikker</span>
+    return <span className="text-xs text-zinc-500">Alle {unitLabelPlural.toLowerCase()}</span>
   }
   if (STORE_SCOPED.includes(role)) {
     return <UserStoreAccess userId={userId} allStores={allStores} currentStoreIds={storeIds} />
@@ -44,6 +47,7 @@ function AccessCell({
 
 export default async function UsersPage() {
   const { supabase, tenantId } = await requireRole(["super_admin", "chain_manager"])
+  const { unitLabelPlural } = await getTenantConfig(supabase, tenantId)
   const users = await getUsersWithDetails(supabase, tenantId)
   const { data: storesData } = await supabase.from("stores").select("id, name").eq("tenant_id", tenantId).order("name")
   const allStores = (storesData ?? []) as { id: string; name: string }[]
@@ -104,7 +108,7 @@ export default async function UsersPage() {
                           </div>
                         </td>
                         <td className="px-4 py-3.5">
-                          <AccessCell role={role} userId={user.id} allStores={allStores} storeIds={storeIds} />
+                          <AccessCell role={role} userId={user.id} allStores={allStores} storeIds={storeIds} unitLabelPlural={unitLabelPlural} />
                         </td>
                         <td className="px-4 py-3.5">
                           <div className="flex items-center gap-2">
@@ -140,7 +144,7 @@ export default async function UsersPage() {
 
                     <div className="space-y-1">
                       <p className="text-[10px] font-semibold text-zinc-400 uppercase tracking-wide">Tilgang</p>
-                      <AccessCell role={role} userId={user.id} allStores={allStores} storeIds={storeIds} />
+                      <AccessCell role={role} userId={user.id} allStores={allStores} storeIds={storeIds} unitLabelPlural={unitLabelPlural} />
                     </div>
 
                     <div className="flex items-center gap-2 pt-1 border-t border-zinc-50">

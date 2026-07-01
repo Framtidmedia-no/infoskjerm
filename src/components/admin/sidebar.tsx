@@ -1,5 +1,6 @@
 "use client"
 
+import Image from "next/image"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import { cn } from "@/lib/utils"
@@ -8,6 +9,7 @@ import {
 } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 import { ImpersonationBanner } from "@/components/admin/impersonation-banner"
+import { useTenantConfig } from "./tenant-config-provider"
 
 type UserRole = "super_admin" | "chain_manager" | "area_manager" | "store_manager" | "store_employee"
 
@@ -88,6 +90,14 @@ export function Sidebar({ user }: SidebarProps) {
   const pathname = usePathname()
   const router = useRouter()
   const role = user.role as UserRole
+  const { unitLabelPlural } = useTenantConfig()
+  // Bytt «Butikker» → tenantens substantiv (f.eks. «Forhandlere»).
+  const relabel = (s: string) => (s === "Butikker" ? unitLabelPlural : s)
+  const groups = navGroups.map((g) => ({
+    ...g,
+    label: relabel(g.label),
+    items: g.items.map((i) => ({ ...i, label: relabel(i.label) })),
+  }))
 
   const handleLogout = async () => {
     const supabase = createClient()
@@ -99,11 +109,15 @@ export function Sidebar({ user }: SidebarProps) {
     <aside className="fixed left-0 top-0 h-screen w-60 bg-white border-r border-zinc-100 flex flex-col z-40">
       {/* Logo/brand */}
       <div className="flex items-center gap-3 px-5 py-4 border-b border-zinc-100">
-        <div
-          className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
-          style={{ backgroundColor: "var(--brand-primary)" }}
-        >
-          <Monitor className="w-4 h-4" style={{ color: "var(--brand-fg)" }} />
+        <div className="w-8 h-8 rounded-lg overflow-hidden flex-shrink-0">
+          <Image
+            src="/icon-192.png"
+            alt="Framtidmedia"
+            width={32}
+            height={32}
+            className="w-full h-full object-cover"
+            priority
+          />
         </div>
         <div className="min-w-0">
           <p className="text-zinc-900 font-bold text-sm leading-tight truncate">
@@ -135,7 +149,7 @@ export function Sidebar({ user }: SidebarProps) {
             </ul>
           </div>
         )}
-        {navGroups.map((group) => {
+        {groups.map((group) => {
           const visibleItems = group.items.filter((item) => item.roles.includes(role))
           if (visibleItems.length === 0) return null
 
