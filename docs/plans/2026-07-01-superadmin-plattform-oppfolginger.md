@@ -3,20 +3,27 @@
 Dato: 2026-07-01. Gjelder branch `feat/superadmin-plattform`. Disse ble bevisst holdt
 utenfor inkrement 1 (tenant-velger) og bør tas i senere runder.
 
-## 1. Category C — enkelt-rad-mutasjoner uten eksplisitt tenant-guard (defense-in-depth)
+## 1. Mutasjoner scopet kun på `id` (defense-in-depth) — RLS er IKKE nok
 
-Audit under Task 7b fant ~15 `.eq("id", …)`-operasjoner (update/delete/toggle) på tenant-scopede
-tabeller uten `.eq("tenant_id", tenantId)`. Lav praktisk risiko: en super_admin i act-as ser kun
-aktiv-tenant-id-er i UI-et, så de kan ikke lett nå fremmede id-er. Men for defense-in-depth bør
-disse også scopes til effektiv tenant. Kjente steder:
+**Viktig premiss:** migrasjon `026_store_isolation_rls.sql` gir `super_admin` ubetinget tilgang
+(`get_my_role() = 'super_admin' then true`). Under act-as gir RLS derfor **null** tenant-isolasjon
+for super_admin — kun eksplisitte app-lag-filtre gjør det. Inkrement 1 scopet alle LISTE-lesninger
+og (etter final review) `stores/[id]`-siden + hele `stores/actions.ts`. Gjenstår: mutasjoner som
+kun scoper på `id`/`in(ids)`. Lav praktisk risiko (id-er kommer fra nå-scopede lister i UI-et), men
+en super_admin som sender en crafted id fra en annen tenant ville truffet den. Kjente steder:
 
-- `src/app/admin/settings/actions.ts`: `sendCommand`, `regenerateToken`, `deleteScreen` (`screens.update/delete().eq("id", …)`), `updateChainBranding`, `uploadChainLogo` (`chains.update().eq("id", …)`).
-- `src/app/admin/stores/actions.ts`: `updateStoreKundeklubb`, `deleteStore` (`stores.*.eq("id", …)`), `deleteUser` (`users.delete().eq("id", …)`), `toggleStoreTag`. Disse bruker fortsatt `requireUser()` (uten effektiv tenant).
+- `src/app/admin/settings/actions.ts`: `sendCommand`, `regenerateToken`, `deleteScreen`, `createScreen` (`screens` by id), `updateChainBranding`, `uploadChainLogo` (`chains` by id). Bruker `requireUser()`.
 - `src/app/admin/users/actions.ts`: `updateUserRole` (`users.update().eq("id", …)`).
-- `src/app/admin/innhold/actions.ts`: flere `content_items` update/delete by id.
+- `src/app/admin/innhold/actions.ts`: `saveContent` (UPDATE), `bulkSetStatus`, `bulkDeleteContent`, `bulkShiftPeriod`, `deleteContent`, `duplicateContent` (kilde-SELECT) — alle `content_items` by id/`in(ids)`.
 
-Anbefalt mønster: bytt `requireUser()` → `requireRole([...])` i disse actionsene og legg
-`.eq("tenant_id", tenantId)` på mutasjonen.
+Anbefalt mønster: bytt `requireUser()` → `requireRole([...])` og legg `.eq("tenant_id", tenantId)`
+på mutasjonen (for tabeller med `tenant_id`; for join-tabeller verifiser forelder-radens tenant).
+
+## 1b. Mobil: banner kun i drawer
+
+`ImpersonationBanner` rendres via `<Sidebar>` inne i mobil-drawer-en (`mobile-nav.tsx`), så «Avslutt»
+er tilgjengelig, men bare etter at man åpner hamburger-menyen — ikke på den alltid-synlige topplinja.
+Vurder en kompakt «opptrer som»-indikator i mobil-topplinja hvis dette oppleves som skjult.
 
 ## 2. Pre-eksisterende rolle-inkonsistens: `/admin/settings`
 
