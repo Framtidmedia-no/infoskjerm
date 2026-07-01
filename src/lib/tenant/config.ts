@@ -20,8 +20,21 @@ export interface TenantConfig {
   unitLabelPlural: string  // «Butikker» | «Forhandlere»
   brand: string            // tenant-merke for topbar/branding (navn uten «AS»-suffiks); «» = ingen
   logoUrl: string | null   // organisasjons-logo (tenant-nivå); null = ingen, bruk bokstav
-  avdelinger: Avdeling[]
+  avdelinger: Avdeling[]        // KUNDE-avdelinger (per tenant)
+  avdelingerIntern: Avdeling[]  // INTERNE avdelinger (per tenant, uavhengig av kunde)
   features: TenantFeatures // per-tenant funksjonsflagg (offerCards, gln, …)
+}
+
+/** «Hele enheten»-label derivert fra terminologi: «Butikk»→«Hele butikken», «Forhandler»→«Hele forhandleren». */
+export function heleEnhetenLabel(unitLabel: string): string {
+  const w = (unitLabel || "Butikk").trim().toLowerCase()
+  return `Hele ${w}en`
+}
+
+/** Sikrer at «felles» (Hele enheten) ligger først, med label derivert fra terminologi. */
+export function withFelles(list: Avdeling[], unitLabel: string): Avdeling[] {
+  const rest = list.filter((a) => a.key !== "felles")
+  return [{ key: "felles", label: heleEnhetenLabel(unitLabel) }, ...rest]
 }
 
 export const DEFAULT_TENANT_CONFIG: TenantConfig = {
@@ -30,5 +43,6 @@ export const DEFAULT_TENANT_CONFIG: TenantConfig = {
   brand: "",
   logoUrl: null,
   avdelinger: [{ key: "felles", label: "Hele butikken" }],
+  avdelingerIntern: [{ key: "felles", label: "Hele butikken" }],
   features: {},
 }
