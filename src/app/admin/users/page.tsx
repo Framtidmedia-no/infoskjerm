@@ -1,4 +1,3 @@
-import { createClient } from "@/lib/supabase/server"
 import { getUsersWithDetails } from "@/lib/admin/queries"
 import { requireRole } from "@/lib/admin/require-role"
 import { Topbar } from "@/components/admin/topbar"
@@ -44,9 +43,8 @@ function AccessCell({
 }
 
 export default async function UsersPage() {
-  await requireRole(["super_admin", "chain_manager"])
-  const supabase = await createClient()
-  const users = await getUsersWithDetails(supabase)
+  const { supabase, tenantId } = await requireRole(["super_admin", "chain_manager"])
+  const users = await getUsersWithDetails(supabase, tenantId)
   const { data: storesData } = await supabase.from("stores").select("id, name").order("name")
   const allStores = (storesData ?? []) as { id: string; name: string }[]
 

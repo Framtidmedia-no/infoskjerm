@@ -32,12 +32,12 @@ export interface AdminStats {
   liveContent: number
 }
 
-export async function getAdminStats(supabase: AdminSupabase): Promise<AdminStats> {
+export async function getAdminStats(supabase: AdminSupabase, tenantId: string): Promise<AdminStats> {
   const [screensResult, pendingResult, storesResult, liveResult] = await Promise.all([
-    supabase.from('screens').select('id, last_heartbeat, status'),
-    supabase.from('content_items').select('id', { count: 'exact', head: true }).eq('status', 'pending_approval'),
-    supabase.from('stores').select('id', { count: 'exact', head: true }),
-    supabase.from('content_items').select('id', { count: 'exact', head: true }).eq('status', 'live'),
+    supabase.from('screens').select('id, last_heartbeat, status').eq('tenant_id', tenantId),
+    supabase.from('content_items').select('id', { count: 'exact', head: true }).eq('tenant_id', tenantId).eq('status', 'pending_approval'),
+    supabase.from('stores').select('id', { count: 'exact', head: true }).eq('tenant_id', tenantId),
+    supabase.from('content_items').select('id', { count: 'exact', head: true }).eq('tenant_id', tenantId).eq('status', 'live'),
   ])
 
   const screens = screensResult.data ?? []
@@ -62,10 +62,11 @@ export interface ChainOverviewItem {
   onlineScreens: number
 }
 
-export async function getChainOverview(supabase: AdminSupabase): Promise<ChainOverviewItem[]> {
+export async function getChainOverview(supabase: AdminSupabase, tenantId: string): Promise<ChainOverviewItem[]> {
   const { data: chains } = await supabase
     .from('chains')
     .select('id, name, color, stores(id, screens(id, status, last_heartbeat))')
+    .eq('tenant_id', tenantId)
     .order('name')
 
   if (!chains) return []
@@ -87,7 +88,7 @@ export async function getChainOverview(supabase: AdminSupabase): Promise<ChainOv
   })
 }
 
-export async function getScreensWithStore(supabase: AdminSupabase) {
+export async function getScreensWithStore(supabase: AdminSupabase, tenantId: string) {
   const { data, error } = await supabase
     .from('screens')
     .select(`
@@ -97,51 +98,56 @@ export async function getScreensWithStore(supabase: AdminSupabase) {
         chains(id, name, color)
       )
     `)
+    .eq('tenant_id', tenantId)
     .order('created_at', { ascending: true })
 
   if (error) throw error
   return data ?? []
 }
 
-export async function getStoresGroupedByChain(supabase: AdminSupabase) {
+export async function getStoresGroupedByChain(supabase: AdminSupabase, tenantId: string) {
   const { data: chains } = await supabase
     .from('chains')
     .select('id, name, color, stores(id, name, company_name, city, email, org_number, gln, screens(id))')
+    .eq('tenant_id', tenantId)
     .order('name')
 
   return chains ?? []
 }
 
-export async function getStoresBoard(supabase: AdminSupabase) {
+export async function getStoresBoard(supabase: AdminSupabase, tenantId: string) {
   const { data: chains } = await supabase
     .from('chains')
     .select(
       'id, name, color, stores(id, name, company_name, city, email, org_number, gln, screens(id), store_tags(tags(id, name, color)))'
     )
+    .eq('tenant_id', tenantId)
     .order('name')
 
   return chains ?? []
 }
 
-export async function getAllTags(supabase: AdminSupabase) {
+export async function getAllTags(supabase: AdminSupabase, tenantId: string) {
   const { data } = await supabase
     .from('tags')
     .select('id, name, color')
+    .eq('tenant_id', tenantId)
     .order('name')
 
   return data ?? []
 }
 
-export async function getTagsWithStores(supabase: AdminSupabase) {
+export async function getTagsWithStores(supabase: AdminSupabase, tenantId: string) {
   const { data } = await supabase
     .from('tags')
     .select('id, name, color, store_tags(stores(id, name))')
+    .eq('tenant_id', tenantId)
     .order('name')
 
   return data ?? []
 }
 
-export async function getUsersWithDetails(supabase: AdminSupabase) {
+export async function getUsersWithDetails(supabase: AdminSupabase, tenantId: string) {
   const { data } = await supabase
     .from('users')
     .select(`
@@ -149,6 +155,7 @@ export async function getUsersWithDetails(supabase: AdminSupabase) {
       chains(id, name, color),
       user_stores(stores(id, name))
     `)
+    .eq('tenant_id', tenantId)
     .order('full_name')
 
   return data ?? []
@@ -156,6 +163,7 @@ export async function getUsersWithDetails(supabase: AdminSupabase) {
 
 export async function getContentItems(
   supabase: AdminSupabase,
+  tenantId: string,
   type: Database['public']['Enums']['content_type']
 ) {
   const { data } = await supabase
@@ -164,25 +172,27 @@ export async function getContentItems(
       id, title, status, type, created_at, valid_from, valid_to,
       users!created_by(full_name)
     `)
+    .eq('tenant_id', tenantId)
     .eq('type', type)
     .order('created_at', { ascending: false })
 
   return data ?? []
 }
 
-export async function getAllContentItems(supabase: AdminSupabase) {
+export async function getAllContentItems(supabase: AdminSupabase, tenantId: string) {
   const { data } = await supabase
     .from('content_items')
     .select(`
       id, title, status, type, created_at, valid_from, valid_to,
       users!created_by(full_name)
     `)
+    .eq('tenant_id', tenantId)
     .order('created_at', { ascending: false })
 
   return data ?? []
 }
 
-export async function getPlaylistsWithItems(supabase: AdminSupabase) {
+export async function getPlaylistsWithItems(supabase: AdminSupabase, tenantId: string) {
   const { data } = await supabase
     .from('playlists')
     .select(`
@@ -192,18 +202,20 @@ export async function getPlaylistsWithItems(supabase: AdminSupabase) {
         content_items(id, title, type)
       )
     `)
+    .eq('tenant_id', tenantId)
     .order('name')
 
   return data ?? []
 }
 
-export async function getPendingContent(supabase: AdminSupabase) {
+export async function getPendingContent(supabase: AdminSupabase, tenantId: string) {
   const { data } = await supabase
     .from('content_items')
     .select(`
       id, title, type, status, created_at,
       users!created_by(full_name)
     `)
+    .eq('tenant_id', tenantId)
     .in('status', ['draft', 'pending_approval', 'approved'])
     .order('created_at', { ascending: false })
 
