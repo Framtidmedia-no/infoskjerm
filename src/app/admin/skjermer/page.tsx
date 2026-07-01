@@ -36,7 +36,20 @@ export default async function SkjermerPage() {
     }))
   )
   const byStore = await fetchScreensByStore(stores.map((s) => ({ id: s.id, name: s.name })))
-  const boardStores: BoardStore[] = stores.map((s) => ({ ...s, screens: byStore.get(s.id) ?? [] }))
+
+  // Kiosk-passord-status per butikk (kun boolean til klienten — aldri hashen).
+  // kiosk_password_hash (031) er ikke i den genererte typen → cast. RLS scoper
+  // radene til brukerens egne enheter.
+  const { data: kioskRows } = await (supabase.from("stores") as unknown as {
+    select: (c: string) => { eq: (col: string, val: string) => Promise<{ data: { id: string; kiosk_password_hash: string | null }[] | null }> }
+  }).select("id, kiosk_password_hash").eq("tenant_id", tenantId)
+  const protectedStores = new Set((kioskRows ?? []).filter((r) => r.kiosk_password_hash).map((r) => r.id))
+
+  const boardStores: BoardStore[] = stores.map((s) => ({
+    ...s,
+    screens: byStore.get(s.id) ?? [],
+    hasKioskPassword: protectedStores.has(s.id),
+  }))
 
   const total = boardStores.reduce((n, s) => n + s.screens.length, 0)
   const online = boardStores.reduce((n, s) => n + s.screens.filter((x) => x.online).length, 0)
