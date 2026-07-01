@@ -31,16 +31,22 @@ export function PdfFlyer({ url, title, color, fg, pages: serverPages }: { url: s
       const doc = await pdfjs.getDocument({ url: src }).promise
       const n = Math.min(MAX_PAGES, doc.numPages)
       const out: string[] = []
+      // Rendrer bredt (mål ~2000 px) så sidene er skarpe også når /skjerm skalerer
+      // ned i et lite vindu. Pi-en bruker forhåndsrendrede sider (denne fallbacken
+      // kjøres kun i nettleser når serverbildene ikke er klare), så ekstra oppløsning
+      // koster ingenting på den svake Pi-en.
       for (let p = 1; p <= n && !cancelled; p++) {
         const page = await doc.getPage(p)
-        const viewport = page.getViewport({ scale: 1.7 })
+        const base = page.getViewport({ scale: 1 })
+        const scale = Math.min(3.5, Math.max(2, 2000 / base.width))
+        const viewport = page.getViewport({ scale })
         const canvas = document.createElement("canvas")
         canvas.width = Math.ceil(viewport.width)
         canvas.height = Math.ceil(viewport.height)
         const ctx = canvas.getContext("2d")
         if (!ctx) continue
         await page.render({ canvasContext: ctx, viewport }).promise
-        out.push(canvas.toDataURL("image/jpeg", 0.82))
+        out.push(canvas.toDataURL("image/jpeg", 0.92))
         if (!cancelled) setPages([...out])
       }
     })().catch(() => {})
