@@ -3,14 +3,17 @@ import { getStoresBoard } from "@/lib/admin/queries"
 import { fetchScreensByStore } from "@/lib/xibo/screens"
 import { Topbar } from "@/components/admin/topbar"
 import { SkjermerBoard, type BoardStore } from "./skjermer-board"
-import { ScreenAssignment, type ScreenRow } from "../stores/[id]/screen-assignment"
+import { StoreScreens, type DisplayLite, type ScreenRowLite } from "./store-screens"
 import { getBaseUrl } from "@/lib/base-url"
 
 /**
- * Fleet overview: every store and the real screens assigned to it, grouped and
- * coloured by role (kunde / bakrom / avdeling), with live online status, last-seen
- * and the layout each player reports showing. Read straight from the engine (Xibo)
- * via fetchScreensByStore, so it's truthful. Client board adds role filtering.
+ * Skjermer = enhets-styring. To lag:
+ *  1) Status-oversikt (SkjermerBoard): alle butikker og deres Xibo-skjermer, lest
+ *     live fra motoren — hvem er pålogget, hva viser de.
+ *  2) Skjerm-styring (StoreScreens per butikk med skjermer): bind hver tilkoblede
+ *     skjerm til flate/avdeling/orientering, eller legg til kiosk-skjermer.
+ *
+ * Butikker uten skjerm styres fra butikksiden (StoreScreens har «+ kiosk» der).
  */
 
 export const dynamic = "force-dynamic"
@@ -40,8 +43,6 @@ export default async function SkjermerPage() {
   const byStore = await fetchScreensByStore(stores.map((s) => ({ id: s.id, name: s.name })))
 
   // Kiosk-passord-status per butikk (kun boolean til klienten — aldri hashen).
-  // kiosk_password_hash (031) er ikke i den genererte typen → cast. RLS scoper
-  // radene til brukerens egne enheter.
   const { data: kioskRows } = await (supabase.from("stores") as unknown as {
     select: (c: string) => { eq: (col: string, val: string) => Promise<{ data: { id: string; kiosk_password_hash: string | null }[] | null }> }
   }).select("id, kiosk_password_hash").eq("tenant_id", tenantId)
@@ -53,48 +54,78 @@ export default async function SkjermerPage() {
     hasKioskPassword: protectedStores.has(s.id),
   }))
 
-  const total = boardStores.reduce((n, s) => n + s.screens.length, 0)
-  const online = boardStores.reduce((n, s) => n + s.screens.filter((x) => x.online).length, 0)
-
-  // Våre screens-rader (enhets-styring: token + flate/avdeling/orientering).
+  // Våre screens-rader (enhets-styring: token + flate/avdeling/orientering + xibo-binding).
   const { data: assignRows } = await supabase
     .from("screens")
-    .select("id, name, token, flate, avdeling, orientation, store_id")
+    .select("id, token, flate, avdeling, orientation, store_id, xibo_display_id")
     .order("name")
-  const rows = (assignRows ?? []) as unknown as (ScreenRow & { store_id: string })[]
-  const rowsByStore = new Map<string, ScreenRow[]>()
+  const rows = (assignRows ?? []) as unknown as (ScreenRowLite & { store_id: string })[]
+  const rowsByStore = new Map<string, ScreenRowLite[]>()
   for (const r of rows) {
     const list = rowsByStore.get(r.store_id) ?? []
     list.push(r)
     rowsByStore.set(r.store_id, list)
   }
-  const assignable = stores
-    .filter((s) => (rowsByStore.get(s.id)?.length ?? 0) > 0)
+
+  // Fysiske Xibo-skjermer → DisplayLite per butikk.
+  const displaysByStore = new Map<string, DisplayLite[]>()
+  for (const [storeId, screens] of byStore.entries()) {
+    displaysByStore.set(storeId, screens.map((s) => ({
+      displayId: s.displayId,
+      name: s.name,
+      online: s.online,
+      lastSeen: s.lastSeen,
+      role: s.role,
+      currentLayout: s.currentLayout,
+    })))
+  }
+
+  // Butikker som har noe å styre (tilkoblet skjerm eller kiosk-rad).
+  const managed = stores
+    .filter((s) => (displaysByStore.get(s.id)?.length ?? 0) > 0 || (rowsByStore.get(s.id)?.length ?? 0) > 0)
     .sort((a, b) => a.name.localeCompare(b.name, "nb"))
+
+  const totalScreens = stores.reduce((n, s) => n + (displaysByStore.get(s.id)?.length ?? 0) + (rowsByStore.get(s.id)?.filter((r) => r.xibo_display_id == null).length ?? 0), 0)
+  const online = boardStores.reduce((n, s) => n + s.screens.filter((x) => x.online).length, 0)
   const origin = await getBaseUrl()
 
   return (
     <div className="flex flex-1 flex-col">
-      <Topbar title="Skjermer" subtitle={`${total} skjermer i drift · ${online} pålogget`} />
+      <Topbar title="Skjermer" subtitle={`${totalScreens} skjermer · ${online} pålogget`} />
       <div className="flex-1 p-6 max-w-7xl space-y-8">
-        <SkjermerBoard stores={boardStores} />
-
-        {assignable.length > 0 && (
+        {managed.length > 0 && (
           <section className="space-y-3">
             <div>
-              <h2 className="text-lg font-bold text-zinc-900">Enhets-tildeling</h2>
-              <p className="text-sm text-zinc-500">Velg hva hver skjerm viser — kunde/intern, avdeling og orientering. Endringen slår gjennom på Pi-en automatisk; du trenger aldri røre den.</p>
+              <h2 className="text-lg font-bold text-zinc-900">Skjerm-styring</h2>
+              <p className="text-sm text-zinc-500">Bind hver tilkoblede skjerm til flate, avdeling og orientering — eller legg til en kiosk-skjerm (telefon/nettbrett). Endringen slår gjennom av seg selv; du rører aldri enheten.</p>
             </div>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              {assignable.map((s) => (
-                <div key={s.id} className="rounded-2xl border border-zinc-100 bg-white">
-                  <div className="px-5 pt-4 -mb-2 text-sm font-semibold text-zinc-900">{s.name}</div>
-                  <ScreenAssignment screens={rowsByStore.get(s.id) ?? []} origin={origin} />
+              {managed.map((s) => (
+                <div key={s.id} className="rounded-2xl border border-zinc-100 bg-white p-5 space-y-3">
+                  <div className="flex items-center gap-2">
+                    <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: s.chainColor }} />
+                    <span className="text-sm font-semibold text-zinc-900">{s.name}</span>
+                    <span className="text-xs text-zinc-400">{s.chainName}</span>
+                  </div>
+                  <StoreScreens
+                    storeId={s.id}
+                    displays={displaysByStore.get(s.id) ?? []}
+                    rows={rowsByStore.get(s.id) ?? []}
+                    origin={origin}
+                  />
                 </div>
               ))}
             </div>
           </section>
         )}
+
+        <section className="space-y-3">
+          <div>
+            <h2 className="text-lg font-bold text-zinc-900">Alle butikker · status</h2>
+            <p className="text-sm text-zinc-500">Live status fra skjermsystemet. Åpne en butikk for å legge til en kiosk-skjerm.</p>
+          </div>
+          <SkjermerBoard stores={boardStores} />
+        </section>
       </div>
     </div>
   )

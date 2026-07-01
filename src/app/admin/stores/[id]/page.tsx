@@ -8,7 +8,7 @@ import Link from "next/link"
 import { fetchScreensByStore } from "@/lib/xibo/screens"
 import { KundeklubbSettings } from "../_components/kundeklubb-settings"
 import { KioskSettings } from "./kiosk-settings"
-import { ScreenAssignment, type ScreenRow } from "./screen-assignment"
+import { StoreScreens, type DisplayLite, type ScreenRowLite } from "../../skjermer/store-screens"
 import { getTenantConfig } from "@/lib/tenant/config-server"
 import { hasFeature } from "@/lib/tenant/features"
 import { getBaseUrl } from "@/lib/base-url"
@@ -41,17 +41,24 @@ export default async function StoreDetailPage({ params }: PageProps) {
   const tenantConfig = await getTenantConfig(supabase, (store as { tenant_id: string | null }).tenant_id)
   const showGln = hasFeature(tenantConfig.features, "gln")
     && !!store.gln && store.gln !== GLN_PLACEHOLDER
-  // Real screens from the engine (Xibo), not a local table — truthful status.
+  // Fysiske Xibo-skjermer, lest live fra motoren — sann status.
   const screensByStore = await fetchScreensByStore([{ id: store.id, name: store.name }])
-  const screens = screensByStore.get(store.id) ?? []
+  const displays: DisplayLite[] = (screensByStore.get(store.id) ?? []).map((s) => ({
+    displayId: s.displayId,
+    name: s.name,
+    online: s.online,
+    lastSeen: s.lastSeen,
+    role: s.role,
+    currentLayout: s.currentLayout,
+  }))
 
-  // Våre screens-rader (enhets-styring: token + flate/avdeling/orientering).
+  // Våre screens-rader (enhets-styring: token + flate/avdeling/orientering + xibo-binding).
   const { data: assignRows } = await supabase
     .from("screens")
-    .select("id, name, token, flate, avdeling, orientation")
+    .select("id, token, flate, avdeling, orientation, xibo_display_id")
     .eq("store_id", store.id)
     .order("name")
-  const assignScreens = (assignRows ?? []) as unknown as ScreenRow[]
+  const assignRowsLite = (assignRows ?? []) as unknown as ScreenRowLite[]
   const origin = await getBaseUrl()
 
   return (
@@ -113,14 +120,18 @@ export default async function StoreDetailPage({ params }: PageProps) {
           </CardContent>
         </Card>
 
-        {/* Enhets-styring: flate/avdeling/orientering per fysiske skjerm */}
+        {/* Skjerm-styring: hver tilkoblet Xibo-skjerm + kiosk-skjermer, inline tildeling */}
         <Card>
-          <CardContent className="p-0">
-            <ScreenAssignment screens={assignScreens} origin={origin} />
+          <CardContent className="p-5 space-y-4">
+            <div className="flex items-center gap-2">
+              <Monitor className="w-4 h-4 text-zinc-500" />
+              <h2 className="font-semibold text-zinc-900">Skjermer</h2>
+            </div>
+            <StoreScreens storeId={store.id} displays={displays} rows={assignRowsLite} origin={origin} />
           </CardContent>
         </Card>
 
-        {/* Kiosk-visning (telefon/nettbrett som skjerm) + privat passord */}
+        {/* Kiosk-passord (privat visning) */}
         <Card>
           <CardContent className="p-0">
             <KioskSettings
@@ -147,42 +158,6 @@ export default async function StoreDetailPage({ params }: PageProps) {
           </CardContent>
         </Card>
 
-        {/* Screens */}
-        <Card>
-          <CardContent className="p-5 space-y-3">
-            <div className="flex items-center justify-between">
-              <h2 className="font-semibold text-zinc-900">Skjermer</h2>
-              <span className="text-xs text-zinc-400">{screens.length} skjerm{screens.length !== 1 ? "er" : ""}</span>
-            </div>
-            {screens.length === 0 ? (
-              <p className="text-sm text-zinc-400 italic">Ingen skjerm er koblet til denne {tenantConfig.unitLabel.toLowerCase()}en ennå. Når en skjerm kobles til skjermsystemet og tilordnes {tenantConfig.unitLabel.toLowerCase()}en, dukker den opp her.</p>
-            ) : (
-              screens.map((screen) => {
-                const roleChip =
-                  screen.role === "kunde"
-                    ? "bg-sky-50 text-sky-700"
-                    : screen.role === "bakrom"
-                      ? "bg-amber-50 text-amber-700"
-                      : "bg-violet-50 text-violet-700"
-                return (
-                  <div key={screen.displayId} className="flex items-center gap-3 p-3 bg-zinc-50 rounded-lg">
-                    <Monitor className="w-4 h-4 text-zinc-400 flex-shrink-0" />
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <p className="text-sm font-medium text-zinc-800 truncate">{screen.name}</p>
-                        <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${roleChip}`}>{screen.roleLabel}</span>
-                      </div>
-                      <p className="text-xs text-zinc-400">Sist sett: {screen.lastSeen ?? "Aldri"}</p>
-                    </div>
-                    <span className={`text-xs font-medium px-2 py-0.5 rounded-full flex-shrink-0 ${screen.online ? "bg-emerald-50 text-emerald-700" : "bg-zinc-100 text-zinc-500"}`}>
-                      {screen.online ? "Pålogget" : "Frakoblet"}
-                    </span>
-                  </div>
-                )
-              })
-            )}
-          </CardContent>
-        </Card>
       </div>
     </div>
   )
