@@ -1,24 +1,16 @@
 "use server"
 
 import { revalidatePath } from "next/cache"
-import { createClient } from "@/lib/supabase/server"
 import { logAudit } from "@/lib/admin/audit"
 import { requireRole } from "@/lib/admin/require-role"
 
 const STORE_ROLES = ["super_admin", "chain_manager", "area_manager"] as const
 
-async function requireUser() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) throw new Error("Ikke innlogget")
-  return { supabase, userId: user.id }
-}
-
 export async function updateStoreKundeklubb(
   storeId: string,
   settings: { enabled: boolean; url: string; headline: string; subtext: string; cta: string }
 ) {
-  const { supabase, userId } = await requireUser()
+  const { supabase, userId, tenantId } = await requireRole([...STORE_ROLES])
   const { error } = await supabase
     .from("stores")
     .update({
@@ -29,6 +21,7 @@ export async function updateStoreKundeklubb(
       kundeklubb_cta: settings.cta.trim() || null,
     })
     .eq("id", storeId)
+    .eq("tenant_id", tenantId)
   if (error) return { ok: false, error: error.message }
   await logAudit({ userId, action: "store.kundeklubb", entityType: "store", entityId: storeId, summary: `Oppdaterte kundeklubb (${settings.enabled ? "på" : "av"})` })
   revalidatePath(`/admin/stores/${storeId}`)
@@ -36,9 +29,9 @@ export async function updateStoreKundeklubb(
 }
 
 export async function deleteStore(storeId: string) {
-  const { supabase, userId } = await requireUser()
-  const { data: store } = await supabase.from("stores").select("name").eq("id", storeId).maybeSingle()
-  const { error } = await supabase.from("stores").delete().eq("id", storeId)
+  const { supabase, userId, tenantId } = await requireRole([...STORE_ROLES])
+  const { data: store } = await supabase.from("stores").select("name").eq("id", storeId).eq("tenant_id", tenantId).maybeSingle()
+  const { error } = await supabase.from("stores").delete().eq("id", storeId).eq("tenant_id", tenantId)
   if (error) return { ok: false, error: error.message }
   await logAudit({ userId, action: "store.delete", entityType: "store", entityId: storeId, summary: `Slettet butikk «${store?.name ?? storeId}»` })
   revalidatePath("/admin/stores")
@@ -46,7 +39,15 @@ export async function deleteStore(storeId: string) {
 }
 
 export async function toggleStoreTag(storeId: string, tagId: string, assign: boolean) {
-  const { supabase } = await requireUser()
+  const { supabase, tenantId } = await requireRole([...STORE_ROLES])
+  // store_tags er en join-tabell uten tenant_id — verifiser at butikken tilhører aktiv tenant først.
+  const { data: st } = await supabase
+    .from("stores")
+    .select("id")
+    .eq("id", storeId)
+    .eq("tenant_id", tenantId)
+    .maybeSingle()
+  if (!st) return { ok: false, error: "Ikke funnet" }
   if (assign) {
     const { error } = await supabase
       .from("store_tags")
