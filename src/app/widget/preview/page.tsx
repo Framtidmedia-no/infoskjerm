@@ -146,15 +146,14 @@ export default async function PreviewWidgetPage({ searchParams }: { searchParams
     ? { name: data.chain.name, logoUrl: data.chain.logoUrl, color: data.chain.color, brandFg: data.chain.brandFg }
     : null
 
-  // Orientering: eksplisitt `o` (fra editorens toggle) styrer for kortene som
-  // TilbudRotator faktisk rendrer stående (tilbud/plakat/konkurranse/galleri/klubb).
-  // Interne-spesifikke typer (nyhet/stilling/salgstall/gratulerer/invitasjon) har
-  // ingen stående kunde-mal → de rendres alltid via NewsRotator, så de ikke havner
-  // i feil rotator og knekker. Standard uten `o`: kampanje + intern = liggende.
-  const portraitCapable = new Set(["slide", "competition", "gallery"]).has(type) || !!item.klubb || !!item.offer
-  const landscape = o
-    ? (portraitCapable ? o === "landscape" : true)
-    : (!!item.campaign || data.audience === "intern")
+  // Orientering: eksplisitt `o` (fra editorens toggle) ellers standard ut fra
+  // innholdet (kampanje + intern = liggende, kunde = stående). Ruting:
+  //  - Stående kunde-kort (tilbud/plakat/konkurranse/galleri/klubb) → TilbudRotator.
+  //  - Alt annet (intern-typer + liggende) → NewsRotator, som nå har EKTE stående-
+  //    layouter for alle kort (portrait-flagg). Slik knekker ingen type i feil
+  //    rotator, og både stående og liggende dekkes.
+  const tilbudCanRender = new Set(["slide", "competition", "gallery"]).has(type) || !!item.klubb || !!item.offer
+  const landscape = o ? o === "landscape" : (!!item.campaign || data.audience === "intern")
 
   // Kampanjekortet er designet for liggende — vis det i sin egen fullskjerm-ramme.
   if (item.campaign && landscape) {
@@ -165,8 +164,8 @@ export default async function PreviewWidgetPage({ searchParams }: { searchParams
     )
   }
 
-  if (landscape) {
-    return <NewsRotator items={[item]} qr={qr} ticker={[]} />
+  if (!landscape && tilbudCanRender) {
+    return <TilbudRotator items={[item]} ticker={[]} storeName={null} chain={chain} qr={qr} />
   }
-  return <TilbudRotator items={[item]} ticker={[]} storeName={null} chain={chain} qr={qr} />
+  return <NewsRotator items={[item]} qr={qr} ticker={[]} portrait={!landscape} />
 }
