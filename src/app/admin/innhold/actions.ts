@@ -242,6 +242,24 @@ export async function bulkShiftPeriod(ids: string[], days: number): Promise<Save
   return { ok: true }
 }
 
+/**
+ * Setter manuell visningsrekkefølge (sort_order = posisjon i lista, 0 = først).
+ * Id-ene kommer fra den tenant-scopede innholdslista, så rekkefølgen påvirker kun
+ * innhold admin allerede ser. Brukes av «Rekkefølge»-dialogen.
+ */
+export async function reorderContent(orderedIds: string[]): Promise<SaveResult> {
+  const { supabase, userId } = await requireRole([...AUTHOR_ROLES])
+  if (orderedIds.length === 0) return { ok: true }
+  for (let i = 0; i < orderedIds.length; i++) {
+    const { error } = await supabase.from("content_items").update({ sort_order: i }).eq("id", orderedIds[i])
+    if (error) return { ok: false, error: error.message }
+  }
+  await logAudit({ userId, action: "content.reorder", entityType: "content", summary: `Endret rekkefølge på ${orderedIds.length} element(er)`, metadata: { count: orderedIds.length } })
+  revalidatePath("/admin/innhold")
+  revalidatePath("/admin/kundeinnhold")
+  return { ok: true }
+}
+
 export async function deleteContent(id: string): Promise<SaveResult> {
   const { supabase, userId } = await requireRole([...AUTHOR_ROLES])
   const { data: row } = await supabase.from("content_items").select("title").eq("id", id).maybeSingle()

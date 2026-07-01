@@ -195,6 +195,8 @@ export async function fetchLiveContent(storeId: string | null, types: string[], 
     .select("id, type, title, body, created_by, created_at, published_at, valid_from, valid_to, content_targets(target_all, store_id, tag_id)")
     .eq("status", "live")
     .in("type", types as ("news" | "competition" | "stats" | "weather" | "slide" | "job" | "birthday" | "ticker" | "invitation" | "gallery")[])
+    // Manuell rekkefølge først (0 = vises først); ellers fall tilbake til nyeste publisert.
+    .order("sort_order", { ascending: true, nullsFirst: false })
     .order("published_at", { ascending: false, nullsFirst: false })
 
   if (!items || items.length === 0) return []
