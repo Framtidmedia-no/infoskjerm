@@ -232,7 +232,10 @@ export async function fetchLiveContent(storeId: string | null, types: string[], 
   // to derive a tenant from, so we do not invent one here.
   if (tenantId) query = query.eq("tenant_id", tenantId)
 
-  const { data: items } = await query.order("published_at", { ascending: false, nullsFirst: false })
+  // Manuell rekkefølge først (0 = vises først); ellers fall tilbake til nyeste publisert.
+  const { data: items } = await query
+    .order("sort_order", { ascending: true, nullsFirst: false })
+    .order("published_at", { ascending: false, nullsFirst: false })
 
   if (!items || items.length === 0) return []
 
