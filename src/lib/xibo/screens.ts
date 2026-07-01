@@ -56,7 +56,7 @@ interface XiboGroup {
  * legger vi på +2 t på en UTC-server (Vercel). Vis den derfor verbatim som norsk
  * tid; kun unix-tallet konverteres til Oslo.
  */
-function parseLastSeen(raw: string | null): string | null {
+export function parseLastSeen(raw: string | null): string | null {
   if (!raw) return null
   const asNum = Number(raw)
   if (Number.isFinite(asNum) && asNum > 0) {

@@ -52,7 +52,10 @@ export function ScreenPreview({
   // Butikk-KPI + «Alle butikker» er dagligvare (svinn/omsetning fra Gange-Rolv Drift)
   // — skjul dem for ikke-dagligvare-tenants (f.eks. bilforhandlere).
   const canKpi = useTenantFeature("offerCards")
-  const [storeId, setStoreId] = useState(stores[0]?.id ?? "")
+  // Land on a store that actually has a screen registered — else the operator
+  // opens the page on an empty store and thinks a screen is missing/misbound.
+  const firstWithScreen = stores.find((s) => (screens[s.id]?.length ?? 0) > 0)
+  const [storeId, setStoreId] = useState(firstWithScreen?.id ?? stores[0]?.id ?? "")
   const [avdeling, setAvdeling] = useState("felles")
   const [view, setView] = useState<View>("intern-innhold")
   const [oversiktPeriode, setOversiktPeriode] = useState<"uke" | "ar">("uke")
@@ -124,9 +127,16 @@ export function ScreenPreview({
             onChange={(e) => setStoreId(e.target.value)}
             className="w-full sm:w-auto appearance-none text-sm font-semibold text-zinc-900 bg-white border border-zinc-200 rounded-lg pl-3 pr-9 py-2 focus:outline-none focus:ring-1 focus:ring-zinc-300"
           >
-            {stores.map((s) => (
-              <option key={s.id} value={s.id}>{s.name}{s.hasOffers ? "  • tilbud aktivt" : ""}</option>
-            ))}
+            {stores.map((s) => {
+              const n = screens[s.id]?.length ?? 0
+              return (
+                <option key={s.id} value={s.id}>
+                  {s.name}
+                  {n > 0 ? `  • ${n} skjerm${n > 1 ? "er" : ""}` : ""}
+                  {s.hasOffers ? "  • tilbud aktivt" : ""}
+                </option>
+              )
+            })}
           </select>
           <ChevronDown className="w-4 h-4 text-zinc-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
         </div>
