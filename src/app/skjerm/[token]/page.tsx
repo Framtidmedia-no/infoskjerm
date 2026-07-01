@@ -3,6 +3,7 @@ import type { Viewport } from "next"
 import { createAdminClient } from "@/lib/supabase/server"
 import { getTenantConfig } from "@/lib/tenant/config-server"
 import { hasFeature } from "@/lib/tenant/features"
+import { ScaledScreen } from "./scaled-screen"
 
 /**
  * ENHETS-STYRT skjerm-URL. Hver fysiske Raspberry Pi laster ÉN stabil URL
@@ -65,14 +66,10 @@ export default async function SkjermPage({ params }: { params: Promise<{ token: 
   const config = await getTenantConfig(supabase, row.tenant_id)
   const grocery = hasFeature(config.features, "offerCards")
 
-  return (
-    <div style={{ position: "fixed", inset: 0, background: "#0a0a0a", overflow: "hidden" }}>
-      <iframe
-        src={widgetFor(row, grocery)}
-        title="Skjerm"
-        style={{ position: "absolute", inset: 0, width: "100%", height: "100%", border: 0, display: "block" }}
-        allow="fullscreen"
-      />
-    </div>
-  )
+  // Widgeten rendres i sin faste design-oppløsning og skaleres uniformt til vinduet
+  // (se ScaledScreen). Slik ser laptop-testen identisk ut med Pi-en, og faste
+  // pikselstørrelser i malene sprenger aldri i et lite vindu.
+  const landscape = row.orientation === "landscape" || row.orientation === "liggende"
+
+  return <ScaledScreen src={widgetFor(row, grocery)} landscape={landscape} />
 }

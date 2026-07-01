@@ -8,11 +8,12 @@ import { isDeckUrl, isPptUrl } from "@/lib/content/deck"
 import { useTenantConfig } from "@/components/admin/tenant-config-provider"
 import { toast } from "sonner"
 import {
-  Newspaper, Trophy, ImageIcon, Briefcase, PartyPopper, BarChart3, Megaphone, Globe, Store as StoreIcon, Tag,
+  Newspaper, Globe, Store as StoreIcon, Tag,
   Copy, Trash2, Pencil, MoreVertical, Calendar, CalendarPlus, Search, ChevronLeft, ChevronRight, FileText,
-  Send, EyeOff, X, Check, Clock, ArrowUpDown, Timer,
+  Send, EyeOff, X, Check, Clock, ArrowUpDown, Timer, LayoutGrid,
 } from "lucide-react"
 import { ReorderDialog } from "./reorder-dialog"
+import { TYPE_META, isVideoUrl } from "./content-thumb"
 
 export interface ContentRow {
   id: string
@@ -35,16 +36,7 @@ export interface ContentRow {
 
 interface Option { id: string; name: string }
 
-const TYPE_META: Record<string, { label: string; icon: React.ElementType; badge: string; gradient: string }> = {
-  news: { label: "Nyhet", icon: Newspaper, badge: "bg-blue-600 text-white", gradient: "from-blue-500 to-blue-700" },
-  competition: { label: "Konkurranse", icon: Trophy, badge: "bg-amber-500 text-white", gradient: "from-amber-400 to-amber-600" },
-  slide: { label: "Tilbud", icon: ImageIcon, badge: "bg-zinc-700 text-white", gradient: "from-zinc-600 to-zinc-800" },
-  job: { label: "Stilling", icon: Briefcase, badge: "bg-indigo-600 text-white", gradient: "from-indigo-500 to-indigo-700" },
-  birthday: { label: "Gratulerer", icon: PartyPopper, badge: "bg-pink-500 text-white", gradient: "from-pink-400 to-pink-600" },
-  stats: { label: "Salgstall", icon: BarChart3, badge: "bg-emerald-600 text-white", gradient: "from-emerald-500 to-emerald-700" },
-  weather: { label: "Vær", icon: ImageIcon, badge: "bg-sky-500 text-white", gradient: "from-sky-400 to-sky-600" },
-  ticker: { label: "Ticker", icon: Megaphone, badge: "bg-orange-500 text-white", gradient: "from-orange-400 to-orange-600" },
-}
+// TYPE_META flyttet til content-thumb.tsx (delt med rekkefølge-dialogen).
 
 const STATUS_META: Record<string, { label: string; color: string }> = {
   draft: { label: "Utkast", color: "bg-white/90 text-zinc-600 ring-1 ring-zinc-200" },
@@ -61,7 +53,7 @@ function targetIcon(mode: ContentRow["target"]["mode"]) {
 
 function formatPeriod(from: string | null, to: string | null): string | null {
   if (!from && !to) return null
-  const fmt = (d: string) => new Date(d).toLocaleDateString("nb-NO", { day: "numeric", month: "short" })
+  const fmt = (d: string) => new Date(d).toLocaleDateString("nb-NO", { timeZone: "Europe/Oslo", day: "numeric", month: "short" })
   if (from && to) return `${fmt(from)} – ${fmt(to)}`
   if (from) return `Fra ${fmt(from)}`
   return `Til ${fmt(to!)}`
@@ -90,8 +82,12 @@ const PAGE_SIZE = 12
 
 const selectCls = "w-full sm:w-auto text-xs bg-white border border-zinc-200 rounded-lg px-2.5 py-2.5 sm:py-2 text-zinc-600 focus:outline-none focus:ring-1 focus:ring-zinc-300"
 
-export function ContentListClient({ items, stores, tags, newHref = "/admin/innhold/ny", editBase = "/admin/innhold" }: { items: ContentRow[]; stores: Option[]; tags: Option[]; newHref?: string; editBase?: string }) {
-  const { avdelinger: AVDELINGER, unitLabelPlural } = useTenantConfig()
+export function ContentListClient({ items, stores, tags, newHref = "/admin/innhold/ny", editBase = "/admin/innhold", audience = "intern" }: { items: ContentRow[]; stores: Option[]; tags: Option[]; newHref?: string; editBase?: string; audience?: "kunde" | "intern" }) {
+  // Avdeling-filteret følger flaten: intern-liste bruker interne avdelinger.
+  const { avdelinger: AVD_KUNDE, avdelingerIntern: AVD_INTERN, unitLabelPlural } = useTenantConfig()
+  const AVDELINGER = audience === "intern" ? AVD_INTERN : AVD_KUNDE
+  // Nøkkel→label for avdelings-chippen på kortene (følger samme audience-liste).
+  const avdelingLabels = useMemo(() => Object.fromEntries(AVDELINGER.map((a) => [a.key, a.label])), [AVDELINGER])
   const router = useRouter()
   const [busyId, setBusyId] = useState<string | null>(null)
   const [menuId, setMenuId] = useState<string | null>(null)
@@ -282,6 +278,11 @@ export function ContentListClient({ items, stores, tags, newHref = "/admin/innho
             const TargetIcon = targetIcon(item.target.mode)
             const period = formatPeriod(item.validFrom, item.validTo)
             const ps = periodStatus(item.validFrom, item.validTo)
+            // Avdeling vises alltid (hvert innhold har en — «felles» = hele enheten
+            // er standard). Spesifikk avdeling fremheves; «Hele butikken» dempes.
+            const avdelingKey = item.avdeling ?? "felles"
+            const avdelingLabel = avdelingLabels[avdelingKey] ?? avdelingKey
+            const avdelingSpecific = avdelingKey !== "felles"
             const targetText = item.target.mode === "all" ? `Alle ${unitLabelPlural.toLowerCase()}`
               : item.target.mode === "none" ? "Ikke målrettet"
               : item.target.names.slice(0, 2).join(", ") + (item.target.names.length > 2 ? ` +${item.target.names.length - 2}` : "")
@@ -301,7 +302,7 @@ export function ContentListClient({ items, stores, tags, newHref = "/admin/innho
                       <FileText className="w-9 h-9" />
                       <span className="text-[11px] font-semibold tracking-wide">{isPptUrl(item.imageUrl) ? "PowerPoint" : "PDF"}</span>
                     </div>
-                  ) : item.imageUrl && /\.(mp4|webm|mov|m4v)$/.test(item.imageUrl.toLowerCase().split("?")[0]) ? (
+                  ) : item.imageUrl && isVideoUrl(item.imageUrl) ? (
                     // eslint-disable-next-line jsx-a11y/media-has-caption
                     <video src={`${item.imageUrl}#t=1`} muted playsInline preload="metadata" className="w-full h-full object-cover bg-zinc-900" />
                   ) : item.imageUrl ? (
@@ -337,11 +338,22 @@ export function ContentListClient({ items, stores, tags, newHref = "/admin/innho
                     {period && <span className="flex items-center gap-1 flex-shrink-0"><Calendar className="w-3 h-3" />{period}</span>}
                     {item.durationSeconds ? <span className="flex items-center gap-1 flex-shrink-0"><Timer className="w-3 h-3" />{item.durationSeconds}s</span> : null}
                   </div>
-                  {ps && (
-                    <span className={`inline-flex items-center gap-1 mt-2 text-[10px] font-semibold px-1.5 py-0.5 rounded-md ${ps.tone === "warn" ? "bg-amber-50 text-amber-700 ring-1 ring-amber-200" : "bg-cyan-50 text-cyan-700 ring-1 ring-cyan-200"}`}>
-                      <Clock className="w-3 h-3" /> {ps.label}
-                    </span>
-                  )}
+                  <div className="flex flex-wrap items-center gap-1.5 mt-2">
+                    {avdelingSpecific ? (
+                      <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded-md bg-violet-50 text-violet-700 ring-1 ring-violet-200">
+                        <LayoutGrid className="w-3 h-3" /> {avdelingLabel}
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded-md text-zinc-400">
+                        <LayoutGrid className="w-3 h-3" /> {avdelingLabel}
+                      </span>
+                    )}
+                    {ps && (
+                      <span className={`inline-flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded-md ${ps.tone === "warn" ? "bg-amber-50 text-amber-700 ring-1 ring-amber-200" : "bg-cyan-50 text-cyan-700 ring-1 ring-cyan-200"}`}>
+                        <Clock className="w-3 h-3" /> {ps.label}
+                      </span>
+                    )}
+                  </div>
                 </div>
 
                 <div className="absolute bottom-2.5 right-2.5">
