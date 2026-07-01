@@ -156,9 +156,11 @@ function bgImage(url: string): CSSProperties {
   return { position: "absolute", inset: 0, backgroundImage: `url('${url}')`, backgroundSize: "cover", backgroundPosition: "center", opacity: 0.22, animation: "grKenBurns 26s ease-in-out infinite alternate", transformOrigin: "center" }
 }
 
-function StandardCard({ item }: { item: LiveItem }) {
+function StandardCard({ item, portrait = false }: { item: LiveItem; portrait?: boolean }) {
   // Base colour comes from the rotator wrapper; the background media (image or
-  // video) overlays it dimmed, so a chosen colour always shows through.
+  // video) overlays it dimmed, so a chosen colour always shows through. Uten bilde
+  // sentreres innholdet vertikalt i stående, så korte tekst-kort ikke blir tomme.
+  const centre = portrait && !item.imageUrl
   return (
     <>
       {item.imageUrl && item.isVideo && (
@@ -166,12 +168,12 @@ function StandardCard({ item }: { item: LiveItem }) {
         <video src={item.imageUrl} autoPlay muted loop playsInline style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", opacity: 0.22 }} />
       )}
       {item.imageUrl && !item.isVideo && <div style={bgImage(item.imageUrl)} />}
-      <div style={{ position: "absolute", inset: 0, padding: 70, boxSizing: "border-box", display: "flex", flexDirection: "column", color: item.textColor ?? "#fff" }}>
+      <div style={{ position: "absolute", inset: 0, padding: portrait ? 76 : 70, boxSizing: "border-box", display: "flex", flexDirection: "column", justifyContent: centre ? "center" : "flex-start", color: item.textColor ?? "#fff" }}>
         {KICKER[item.type] && <Kicker>{KICKER[item.type]}</Kicker>}
-        <h1 style={{ fontSize: 78, fontWeight: 900, margin: "0 0 14px", lineHeight: 1.03 }}>{item.title}</h1>
+        <h1 style={{ fontSize: portrait ? 96 : 78, fontWeight: 900, margin: "0 0 18px", lineHeight: 1.02, letterSpacing: -1, textWrap: "balance" }}>{item.title}</h1>
         <Byline item={item} />
         <PeriodChip item={item} />
-        <ScrollText blocks={item.blocks} style={{ flex: "1 1 auto" }} />
+        <ScrollText blocks={item.blocks} style={centre ? { flex: "0 1 auto", maxHeight: "48%" } : { flex: "1 1 auto" }} />
       </div>
     </>
   )
@@ -198,30 +200,32 @@ function Gallery({ urls }: { urls: string[] }) {
  * single-image "Lite bilde" mode — so the text stays readable next to the image
  * instead of disappearing (poster) or sitting on a dimmed background.
  */
-function SplitCard({ item }: { item: LiveItem }) {
+function SplitCard({ item, portrait = false }: { item: LiveItem; portrait?: boolean }) {
   const multi = item.imageUrls.length >= 2
+  // Stående: stable tekst over bilde(r); liggende: tekst venstre / bilde høyre.
   return (
-    <div style={{ position: "absolute", inset: 0, padding: 60, boxSizing: "border-box", display: "flex", gap: 44, alignItems: "stretch" }}>
-      <div style={{ flex: multi ? "0 0 40%" : "1 1 auto", minWidth: 0, display: "flex", flexDirection: "column" }}>
+    <div style={{ position: "absolute", inset: 0, padding: portrait ? 68 : 60, boxSizing: "border-box", display: "flex", flexDirection: portrait ? "column" : "row", gap: portrait ? 34 : 44, alignItems: "stretch" }}>
+      <div style={{ flex: portrait ? "0 0 auto" : (multi ? "0 0 40%" : "1 1 auto"), minWidth: 0, display: "flex", flexDirection: "column" }}>
         {KICKER[item.type] && <Kicker>{KICKER[item.type]}</Kicker>}
-        <h1 style={{ fontSize: 60, fontWeight: 900, margin: "0 0 12px", lineHeight: 1.04 }}>{item.title}</h1>
+        <h1 style={{ fontSize: portrait ? 82 : 60, fontWeight: 900, margin: "0 0 12px", lineHeight: 1.03, letterSpacing: -1, textWrap: "balance" }}>{item.title}</h1>
         <Byline item={item} />
         <PeriodChip item={item} />
-        <ScrollText blocks={item.blocks} style={{ flex: "1 1 auto" }} />
+        {!portrait && <ScrollText blocks={item.blocks} style={{ flex: "1 1 auto" }} />}
       </div>
-      <div style={{ flex: multi ? "1 1 auto" : "0 0 38%", minWidth: 0, display: "flex" }}>
+      <div style={{ flex: "1 1 auto", minHeight: 0, minWidth: 0, display: "flex" }}>
         <Gallery urls={item.imageUrls} />
       </div>
+      {portrait && item.blocks.length > 0 && <ScrollText blocks={item.blocks} style={{ flex: "0 0 auto", maxHeight: "22%" }} />}
     </div>
   )
 }
 
-function PosterCard({ item }: { item: LiveItem }) {
+function PosterCard({ item, portrait = false }: { item: LiveItem; portrait?: boolean }) {
   return (
-    <div style={{ position: "absolute", inset: 0, padding: 50, boxSizing: "border-box", display: "flex", flexDirection: "column", gap: 16 }}>
+    <div style={{ position: "absolute", inset: 0, padding: portrait ? 60 : 50, boxSizing: "border-box", display: "flex", flexDirection: "column", gap: 18 }}>
       <div style={{ flex: "0 0 auto", display: "flex", flexDirection: "column" }}>
         {KICKER[item.type] && <Kicker>{KICKER[item.type]}</Kicker>}
-        <h1 style={{ fontSize: 58, fontWeight: 900, margin: "0 0 12px", lineHeight: 1.04 }}>{item.title}</h1>
+        <h1 style={{ fontSize: portrait ? 76 : 58, fontWeight: 900, margin: "0 0 12px", lineHeight: 1.03, letterSpacing: -1, textWrap: "balance" }}>{item.title}</h1>
         <PeriodChip item={item} />
       </div>
       <MediaFull item={item} />
@@ -229,59 +233,67 @@ function PosterCard({ item }: { item: LiveItem }) {
   )
 }
 
-function QrPanel({ qrUrl, contact }: { qrUrl?: string; contact: string | null }) {
+function QrPanel({ qrUrl, contact, portrait = false }: { qrUrl?: string; contact: string | null; portrait?: boolean }) {
+  // Stående: bunnlinje = QR til venstre + tekst-kolonne (Skann + Kontakt) til høyre.
+  // Liggende: sidepanel til høyre, alt sentrert i kolonne.
+  const text = (
+    <div style={{ display: "flex", flexDirection: "column", gap: 8, alignItems: portrait ? "flex-start" : "center", minWidth: 0 }}>
+      {qrUrl && <p style={{ fontSize: portrait ? 36 : 30, fontWeight: 800, margin: 0, textAlign: portrait ? "left" : "center", lineHeight: 1.1 }}>Skann for å søke</p>}
+      {contact && <p style={{ fontSize: portrait ? 30 : 26, color: "rgba(255,255,255,.7)", margin: 0, textAlign: portrait ? "left" : "center" }}>Kontakt: <span style={{ color: "#fff", fontWeight: 600 }}>{contact}</span></p>}
+    </div>
+  )
   return (
-    <div style={{ flex: "0 0 36%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 22, padding: 40, background: "rgba(255,255,255,.06)", borderLeft: "1px solid rgba(255,255,255,.08)" }}>
+    <div style={{
+      flex: "0 0 auto", display: "flex", alignItems: "center", justifyContent: "center", gap: portrait ? 44 : 22, padding: 44,
+      background: "rgba(255,255,255,.06)",
+      ...(portrait
+        ? { flexDirection: "row", borderTop: "1px solid rgba(255,255,255,.08)" }
+        : { flexBasis: "36%", flexDirection: "column", borderLeft: "1px solid rgba(255,255,255,.08)" }),
+    }}>
       {qrUrl && (
-        <>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={qrUrl} alt="QR-kode for å søke" width={300} height={300} style={{ background: "#fff", padding: 18, borderRadius: 18 }} />
-          <p style={{ fontSize: 30, fontWeight: 700, margin: 0, textAlign: "center" }}>Skann for å søke</p>
-        </>
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={qrUrl} alt="QR-kode for å søke" width={portrait ? 210 : 300} height={portrait ? 210 : 300} style={{ background: "#fff", padding: 18, borderRadius: 18, flex: "0 0 auto" }} />
       )}
-      {contact && (
-        <p style={{ fontSize: 26, color: "rgba(255,255,255,.7)", margin: 0, textAlign: "center" }}>
-          Kontakt: <span style={{ color: "#fff", fontWeight: 600 }}>{contact}</span>
-        </p>
-      )}
+      {text}
     </div>
   )
 }
 
-function JobCard({ item, qrUrl }: { item: LiveItem; qrUrl?: string }) {
+function JobCard({ item, qrUrl, portrait = false }: { item: LiveItem; qrUrl?: string; portrait?: boolean }) {
   const showQrPanel = !!qrUrl || !!item.contactPerson
   const poster = item.imageMode === "plakat" && item.imageUrl
+  // Stående: tekst øverst, QR-linje nederst (stablet). Liggende: tekst venstre, QR-panel høyre.
   return (
     <>
       {!poster && item.imageUrl && <div style={bgImage(item.imageUrl)} />}
-      <div style={{ position: "absolute", inset: 0, display: "flex" }}>
-        <div style={{ flex: "1 1 auto", minWidth: 0, padding: 60, boxSizing: "border-box", display: "flex", flexDirection: "column" }}>
+      <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: portrait ? "column" : "row" }}>
+        <div style={{ flex: "1 1 auto", minHeight: 0, minWidth: 0, padding: portrait ? 76 : 60, boxSizing: "border-box", display: "flex", flexDirection: "column" }}>
           <Kicker>STILLING LEDIG</Kicker>
-          <h1 style={{ fontSize: 60, fontWeight: 900, margin: "0 0 12px", lineHeight: 1.04 }}>{item.title}</h1>
+          <h1 style={{ fontSize: portrait ? 86 : 60, fontWeight: 900, margin: "0 0 12px", lineHeight: 1.03, letterSpacing: -1, textWrap: "balance" }}>{item.title}</h1>
           <Byline item={item} />
           {poster ? (
-            <div style={{ flex: "1 1 auto", minHeight: 0, backgroundImage: `url('${item.imageUrl}')`, backgroundSize: "contain", backgroundPosition: "left center", backgroundRepeat: "no-repeat", borderRadius: 14 }} />
+            <div style={{ flex: "1 1 auto", minHeight: 0, backgroundImage: `url('${item.imageUrl}')`, backgroundSize: "contain", backgroundPosition: portrait ? "center" : "left center", backgroundRepeat: "no-repeat", borderRadius: 14 }} />
           ) : (
             <ScrollText blocks={item.blocks} style={{ flex: "1 1 auto" }} />
           )}
         </div>
-        {showQrPanel && <QrPanel qrUrl={qrUrl} contact={item.contactPerson} />}
+        {showQrPanel && <QrPanel qrUrl={qrUrl} contact={item.contactPerson} portrait={portrait} />}
       </div>
     </>
   )
 }
 
-function StatsCard({ item }: { item: LiveItem }) {
+function StatsCard({ item, portrait = false }: { item: LiveItem; portrait?: boolean }) {
   const change = item.statsChange?.trim() ?? ""
   const up = /(^[+▲])|opp|øk/i.test(change)
   const down = /(^[-▼])|ned|fall/i.test(change)
   const changeColor = up ? "#16a34a" : down ? "#ef4444" : "rgba(255,255,255,.6)"
   const changeText = change.replace(/^[▲▼+\-]\s*/, "").trim()
   return (
-    <div style={{ position: "absolute", inset: 0, padding: 80, boxSizing: "border-box", display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "flex-start", gap: 8 }}>
+    <div style={{ position: "absolute", inset: 0, padding: portrait ? 76 : 80, boxSizing: "border-box", display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "flex-start", gap: 8 }}>
       <Kicker>SALGSTALL</Kicker>
-      <h1 style={{ fontSize: 56, fontWeight: 800, margin: "0 0 20px", color: "rgba(255,255,255,.8)", lineHeight: 1.05 }}>{item.title}</h1>
-      {item.statsValue && <div style={{ fontSize: 170, fontWeight: 900, lineHeight: 0.95, letterSpacing: -4 }}>{item.statsValue}</div>}
+      <h1 style={{ fontSize: portrait ? 60 : 56, fontWeight: 800, margin: "0 0 20px", color: "rgba(255,255,255,.8)", lineHeight: 1.05 }}>{item.title}</h1>
+      {item.statsValue && <div style={{ fontSize: portrait ? 150 : 170, fontWeight: 900, lineHeight: 0.95, letterSpacing: -4, textWrap: "balance" }}>{item.statsValue}</div>}
       {change && (
         <div style={{ marginTop: 16, display: "inline-flex", alignItems: "center", gap: 12, fontSize: 44, fontWeight: 800, color: changeColor }}>
           {up ? "▲" : down ? "▼" : ""} {changeText || change}
@@ -296,9 +308,11 @@ function StatsCard({ item }: { item: LiveItem }) {
 
 /** Staff "ukens tilbud" slide on the internal screen: structured offer card,
  *  rasterised PDF flyer, or an uploaded poster — never on customer screens. */
-function SlideCard({ item }: { item: LiveItem }) {
+function SlideCard({ item, portrait = false }: { item: LiveItem; portrait?: boolean }) {
   if (item.offer) {
-    // OfferCard is portrait — centre it in a 9:16 box on the landscape screen.
+    // OfferCard er stående — i liggende sentreres den i en 9:16-boks; i stående
+    // fyller den hele skjermen. (Ekte liggende OfferCard-layout er egen jobb.)
+    if (portrait) return <OfferCard item={item} />
     return (
       <div style={{ position: "absolute", inset: 0, display: "flex", justifyContent: "center", background: "#0a0a0a" }}>
         <div style={{ position: "relative", height: "100%", aspectRatio: "9 / 16" }}>
@@ -308,22 +322,22 @@ function SlideCard({ item }: { item: LiveItem }) {
     )
   }
   if ((item.isPdf || item.isPpt) && item.imageUrl) return <PdfFlyer url={item.imageUrl} title={item.title} pages={item.pages} ppt={item.isPpt} />
-  return <PosterCard item={item} />
+  return <PosterCard item={item} portrait={portrait} />
 }
 
-function Card({ item, qrUrl }: { item: LiveItem; qrUrl?: string }) {
-  if (item.type === "competition") return <CompetitionCard item={item} qrUrl={qrUrl} />
-  if (item.type === "invitation") return <InvitationCard item={item} qrUrl={qrUrl} />
-  if (item.type === "gallery") return <GalleryCard item={item} qrUrl={qrUrl} />
-  if (item.type === "slide") return <SlideCard item={item} />
-  if (item.type === "stats") return <StatsCard item={item} />
-  if (item.type === "job") return <JobCard item={item} qrUrl={qrUrl} />
+function Card({ item, qrUrl, portrait = false }: { item: LiveItem; qrUrl?: string; portrait?: boolean }) {
+  if (item.type === "competition") return <CompetitionCard item={item} qrUrl={qrUrl} portrait={portrait} />
+  if (item.type === "invitation") return <InvitationCard item={item} qrUrl={qrUrl} portrait={portrait} />
+  if (item.type === "gallery") return <GalleryCard item={item} qrUrl={qrUrl} portrait={portrait} />
+  if (item.type === "slide") return <SlideCard item={item} portrait={portrait} />
+  if (item.type === "stats") return <StatsCard item={item} portrait={portrait} />
+  if (item.type === "job") return <JobCard item={item} qrUrl={qrUrl} portrait={portrait} />
   // 2+ images, or single image in "Lite bilde" mode → text left, image(s) right.
-  if (item.imageUrls.length >= 2) return <SplitCard item={item} />
-  if (item.imageUrl && item.imageMode === "liten" && !item.isPdf) return <SplitCard item={item} />
+  if (item.imageUrls.length >= 2) return <SplitCard item={item} portrait={portrait} />
+  if (item.imageUrl && item.imageMode === "liten" && !item.isPdf) return <SplitCard item={item} portrait={portrait} />
   // Posters & PDFs always show full (never as a cropped background).
-  if (item.imageUrl && (item.imageMode === "plakat" || item.isPdf)) return <PosterCard item={item} />
-  return <StandardCard item={item} />
+  if (item.imageUrl && (item.imageMode === "plakat" || item.isPdf)) return <PosterCard item={item} portrait={portrait} />
+  return <StandardCard item={item} portrait={portrait} />
 }
 
 const TICKER_HEIGHT = 96
@@ -367,7 +381,7 @@ function TickerOverlay({ messages }: { messages: string[] }) {
   )
 }
 
-export function NewsRotator({ items, qr, ticker }: { items: LiveItem[]; qr: Record<string, string>; ticker: string[] }) {
+export function NewsRotator({ items, qr, ticker, portrait = false }: { items: LiveItem[]; qr: Record<string, string>; ticker: string[]; portrait?: boolean }) {
   const [i, setI] = useState(0)
   useEffect(() => {
     if (items.length <= 1) return
@@ -397,7 +411,7 @@ export function NewsRotator({ items, qr, ticker }: { items: LiveItem[]; qr: Reco
         </div>
       ) : (
         <div key={item.id} style={{ ...contentInset, overflow: "hidden", animation: "grFade .6s ease-out", background: item.bgColor ?? undefined, color: item.textColor ?? undefined }}>
-          <Card item={item} qrUrl={qr[item.id]} />
+          <Card item={item} qrUrl={qr[item.id]} portrait={portrait} />
         </div>
       )}
       {hasTicker && <TickerOverlay messages={ticker} />}
