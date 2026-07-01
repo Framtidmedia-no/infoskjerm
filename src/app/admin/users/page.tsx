@@ -45,7 +45,7 @@ function AccessCell({
 export default async function UsersPage() {
   const { supabase, tenantId } = await requireRole(["super_admin", "chain_manager"])
   const users = await getUsersWithDetails(supabase, tenantId)
-  const { data: storesData } = await supabase.from("stores").select("id, name").order("name")
+  const { data: storesData } = await supabase.from("stores").select("id, name").eq("tenant_id", tenantId).order("name")
   const allStores = (storesData ?? []) as { id: string; name: string }[]
 
   const rows = users.map((user) => {
