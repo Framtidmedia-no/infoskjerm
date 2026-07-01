@@ -75,10 +75,22 @@ export default async function KioskPage({
   }
 
   // Intern skjerm (verksted/pauserom) via ?type=intern → FULL bakrom-rotasjon
-  // (internt innhold + butikk-KPI + KPI-oversikt uke/år), akkurat som en ekte
-  // internskjerm. Alltid liggende (1920×1080).
+  // (internt innhold + butikk-KPI + KPI-oversikt uke/år). Auto-orienterer som
+  // kundeskjerm: stående enhet (f.eks. Mobile sine internskjermer) → portrett.
   if (type === "intern") {
-    return <KioskStage src={`/widget/bakrom?store=${row.id}${avd}`} title={row.name} width={1920} height={1080} />
+    const internSrc = `/widget/bakrom?store=${row.id}${avd}`
+    const internPortrait = { src: internSrc, width: 1080, height: 1920 }
+    const internLandscape = { src: internSrc, width: 1920, height: 1080 }
+    const explicitIntern =
+      orientation === "staaende" || orientation === "stående" || orientation === "portrait"
+        ? internPortrait
+        : orientation === "liggende" || orientation === "landscape"
+          ? internLandscape
+          : null
+    if (explicitIntern) {
+      return <KioskStage src={explicitIntern.src} title={row.name} width={explicitIntern.width} height={explicitIntern.height} />
+    }
+    return <KioskAuto portrait={internPortrait} landscape={internLandscape} title={row.name} />
   }
 
   // Kundeskjerm i to native orienteringer: stående (tilbud, 1080×1920) og
