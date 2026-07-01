@@ -5,6 +5,7 @@ import { QuickCapture } from "@/components/pwa/quick-capture"
 import { BiometricLock } from "@/components/pwa/biometric-lock"
 import { ChainThemeProvider } from "@/components/admin/chain-theme-provider"
 import { createClient } from "@/lib/supabase/server"
+import { getAdminContext } from "@/lib/admin/admin-context"
 import { redirect } from "next/navigation"
 import { Toaster } from "sonner"
 
@@ -13,6 +14,8 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) redirect("/login")
+
+  const ctx = await getAdminContext()
 
   const { data: profile } = await supabase
     .from("users")
@@ -39,6 +42,8 @@ export default async function AdminLayout({ children }: { children: React.ReactN
             role,
             chainName: chain?.name ?? null,
             chainColor: chain?.color ?? null,
+            isImpersonating: ctx?.isImpersonating ?? false,
+            activeTenantName: ctx?.activeTenant?.name ?? null,
           }
           return (
             <>
