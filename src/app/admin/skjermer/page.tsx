@@ -49,12 +49,6 @@ export default async function SkjermerPage() {
   }).select("id, kiosk_password_hash").eq("tenant_id", tenantId)
   const protectedStores = new Set((kioskRows ?? []).filter((r) => r.kiosk_password_hash).map((r) => r.id))
 
-  const boardStores: BoardStore[] = stores.map((s) => ({
-    ...s,
-    screens: byStore.get(s.id) ?? [],
-    hasKioskPassword: protectedStores.has(s.id),
-  }))
-
   // Våre screens-rader (enhets-styring: token + flate/avdeling/orientering + xibo-binding).
   const { data: assignRows } = await supabase
     .from("screens")
@@ -62,11 +56,23 @@ export default async function SkjermerPage() {
     .order("name")
   const rows = (assignRows ?? []) as unknown as (ScreenRowLite & { store_id: string })[]
   const rowsByStore = new Map<string, ScreenRowLite[]>()
+  const assignmentByDisplay = new Map<number, { flate: ScreenRowLite["flate"]; avdeling: string }>()
   for (const r of rows) {
     const list = rowsByStore.get(r.store_id) ?? []
     list.push(r)
     rowsByStore.set(r.store_id, list)
+    if (r.xibo_display_id != null) assignmentByDisplay.set(r.xibo_display_id, { flate: r.flate, avdeling: r.avdeling })
   }
+
+  // Status-brettet: Xibo-skjermene + hva de er SATT OPP mot i admin (flate/avdeling).
+  const boardStores: BoardStore[] = stores.map((s) => ({
+    ...s,
+    screens: (byStore.get(s.id) ?? []).map((sc) => {
+      const a = assignmentByDisplay.get(sc.displayId)
+      return a ? { ...sc, assignedFlate: a.flate, assignedAvdeling: a.avdeling } : sc
+    }),
+    hasKioskPassword: protectedStores.has(s.id),
+  }))
 
   // Fysiske Xibo-skjermer → DisplayLite per butikk.
   const displaysByStore = new Map<string, DisplayLite[]>()
