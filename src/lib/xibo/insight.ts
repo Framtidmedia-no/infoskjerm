@@ -1,4 +1,5 @@
-import { xiboFetch } from "./client"
+import { xiboFetch, listDisplays, type XiboDisplay } from "./client"
+import { parseLastSeen } from "./screens"
 
 /**
  * Estate-wide screen insight read live from the Xibo engine: current player
@@ -6,6 +7,12 @@ import { xiboFetch } from "./client"
  * stats (what actually showed on screens, and how often). Read-only. Every call
  * is defensive — a screen-engine hiccup yields an empty result, never a crash,
  * and an empty estate (no Pis connected yet) simply returns nothing.
+ *
+ * NB: Xibo's /fault endpoint only holds faults a *running* player reported
+ * (download/XMR/widget errors). A screen that lost power or network simply stops
+ * checking in — it can't report a fault. That "offline" signal lives on the
+ * display itself (loggedIn / lastAccessed), so we derive it separately and merge
+ * it in; otherwise a dark screen shows "Ingen feil" for days.
  */
 
 export interface ScreenFault {
@@ -68,6 +75,49 @@ async function fetchFaults(): Promise<ScreenFault[]> {
   }
 }
 
+/**
+ * Sortable epoch (ms) from Xibo's lastAccessed — a unix-seconds number or a naive
+ * "YYYY-MM-DD HH:mm:ss" string. Only used to order faults most-stale-first, so a
+ * uniform timezone skew on the naive string is harmless. Never-seen → -Infinity
+ * (most severe, sorts first).
+ */
+function lastSeenSortKey(raw: string | null): number {
+  if (!raw) return -Infinity
+  const n = Number(raw)
+  if (Number.isFinite(n) && n > 0) return n * 1000
+  const ms = Date.parse(raw.replace(" ", "T"))
+  return Number.isFinite(ms) ? ms : -Infinity
+}
+
+/**
+ * Turn offline displays into faults. "Offline" here matches the rest of the app
+ * (screens.ts, the "Frakoblet" badge): the player is not currently logged in.
+ * Most-stale-first so the screen that's been dark longest is at the top.
+ */
+export function offlineFaultsFromDisplays(
+  displays: Pick<XiboDisplay, "displayId" | "display" | "loggedIn" | "lastAccessed">[]
+): ScreenFault[] {
+  return displays
+    .filter((d) => d.loggedIn !== 1)
+    .sort((a, b) => lastSeenSortKey(a.lastAccessed) - lastSeenSortKey(b.lastAccessed))
+    .map((d) => ({
+      displayId: d.displayId ?? null,
+      display: d.display ?? null,
+      code: "OFFLINE",
+      description: "Skjermen er frakoblet",
+      since: d.lastAccessed ? `sist sett ${parseLastSeen(d.lastAccessed)}` : "har aldri koblet til",
+    }))
+}
+
+async function fetchOfflineFaults(): Promise<ScreenFault[]> {
+  try {
+    const displays = await listDisplays()
+    return offlineFaultsFromDisplays(displays ?? [])
+  } catch {
+    return []
+  }
+}
+
 async function fetchTopPlays(from: string, to: string): Promise<PlaySummaryRow[]> {
   try {
     const data = await xiboFetch<unknown>("/stats", {
@@ -95,6 +145,12 @@ export async function fetchScreenInsight(windowDays = 7): Promise<ScreenInsight>
   const from = isoDate(start)
   const to = isoDate(now)
 
-  const [faults, topPlays] = await Promise.all([fetchFaults(), fetchTopPlays(from, to)])
-  return { faults, topPlays, from, to }
+  const [reported, offline, topPlays] = await Promise.all([
+    fetchFaults(),
+    fetchOfflineFaults(),
+    fetchTopPlays(from, to),
+  ])
+  // Offline screens first — a dark screen is the most urgent thing to see —
+  // then player-reported faults.
+  return { faults: [...offline, ...reported], topPlays, from, to }
 }
