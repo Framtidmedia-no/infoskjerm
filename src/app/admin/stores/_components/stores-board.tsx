@@ -327,10 +327,17 @@ export function StoresBoard({ chains, allTags, screenCountsPromise }: StoresBoar
       ) : (
         <div className="flex-1 space-y-8 p-4 sm:p-6">
           {filteredChains.map((chain) => (
-            <section key={chain.id}>
+            <section
+              key={chain.id}
+              className="relative overflow-hidden rounded-3xl border p-4 sm:p-5"
+              style={{
+                borderColor: withAlpha(chain.color, "24"),
+                background: `linear-gradient(180deg, ${withAlpha(chain.color, "0f")}, ${withAlpha(chain.color, "05")} 10rem, transparent 18rem)`,
+              }}
+            >
               <div className="mb-4 flex items-center gap-3">
                 <span className="h-6 w-1.5 rounded-full" style={{ backgroundColor: chain.color }} />
-                <h2 className="text-lg font-bold tracking-tight text-zinc-900">{chain.name}</h2>
+                <h2 className="font-display text-lg font-bold tracking-tight text-zinc-900">{chain.name}</h2>
                 <span
                   className="rounded-full px-2 py-0.5 text-xs font-semibold"
                   style={{
