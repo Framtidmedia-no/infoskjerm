@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import { StoresBoard } from "./_components/stores-board"
 import type { BoardChain, BoardStore, BoardTag } from "./_components/types"
+import type { OpeningHours } from "@/lib/power/schedule"
 
 export const dynamic = "force-dynamic"
 
@@ -17,6 +18,7 @@ interface RawStore {
   email: string | null
   org_number: string | null
   gln: string | null
+  apningstider: OpeningHours | null
   screens: unknown[] | null
   store_tags: { tags: BoardTag | null }[] | null
 }
@@ -51,6 +53,7 @@ export default async function StoresPage() {
         email: store.email,
         org_number: store.org_number,
         gln: store.gln,
+        apningstider: store.apningstider ?? null,
         tags: (store.store_tags ?? [])
           .map((st) => st.tags)
           .filter((t): t is BoardTag => Boolean(t)),
