@@ -1,9 +1,10 @@
 "use client"
 
-import { useMemo, useState } from "react"
-import { Search, Shield, Building2, LayoutGrid, UserCircle, Network, X } from "lucide-react"
+import { Fragment, useMemo, useState } from "react"
+import { Search, Shield, Building2, LayoutGrid, UserCircle, Network, X, ChevronDown } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Card, CardContent } from "@/components/ui/card"
+import { EmptyState } from "@/components/ui/empty-state"
 import { SoftTable, SoftTd, SoftTh, SoftThead, SoftTr } from "@/components/ui/soft-table"
 import { UserDeleteButton } from "./user-delete-button"
 import { UserRoleSelect } from "./user-role-select"
@@ -72,6 +73,7 @@ function AccessCell({
 export function UsersList({ rows, allStores, canAdminister, unitLabelPlural }: UsersListProps) {
   const [search, setSearch] = useState("")
   const [activeRole, setActiveRole] = useState<UserRole | "all">("all")
+  const [expanded, setExpanded] = useState<string | null>(null)
 
   const rolesPresent = useMemo(
     () => ROLE_ORDER.filter((r) => rows.some((row) => row.role === r)),
@@ -129,26 +131,23 @@ export function UsersList({ rows, allStores, canAdminister, unitLabelPlural }: U
       </div>
 
       {filtered.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-zinc-300 bg-white p-12 text-center">
-          <UserCircle className="mx-auto mb-3 h-10 w-10 text-zinc-300" />
-          <p className="text-sm font-medium text-zinc-700">
-            {hasFilters ? "Ingen brukere matcher filtrene." : "Ingen brukere ennå"}
-          </p>
-          {hasFilters ? (
+        <EmptyState
+          variant={hasFilters ? "kikkert" : "spire"}
+          title={hasFilters ? "Ingen brukere matcher filtrene" : "Ingen brukere ennå"}
+          hint={hasFilters ? "Prøv et annet søkeord eller rollefilter." : "Inviter en bruker for å komme i gang."}
+          action={hasFilters ? (
             <button
               type="button"
               onClick={() => {
                 setSearch("")
                 setActiveRole("all")
               }}
-              className="mt-1 text-xs font-medium text-zinc-600 underline-offset-2 hover:underline"
+              className="rounded-full bg-white px-3.5 py-1.5 text-xs font-semibold text-zinc-600 shadow-[0_1px_2px_rgba(16,24,40,0.06)] ring-1 ring-zinc-200 transition-all hover:text-zinc-900 hover:ring-zinc-300"
             >
               Nullstill filtre
             </button>
-          ) : (
-            <p className="mt-1 text-xs text-zinc-400">Inviter en bruker for å komme i gang.</p>
-          )}
-        </div>
+          ) : undefined}
+        />
       ) : (
         <>
           {/* Desktop: pillekort-tabell */}
@@ -165,8 +164,18 @@ export function UsersList({ rows, allStores, canAdminister, unitLabelPlural }: U
                 {filtered.map((row, idx) => {
                   const cfg = roleConfig[row.role] ?? roleConfig.store_employee
                   const Icon = cfg.icon
+                  const erUtvidet = expanded === row.id
                   return (
-                    <SoftTr key={row.id} index={idx}>
+                    <Fragment key={row.id}>
+                    <SoftTr
+                      index={idx}
+                      className="cursor-pointer"
+                      onClick={(e) => {
+                        // Ikke utvid når klikket traff en interaktiv kontroll i raden
+                        if ((e.target as HTMLElement).closest("button, select, a, input, label, [role=dialog]")) return
+                        setExpanded(erUtvidet ? null : row.id)
+                      }}
+                    >
                       <SoftTd>
                         <div className="flex items-center gap-3">
                           <div className={`h-10 w-10 rounded-xl ${cfg.bg} flex items-center justify-center ring-1 ring-inset ring-black/5`}>
@@ -196,16 +205,49 @@ export function UsersList({ rows, allStores, canAdminister, unitLabelPlural }: U
                         </span>
                       </SoftTd>
                       <SoftTd>
-                        {canAdminister && (
-                          <div className="flex items-center justify-end gap-2">
-                            <UserRoleSelect userId={row.id} currentRole={row.role} />
-                            <span className="opacity-0 transition-opacity focus-within:opacity-100 group-hover:opacity-100 pointer-coarse:opacity-100">
-                              <UserDeleteButton userId={row.id} userLabel={row.displayName} />
-                            </span>
-                          </div>
-                        )}
+                        <div className="flex items-center justify-end gap-2">
+                          {canAdminister && (
+                            <>
+                              <UserRoleSelect userId={row.id} currentRole={row.role} />
+                              <span className="opacity-0 transition-opacity focus-within:opacity-100 group-hover:opacity-100 pointer-coarse:opacity-100">
+                                <UserDeleteButton userId={row.id} userLabel={row.displayName} />
+                              </span>
+                            </>
+                          )}
+                          <ChevronDown className={cn("h-4 w-4 flex-shrink-0 text-zinc-400 transition-transform", erUtvidet && "rotate-180")} />
+                        </div>
                       </SoftTd>
                     </SoftTr>
+                    {erUtvidet && (
+                      <tr className="fx-fade">
+                        <td colSpan={5} className="rounded-2xl border border-zinc-200/70 bg-zinc-50/80 px-6 py-4">
+                          <div className="flex flex-wrap items-start gap-x-10 gap-y-3">
+                            <div>
+                              <p className="text-[10px] font-semibold uppercase tracking-widest text-zinc-400">E-post</p>
+                              <p className="mt-0.5 text-sm text-zinc-700">{row.email ?? "—"}</p>
+                            </div>
+                            <div>
+                              <p className="text-[10px] font-semibold uppercase tracking-widest text-zinc-400">Sist innlogget</p>
+                              <p className="mt-0.5 text-sm text-zinc-700">{row.lastSignInExact ?? row.lastSignIn}</p>
+                            </div>
+                            <div className="min-w-[200px]">
+                              <p className="text-[10px] font-semibold uppercase tracking-widest text-zinc-400">Tilgang</p>
+                              <p className="mt-0.5 text-sm text-zinc-700">
+                                {row.role === "super_admin" || row.role === "chain_manager"
+                                  ? `Alle ${unitLabelPlural.toLowerCase()}`
+                                  : row.storeNames.length > 0 ? row.storeNames.join(", ") : `Ingen ${unitLabelPlural.toLowerCase()}`}
+                              </p>
+                            </div>
+                            {canAdminister && (
+                              <div className="ml-auto self-center">
+                                <UserDeleteButton userId={row.id} userLabel={row.displayName} />
+                              </div>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                    </Fragment>
                   )
                 })}
               </tbody>
