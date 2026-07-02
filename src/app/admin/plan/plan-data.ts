@@ -13,6 +13,7 @@ export interface PlanItem {
   title: string
   type: string
   status: string | null
+  imageUrl: string | null
   /** ISO-dato eller null = åpen start (kontinuerlig fra publisering). */
   start: string | null
   /** ISO-dato eller null = åpen slutt. */
@@ -80,6 +81,7 @@ export async function loadPlanData(): Promise<PlanData> {
       title: row.title,
       type: row.type,
       status: row.status,
+      imageUrl: row.imageUrl,
       start: row.validFrom,
       end: row.validTo,
       inBothLanes: kundeIds.has(row.id) && internIds.has(row.id),

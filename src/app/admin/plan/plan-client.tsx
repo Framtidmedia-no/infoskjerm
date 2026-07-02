@@ -2,8 +2,8 @@
 
 import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
-import { ChevronLeft, ChevronRight, Images, Layers, Megaphone, Newspaper, Ticket } from "lucide-react"
-import { TYPE_META } from "@/app/admin/innhold/_components/content-thumb"
+import { ChevronLeft, ChevronRight, GalleryThumbnails, Images, Layers, Megaphone, Newspaper, Rows3, Ticket } from "lucide-react"
+import { ContentThumb, TYPE_META } from "@/app/admin/innhold/_components/content-thumb"
 import { cn } from "@/lib/utils"
 import type { PlanData, PlanItem } from "./plan-data"
 
@@ -11,7 +11,9 @@ import type { PlanData, PlanItem } from "./plan-data"
  * «Planen»: horisontal tidslinje over alt planlagt innhold, én bane per flate
  * (kundeskjerm/internskjerm). Barer = gyldighetsvindu (åpen start/slutt fader
  * ut), i dag-linje, helgeskygge, hull-varsling (dager uten aktivt innhold) og
- * typelegende som filter. Ingen tidslinje-avhengigheter — ren CSS-geometri.
+ * typelegende som filter. To visninger: visuell (miniatyrbilde av innholdet i
+ * baren) og kompakt (tette tekstbarer) — valget huskes i localStorage.
+ * Ingen tidslinje-avhengigheter — ren CSS-geometri.
  */
 
 const DAY_MS = 24 * 60 * 60 * 1000
@@ -21,6 +23,10 @@ const ZOOM_DAYS: Record<Zoom, number> = { uke: 7, maned: 30, kvartal: 91 }
 const ZOOM_LABELS: Record<Zoom, string> = { uke: "Uke", maned: "Måned", kvartal: "Kvartal" }
 
 type StatusFilter = "alle" | "live" | "scheduled" | "draft"
+
+/** Visuell = barer med miniatyrbilde av innholdet; kompakt = tette tekstbarer. */
+type PlanView = "visuell" | "kompakt"
+const VIEW_STORAGE_KEY = "plan-view"
 
 /** Typer som ikke finnes i TYPE_META (invitasjoner bor i egen seksjon). */
 const EXTRA_TYPE_META: Record<string, { label: string; icon: React.ElementType; badge: string }> = {
@@ -104,11 +110,14 @@ function coversDay(item: PlanItem, day: Date): boolean {
   return true
 }
 
-function Bar({ item, geo, today }: { item: PlanItem; geo: Geometry; today: Date }) {
+function Bar({ item, geo, today, view }: { item: PlanItem; geo: Geometry; today: Date; view: PlanView }) {
   const g = barGeometry(item, geo)
   if (!g.visible) return null
   const meta = typeMeta(item.type)
   const Icon = meta.icon
+  const visual = view === "visuell"
+  // For korte barer har ikke plass til miniatyren — fall tilbake til ikon + tittel.
+  const showThumb = visual && g.widthPct >= 6
   const isDraft = item.status === "draft"
   const isScheduled = item.status === "scheduled"
   const expired = item.status === "live" && item.end !== null && parseDay(item.end) < today
@@ -134,12 +143,13 @@ function Bar({ item, geo, today }: { item: PlanItem; geo: Geometry; today: Date 
           : undefined
 
   return (
-    <div className="relative h-8">
+    <div className={cn("relative", visual ? "h-[52px]" : "h-8")}>
       <Link
         href={item.editHref}
         title={`${meta.label}: ${item.title} · ${item.targetLabel}${expired ? " · UTLØPT" : ""}`}
         className={cn(
-          "group absolute inset-y-0.5 flex items-center gap-1.5 overflow-hidden px-2 text-xs font-medium transition-all hover:z-20 hover:-translate-y-px hover:shadow-lg",
+          "group absolute inset-y-0.5 flex items-center overflow-hidden text-xs font-medium transition-all hover:z-20 hover:-translate-y-px hover:shadow-lg",
+          showThumb ? "gap-2 pl-1 pr-2" : "gap-1.5 px-2",
           g.openStart ? "rounded-l-sm" : "rounded-l-lg",
           g.openEnd ? "rounded-r-sm" : "rounded-r-lg",
           isDraft
@@ -155,9 +165,26 @@ function Bar({ item, geo, today }: { item: PlanItem; geo: Geometry; today: Date 
           ...(mask ? { maskImage: mask, WebkitMaskImage: mask } : undefined),
         }}
       >
-        <Icon className="h-3 w-3 flex-shrink-0 opacity-90" />
-        <span className="truncate">{item.title}</span>
-        {item.inBothLanes && <Layers className="h-3 w-3 flex-shrink-0 opacity-70" aria-label="Vises på begge flater" />}
+        {showThumb ? (
+          <>
+            <ContentThumb imageUrl={item.imageUrl} type={item.type} className="h-10 w-16 flex-shrink-0 rounded-md" />
+            <span className="flex min-w-0 flex-col justify-center leading-tight">
+              <span className="flex items-center gap-1">
+                <span className="truncate font-semibold">{item.title}</span>
+                {item.inBothLanes && <Layers className="h-3 w-3 flex-shrink-0 opacity-70" aria-label="Vises på begge flater" />}
+              </span>
+              <span className="truncate text-[10px] font-medium opacity-75">
+                {meta.label} · {item.targetLabel}
+              </span>
+            </span>
+          </>
+        ) : (
+          <>
+            <Icon className="h-3 w-3 flex-shrink-0 opacity-90" />
+            <span className="truncate">{item.title}</span>
+            {item.inBothLanes && <Layers className="h-3 w-3 flex-shrink-0 opacity-70" aria-label="Vises på begge flater" />}
+          </>
+        )}
       </Link>
       {markers.map((m) => (
         <span
@@ -183,6 +210,7 @@ function Lane({
   geo,
   today,
   delay,
+  view,
 }: {
   title: string
   icon: React.ElementType
@@ -190,6 +218,7 @@ function Lane({
   geo: Geometry
   today: Date
   delay: number
+  view: PlanView
 }) {
   const visible = items.filter((i) => barGeometry(i, geo).visible)
   const windowDays = Array.from({ length: geo.days }, (_, i) => addDays(geo.windowStart, i))
@@ -247,7 +276,7 @@ function Lane({
         ) : (
           <div className="relative space-y-1">
             {visible.map((item) => (
-              <Bar key={item.id} item={item} geo={geo} today={today} />
+              <Bar key={item.id} item={item} geo={geo} today={today} view={view} />
             ))}
           </div>
         )}
@@ -263,10 +292,18 @@ export function PlanClient({ data }: { data: PlanData }) {
   const [offset, setOffset] = useState(0)
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("alle")
   const [hiddenTypes, setHiddenTypes] = useState<Set<string>>(new Set())
+  const [view, setView] = useState<PlanView>("visuell")
 
   useEffect(() => {
     setToday(startOfDay(new Date()))
+    const saved = localStorage.getItem(VIEW_STORAGE_KEY)
+    if (saved === "visuell" || saved === "kompakt") setView(saved)
   }, [])
+
+  const changeView = (v: PlanView) => {
+    setView(v)
+    localStorage.setItem(VIEW_STORAGE_KEY, v)
+  }
 
   const allTypes = useMemo(() => {
     const set = new Set<string>()
@@ -337,19 +374,38 @@ export function PlanClient({ data }: { data: PlanData }) {
           {fmtDay.format(geo.windowStart)} – {fmtDay.format(windowEnd)}
         </span>
 
-        <div className="ml-auto flex rounded-xl border border-zinc-200 bg-white p-0.5 shadow-[0_1px_2px_rgba(16,24,40,0.05)]">
-          {([["alle", "Alle"], ["live", "Live"], ["scheduled", "Planlagt"], ["draft", "Utkast"]] as const).map(([value, label]) => (
-            <button
-              key={value}
-              onClick={() => setStatusFilter(value)}
-              className={cn(
-                "rounded-[10px] px-2.5 py-1.5 text-xs font-semibold transition-all",
-                statusFilter === value ? "bg-zinc-900 text-white shadow-sm" : "text-zinc-500 hover:text-zinc-900"
-              )}
-            >
-              {label}
-            </button>
-          ))}
+        <div className="ml-auto flex flex-wrap items-center gap-2">
+          <div className="flex rounded-xl border border-zinc-200 bg-white p-0.5 shadow-[0_1px_2px_rgba(16,24,40,0.05)]">
+            {([["visuell", "Visuell", GalleryThumbnails], ["kompakt", "Kompakt", Rows3]] as const).map(([value, label, Icon]) => (
+              <button
+                key={value}
+                onClick={() => changeView(value)}
+                title={value === "visuell" ? "Barer med miniatyrbilde av innholdet" : "Tette tekstbarer"}
+                className={cn(
+                  "flex items-center gap-1.5 rounded-[10px] px-2.5 py-1.5 text-xs font-semibold transition-all",
+                  view === value ? "bg-zinc-900 text-white shadow-sm" : "text-zinc-500 hover:text-zinc-900"
+                )}
+              >
+                <Icon className="h-3.5 w-3.5" />
+                {label}
+              </button>
+            ))}
+          </div>
+
+          <div className="flex rounded-xl border border-zinc-200 bg-white p-0.5 shadow-[0_1px_2px_rgba(16,24,40,0.05)]">
+            {([["alle", "Alle"], ["live", "Live"], ["scheduled", "Planlagt"], ["draft", "Utkast"]] as const).map(([value, label]) => (
+              <button
+                key={value}
+                onClick={() => setStatusFilter(value)}
+                className={cn(
+                  "rounded-[10px] px-2.5 py-1.5 text-xs font-semibold transition-all",
+                  statusFilter === value ? "bg-zinc-900 text-white shadow-sm" : "text-zinc-500 hover:text-zinc-900"
+                )}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
@@ -394,8 +450,8 @@ export function PlanClient({ data }: { data: PlanData }) {
         })}
       </div>
 
-      <Lane title="Kundeskjerm" icon={Megaphone} items={kunde} geo={geo} today={today} delay={120} />
-      <Lane title="Internskjerm" icon={Newspaper} items={intern} geo={geo} today={today} delay={180} />
+      <Lane title="Kundeskjerm" icon={Megaphone} items={kunde} geo={geo} today={today} delay={120} view={view} />
+      <Lane title="Internskjerm" icon={Newspaper} items={intern} geo={geo} today={today} delay={180} view={view} />
 
       <p className="text-center text-[11px] text-zinc-400">
         Barer viser gyldighetsvinduet — åpne ender fader ut. Skraverte barer er planlagte, stiplede er utkast. Gule felter = dager uten aktivt innhold.
