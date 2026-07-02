@@ -86,8 +86,8 @@ export default async function PlattformPage() {
                         <span className="font-display text-sm font-bold text-white">{t.name.charAt(0).toUpperCase()}</span>
                       </span>
                       <div>
-                        <p className="font-semibold text-zinc-900">{t.name}</p>
-                        <p className="text-xs text-zinc-400">{t.slug}</p>
+                        <p className="font-semibold text-zinc-900 whitespace-nowrap">{t.name}</p>
+                        <p className="text-xs text-zinc-400 whitespace-nowrap">{t.slug}</p>
                       </div>
                     </div>
                   </td>
