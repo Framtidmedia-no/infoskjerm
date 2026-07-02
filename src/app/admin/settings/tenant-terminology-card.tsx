@@ -88,7 +88,7 @@ export function TenantTerminologyCard() {
               value={singular}
               onChange={(e) => setSingular(e.target.value)}
               placeholder="Butikk"
-              className="mt-1 w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-zinc-300"
+              className="mt-1 w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm transition-colors focus:border-[var(--brand-primary)] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)]/15"
             />
           </label>
           <label className="block">
@@ -97,7 +97,7 @@ export function TenantTerminologyCard() {
               value={plural}
               onChange={(e) => setPlural(e.target.value)}
               placeholder="Butikker"
-              className="mt-1 w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-zinc-300"
+              className="mt-1 w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm transition-colors focus:border-[var(--brand-primary)] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)]/15"
             />
           </label>
         </div>

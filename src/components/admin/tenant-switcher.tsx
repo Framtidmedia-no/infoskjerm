@@ -77,7 +77,7 @@ export function TenantSwitcher({ tenants, activeTenantId }: { tenants: SwitcherT
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Søk organisasjon…"
-                className="w-full text-sm bg-zinc-50 rounded-lg pl-8 pr-3 py-2 focus:outline-none focus:ring-1 focus:ring-zinc-300"
+                className="w-full text-sm bg-zinc-50 rounded-lg pl-8 pr-3 py-2 transition-colors focus:border-[var(--brand-primary)] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)]/15"
               />
             </div>
             <ul className="max-h-72 overflow-y-auto py-1" role="listbox">

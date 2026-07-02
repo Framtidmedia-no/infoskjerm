@@ -121,7 +121,7 @@ export function RichTextEditor({ value, onChange, placeholder = "Skriv innholdet
             }}
             placeholder="https://…"
             aria-label="Lenke-URL"
-            className="min-w-0 flex-1 rounded-lg border border-zinc-200 px-2 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-zinc-300"
+            className="min-w-0 flex-1 rounded-lg border border-zinc-200 px-2 py-1.5 text-xs transition-colors focus:border-[var(--brand-primary)] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)]/15"
           />
           <button type="button" onClick={applyLink} title="Sett lenke" className="rounded-lg bg-zinc-900 p-1.5 text-white hover:bg-zinc-700">
             <Check className="h-3.5 w-3.5" />

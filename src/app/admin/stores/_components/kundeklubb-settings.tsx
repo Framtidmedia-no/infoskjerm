@@ -33,7 +33,7 @@ export function KundeklubbSettings({
     else toast.error(res.error ?? "Noe gikk galt")
   }
 
-  const field = "w-full text-sm border border-zinc-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-zinc-300"
+  const field = "w-full text-sm rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 transition-colors focus:border-[var(--brand-primary)] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)]/15"
 
   return (
     <div className="space-y-4">

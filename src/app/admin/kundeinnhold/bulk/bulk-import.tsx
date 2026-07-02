@@ -60,7 +60,7 @@ function toLiveItem(offer: OfferFields, imageUrl: string | null, validFrom: stri
   }
 }
 
-const inputCls = "w-full text-sm border border-zinc-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-zinc-300"
+const inputCls = "w-full text-sm rounded-xl border border-zinc-200 bg-zinc-50 px-2.5 py-1.5 transition-colors focus:border-[var(--brand-primary)] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)]/15"
 
 function reachCount(v: TargetValue, stores: StoreOption[]): number {
   if (v.mode === "all") return stores.length
@@ -91,7 +91,7 @@ function TargetPicker({ value, onChange, stores, tags, chosen = true, canTargetA
         : <p className="text-[11px] font-medium text-amber-600">Velg hvor tilbudene skal vises før du publiserer.</p>}
       {value.mode === "stores" && (
         <div className="mt-2">
-          <div className="relative mb-1"><Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-zinc-400" /><input value={search} onChange={(e) => setSearch(e.target.value)} placeholder={`Søk ${unitLabel.toLowerCase()}…`} className="w-full text-xs border border-zinc-200 rounded-lg pl-7 pr-2 py-1.5" /></div>
+          <div className="relative mb-1"><Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-zinc-400" /><input value={search} onChange={(e) => setSearch(e.target.value)} placeholder={`Søk ${unitLabel.toLowerCase()}…`} className="w-full text-xs rounded-xl border border-zinc-200 bg-zinc-50 pl-7 pr-2 py-1.5" /></div>
           <div className="max-h-32 overflow-y-auto space-y-0.5">
             {visible.map((s) => (
               <label key={s.id} className="flex items-center gap-2 px-1.5 py-1 rounded hover:bg-zinc-50 cursor-pointer">
@@ -236,7 +236,7 @@ export function BulkImport({ stores, tags, initialLinks = "", canTargetAll = tru
           {rows.length > 0 && <span className="text-xs text-zinc-400 whitespace-nowrap shrink-0">{ready.length} klare · {rows.filter((r) => r.status === "failed" && !r.offer.varenavn.trim()).length} mangler</span>}
         </div>
         <div className="flex items-center gap-2 sm:ml-auto [&>*]:flex-1 sm:[&>*]:flex-none">
-          <button onClick={() => save(false)} disabled={saving || rows.length === 0} className="flex items-center justify-center gap-1.5 text-xs font-medium border border-zinc-200 rounded-lg px-3 py-2.5 sm:py-2 text-zinc-700 hover:border-zinc-300 disabled:opacity-50"><Save className="w-3.5 h-3.5" /> Lagre utkast</button>
+          <button onClick={() => save(false)} disabled={saving || rows.length === 0} className="flex items-center justify-center gap-1.5 text-xs font-medium rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2.5 sm:py-2 text-zinc-700 hover:border-zinc-300 disabled:opacity-50"><Save className="w-3.5 h-3.5" /> Lagre utkast</button>
           <button onClick={() => save(true)} disabled={saving || rows.length === 0} className="flex items-center justify-center gap-1.5 text-xs font-semibold text-white rounded-lg px-3 py-2.5 sm:py-2 disabled:opacity-50" style={{ backgroundColor: "var(--brand-primary)" }}>
             {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />} Publiser alle ({ready.length})
           </button>
@@ -256,7 +256,7 @@ export function BulkImport({ stores, tags, initialLinks = "", canTargetAll = tru
         {/* Paste box */}
         <section className="rounded-xl border border-zinc-200 bg-white p-4">
           <h3 className="text-xs font-semibold text-zinc-600 mb-2">Lim inn spar.no-lenker eller GTIN — én per linje</h3>
-          <textarea value={raw} onChange={(e) => setRaw(e.target.value)} rows={4} placeholder={"https://spar.no/varer/...\n7039610001234\nhttps://spar.no/varer/..."} className="w-full text-sm border border-zinc-200 rounded-lg px-3 py-2 font-mono focus:outline-none focus:ring-1 focus:ring-zinc-300" />
+          <textarea value={raw} onChange={(e) => setRaw(e.target.value)} rows={4} placeholder={"https://spar.no/varer/...\n7039610001234\nhttps://spar.no/varer/..."} className="w-full text-sm rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 font-mono transition-colors focus:border-[var(--brand-primary)] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)]/15" />
           <button onClick={handleLookup} disabled={loading} className="mt-2 flex items-center gap-1.5 text-xs font-semibold text-white rounded-lg px-3.5 py-2 disabled:opacity-50" style={{ backgroundColor: "var(--brand-primary)" }}>
             {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />} Hent alle
           </button>
@@ -272,9 +272,9 @@ export function BulkImport({ stores, tags, initialLinks = "", canTargetAll = tru
               ))}
             </div>
             <div className="flex items-center gap-2">
-              <input type="date" value={validFrom} onChange={(e) => setValidFrom(e.target.value)} className="text-xs border border-zinc-200 rounded-lg px-2 py-1.5" />
+              <input type="date" value={validFrom} onChange={(e) => setValidFrom(e.target.value)} className="text-xs rounded-xl border border-zinc-200 bg-zinc-50 px-2 py-1.5" />
               <span className="text-zinc-400 text-xs">→</span>
-              <input type="date" value={validTo} onChange={(e) => setValidTo(e.target.value)} className="text-xs border border-zinc-200 rounded-lg px-2 py-1.5" />
+              <input type="date" value={validTo} onChange={(e) => setValidTo(e.target.value)} className="text-xs rounded-xl border border-zinc-200 bg-zinc-50 px-2 py-1.5" />
             </div>
           </div>
           <div>
@@ -374,9 +374,9 @@ export function BulkImport({ stores, tags, initialLinks = "", canTargetAll = tru
                     <div className="mt-3 pt-3 border-t border-zinc-100">
                       <p className="text-[10px] text-zinc-400 mb-1.5">Egen periode for denne (valgfri — ellers brukes felles)</p>
                       <div className="flex items-center gap-2">
-                        <input type="date" value={focused.validFrom ?? ""} onChange={(e) => updateRow(focused.id, { validFrom: e.target.value || null })} className="text-xs border border-zinc-200 rounded-lg px-2 py-1.5" />
+                        <input type="date" value={focused.validFrom ?? ""} onChange={(e) => updateRow(focused.id, { validFrom: e.target.value || null })} className="text-xs rounded-xl border border-zinc-200 bg-zinc-50 px-2 py-1.5" />
                         <span className="text-zinc-400 text-xs">→</span>
-                        <input type="date" value={focused.validTo ?? ""} onChange={(e) => updateRow(focused.id, { validTo: e.target.value || null })} className="text-xs border border-zinc-200 rounded-lg px-2 py-1.5" />
+                        <input type="date" value={focused.validTo ?? ""} onChange={(e) => updateRow(focused.id, { validTo: e.target.value || null })} className="text-xs rounded-xl border border-zinc-200 bg-zinc-50 px-2 py-1.5" />
                       </div>
                     </div>
                     <div className="mt-3 pt-3 border-t border-zinc-100">

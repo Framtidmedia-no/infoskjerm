@@ -39,15 +39,24 @@ function metaFor(action: string) {
   return ACTION_META[action] ?? { label: action, icon: Activity, cls: "bg-zinc-100 text-zinc-600" }
 }
 
-function relTime(iso: string): string {
-  const d = new Date(iso)
-  const diff = Date.now() - d.getTime()
-  const min = Math.round(diff / 60000)
-  if (min < 1) return "nå nettopp"
-  if (min < 60) return `${min} min siden`
-  const h = Math.round(min / 60)
-  if (h < 24) return `${h} t siden`
-  return d.toLocaleDateString("nb-NO", { timeZone: "Europe/Oslo", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })
+const dayFmt = new Intl.DateTimeFormat("nb-NO", { timeZone: "Europe/Oslo", year: "numeric", month: "2-digit", day: "2-digit" })
+const dayLabelFmt = new Intl.DateTimeFormat("nb-NO", { timeZone: "Europe/Oslo", weekday: "long", day: "numeric", month: "long" })
+const clockFmt = new Intl.DateTimeFormat("nb-NO", { timeZone: "Europe/Oslo", hour: "2-digit", minute: "2-digit" })
+
+function dayLabel(iso: string): string {
+  const key = dayFmt.format(new Date(iso))
+  if (key === dayFmt.format(new Date())) return "I dag"
+  if (key === dayFmt.format(new Date(Date.now() - 86_400_000))) return "I går"
+  const label = dayLabelFmt.format(new Date(iso))
+  return label.charAt(0).toUpperCase() + label.slice(1)
+}
+
+/** «x min siden» for ferske hendelser, ellers klokkeslett (dagen står i gruppeheaderen). */
+function timeLabel(iso: string): string {
+  const diffMin = Math.round((Date.now() - new Date(iso).getTime()) / 60_000)
+  if (diffMin < 1) return "nå nettopp"
+  if (diffMin < 60) return `${diffMin} min siden`
+  return `kl. ${clockFmt.format(new Date(iso))}`
 }
 
 const ENTITY_FILTERS = [
@@ -73,13 +82,25 @@ export function LoggClient({ rows, limit, hasMore }: { rows: LogRow[]; limit: nu
     return true
   }), [rows, search, entity])
 
+  // Grupper per dag (Europe/Oslo) — radene kommer allerede nyeste først.
+  const groups = useMemo(() => {
+    const out: Array<{ key: string; label: string; items: LogRow[] }> = []
+    for (const row of filtered) {
+      const key = dayFmt.format(new Date(row.created_at))
+      const last = out[out.length - 1]
+      if (last?.key === key) last.items.push(row)
+      else out.push({ key, label: dayLabel(row.created_at), items: [row] })
+    }
+    return out
+  }, [filtered])
+
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-2">
         <div className="relative flex-1 min-w-[200px]">
           <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
           <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Søk i logg…"
-            className="w-full text-sm bg-white border border-zinc-200 rounded-lg pl-8 pr-3 py-2 focus:outline-none focus:ring-1 focus:ring-zinc-300" />
+            className="w-full rounded-xl border border-zinc-200 bg-white py-2 pl-8 pr-3 text-sm shadow-[0_1px_2px_rgba(16,24,40,0.04)] transition-colors focus:border-[var(--brand-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)]/15" />
         </div>
         <div className="flex flex-wrap gap-1.5">
           {ENTITY_FILTERS.map((f) => (
@@ -108,24 +129,36 @@ export function LoggClient({ rows, limit, hasMore }: { rows: LogRow[]; limit: nu
           )}
         </div>
       ) : (
-        <ul className="rounded-2xl border border-zinc-200 bg-white divide-y divide-zinc-100 overflow-hidden">
-          {filtered.map((r) => {
-            const m = metaFor(r.action)
-            const Icon = m.icon
-            return (
-              <li key={r.id} className="flex items-center gap-3 px-4 py-3">
-                <span className={`flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg ${m.cls}`}>
-                  <Icon className="h-4 w-4" />
-                </span>
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm text-zinc-800 truncate">{r.summary}</p>
-                  <p className="text-[11px] text-zinc-400 truncate">{r.user_email ?? "System"} · {m.label}</p>
-                </div>
-                <span className="text-[11px] text-zinc-400 flex-shrink-0 whitespace-nowrap">{relTime(r.created_at)}</span>
-              </li>
-            )
-          })}
-        </ul>
+        <div className="overflow-hidden rounded-2xl border border-zinc-200/80 bg-white shadow-[0_1px_2px_rgba(16,24,40,0.04)]">
+          {groups.map((group) => (
+            <section key={group.key}>
+              <header className="border-y border-zinc-100 bg-zinc-50/80 px-4 py-1.5 backdrop-blur first:border-t-0">
+                <span className="font-display text-[11px] font-semibold uppercase tracking-widest text-zinc-500">{group.label}</span>
+                <span className="ml-2 text-[11px] tabular-nums text-zinc-400">{group.items.length}</span>
+              </header>
+              {/* Tidslinje-rail gjennom dagens hendelser */}
+              <ul className="relative">
+                <span aria-hidden className="absolute bottom-2 left-[31px] top-2 w-px bg-zinc-100" />
+                {group.items.map((r) => {
+                  const m = metaFor(r.action)
+                  const Icon = m.icon
+                  return (
+                    <li key={r.id} className="flex items-center gap-3 px-4 py-2.5 transition-colors hover:bg-zinc-50/70">
+                      <span className={`relative z-10 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg ring-4 ring-white ${m.cls}`}>
+                        <Icon className="h-4 w-4" />
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm text-zinc-800">{r.summary}</p>
+                        <p className="truncate text-[11px] text-zinc-400">{r.user_email ?? "System"} · {m.label}</p>
+                      </div>
+                      <span className="flex-shrink-0 whitespace-nowrap text-[11px] tabular-nums text-zinc-400">{timeLabel(r.created_at)}</span>
+                    </li>
+                  )
+                })}
+              </ul>
+            </section>
+          ))}
+        </div>
       )}
       <p className="text-[11px] text-zinc-400">Viser de siste {rows.length} hendelsene.</p>
       {hasMore && (

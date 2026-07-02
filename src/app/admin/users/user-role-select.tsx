@@ -41,7 +41,7 @@ export function UserRoleSelect({ userId, currentRole }: { userId: string; curren
       onChange={(e) => handleChange(e.target.value as UserRole)}
       disabled={saving}
       aria-label="Endre rolle"
-      className="text-xs border border-zinc-200 rounded-lg px-2 py-1 focus:outline-none focus:ring-1 focus:ring-zinc-300 disabled:opacity-50"
+      className="rounded-xl border border-zinc-200 bg-zinc-50 px-2.5 py-1.5 text-xs font-medium text-zinc-700 shadow-[0_1px_2px_rgba(16,24,40,0.04)] transition-colors hover:border-zinc-300 focus:border-[var(--brand-primary)] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)]/15 disabled:opacity-50"
     >
       {roleOptions.map((opt) => (
         <option key={opt.value} value={opt.value}>
