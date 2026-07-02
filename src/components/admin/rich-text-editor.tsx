@@ -64,7 +64,7 @@ export function RichTextEditor({ value, onChange, placeholder = "Skriv innholdet
   }, [value, editor])
 
   if (!editor) {
-    return <div className="min-h-[260px] rounded-xl border border-zinc-200 bg-white animate-pulse" />
+    return <div className="min-h-[260px] rounded-2xl border border-zinc-200/80 bg-white shadow-[0_1px_2px_rgba(16,24,40,0.04)] animate-pulse" />
   }
 
   const openLinkEditor = () => {
@@ -91,7 +91,7 @@ export function RichTextEditor({ value, onChange, placeholder = "Skriv innholdet
   }
 
   return (
-    <div className="relative rounded-xl border border-zinc-200 bg-white overflow-visible focus-within:ring-2 focus-within:ring-zinc-900 focus-within:border-transparent">
+    <div className="relative rounded-2xl border border-zinc-200/80 bg-white shadow-[0_1px_2px_rgba(16,24,40,0.04)] overflow-visible focus-within:ring-2 focus-within:ring-zinc-900 focus-within:border-transparent">
       <div className="flex items-center gap-0.5 px-2 py-1.5 border-b border-zinc-100 bg-zinc-50/50 flex-wrap">
         <ToolbarButton title="Overskrift" active={editor.isActive("heading", { level: 2 })} onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}><Heading2 className="w-4 h-4" /></ToolbarButton>
         <ToolbarButton title="Underoverskrift" active={editor.isActive("heading", { level: 3 })} onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}><Heading3 className="w-4 h-4" /></ToolbarButton>

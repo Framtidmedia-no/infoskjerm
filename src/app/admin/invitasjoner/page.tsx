@@ -93,7 +93,7 @@ export default async function InvitasjonerPage() {
               const image = body.imageUrl ?? null
 
               return (
-                <div key={inv.id} className="group relative overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm transition-shadow hover:shadow-md">
+                <div key={inv.id} className="group relative overflow-hidden rounded-2xl border border-zinc-200/80 bg-white shadow-[0_1px_2px_rgba(16,24,40,0.04)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_12px_28px_-14px_rgba(16,24,40,0.22)]">
                   <div className="relative h-24" style={{ background: "linear-gradient(135deg,#1a1333,#3b1d63 55%,#7a2e62)" }}>
                     {image && (
                       // eslint-disable-next-line @next/next/no-img-element
