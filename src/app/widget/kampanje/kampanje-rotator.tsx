@@ -6,6 +6,12 @@ import { OfferCard, type ChainBrand } from "@/app/widget/tilbud/offer-card"
 import { CampaignCard } from "./campaign-card"
 import { CompetitionCard } from "@/app/widget/_shared/competition-card"
 import { GalleryCard } from "@/app/widget/_shared/gallery-card"
+import { AmbientBackdrop } from "@/app/widget/_shared/ambient-backdrop"
+import { SceneTransition, usePreloadNext } from "@/app/widget/_shared/scene-transition"
+import { SeasonLayer } from "@/app/widget/_shared/season-layer"
+import { formatPeriod, expiryLabel } from "@/app/widget/_shared/period"
+import { KEYFRAMES as TOKEN_KEYFRAMES, hexAlpha } from "@/app/widget/_shared/tokens"
+import type { Season } from "@/lib/season"
 
 /**
  * Liggende kunde-kampanjeskjerm (1920×1080). Roterer butikkens kunde-slides:
@@ -26,14 +32,6 @@ const frame: CSSProperties = {
   color: "#fff",
 }
 
-function formatPeriod(from: string | null, to: string | null): string | null {
-  if (!from && !to) return null
-  const f = (d: string) => new Date(d).toLocaleDateString("nb-NO", { day: "numeric", month: "long" })
-  if (from && to) return `Gjelder ${f(from)} – ${f(to)}`
-  if (from) return `Gjelder fra ${f(from)}`
-  return `Gjelder til ${f(to!)}`
-}
-
 /**
  * Liggende plakat/artikkel: tekstpanel til VENSTRE (kicker, tittel, punkter,
  * periode) og bildet til HØYRE (contain + uskarp fyll). Manglende/ødelagt bilde
@@ -42,7 +40,9 @@ function formatPeriod(from: string | null, to: string | null): string | null {
 function LandscapePoster({ item, chain, qrUrl }: { item: LiveItem; chain?: ChainBrand | null; qrUrl?: string }) {
   const [imgOk, setImgOk] = useState(true)
   const brand = chain?.color || "#0a5c2b"
-  const period = formatPeriod(item.validFrom, item.validTo)
+  const urgent = expiryLabel(item.validTo)
+  const period = urgent ?? formatPeriod(item.validFrom, item.validTo)
+  const pulse = urgent ? { animation: "wPulse 1.6s ease-in-out infinite", boxShadow: `0 0 24px ${hexAlpha(brand, 0.6)}` } : {}
   const kicker = item.type === "news" ? "Aktuelt" : "Tilbud"
   // Media kan være video, PDF/PowerPoint, forhåndsrendret kundeavis (pages) eller
   // vanlige bilder — ikke bare imageUrl. Uten dette ble video/kundeavis vist som
@@ -72,7 +72,7 @@ function LandscapePoster({ item, chain, qrUrl }: { item: LiveItem; chain?: Chain
             )}
           </div>
         )}
-        {period && <span style={{ alignSelf: "flex-start", background: "#fff", color: "#0a0a0a", fontWeight: 800, fontSize: "2.8cqh", padding: "1.2cqh 3cqw", borderRadius: "100cqh", marginTop: "0.8cqh" }}>{period}</span>}
+        {period && <span style={{ alignSelf: "flex-start", background: "#fff", color: "#0a0a0a", fontWeight: 800, fontSize: "2.8cqh", padding: "1.2cqh 3cqw", borderRadius: "100cqh", marginTop: "0.8cqh", ...pulse }}>{period}</span>}
       </div>
 
       {/* Høyre: media (video / PDF / bilde, contain + uskarp fyll) eller branded gradient */}
@@ -103,7 +103,7 @@ function LandscapePoster({ item, chain, qrUrl }: { item: LiveItem; chain?: Chain
   )
 }
 
-export function KampanjeRotator({ items, chain = null, qr = {} }: { items: LiveItem[]; chain?: ChainBrand | null; qr?: Record<string, string> }) {
+export function KampanjeRotator({ items, chain = null, qr = {}, season = null }: { items: LiveItem[]; chain?: ChainBrand | null; qr?: Record<string, string>; season?: Season | null }) {
   const [i, setI] = useState(0)
 
   useEffect(() => {
@@ -121,26 +121,34 @@ export function KampanjeRotator({ items, chain = null, qr = {} }: { items: LiveI
 
   const item = items.length ? items[i % items.length] : null
 
+  const accent = chain?.color || "#16a34a"
+  const next = items.length > 1 ? items[(i + 1) % items.length] : null
+  usePreloadNext(next)
+
   return (
     <main style={frame}>
-      <style>{"@keyframes grKb{from{transform:scale(1)}to{transform:scale(1.08)}}@keyframes grFade{from{opacity:0}to{opacity:1}}"}</style>
+      <style>{"@keyframes grKb{from{transform:scale(1)}to{transform:scale(1.08)}}" + TOKEN_KEYFRAMES}</style>
+      <AmbientBackdrop accent={accent} tint={season?.tint ?? null} intensity="normal" />
+      <SeasonLayer season={season?.key ?? null} />
       {!item ? (
         <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", color: "rgba(255,255,255,.4)", fontSize: 34 }}>
           Ingen aktive kampanjer
         </div>
       ) : (
-        <div key={item.id} style={{ position: "absolute", inset: 0, animation: "grFade .6s ease-out" }}>
-          {item.campaign ? (
-            <CampaignCard item={item} chain={chain} />
-          ) : item.type === "competition" ? (
-            <CompetitionCard item={item} qrUrl={qr[item.id]} />
-          ) : item.type === "gallery" ? (
-            <GalleryCard item={item} qrUrl={qr[item.id]} />
-          ) : item.offer ? (
-            <OfferCard item={item} chain={chain} orientation="landscape" />
-          ) : (
-            <LandscapePoster item={item} chain={chain} qrUrl={qr[item.id]} />
-          )}
+        <div style={{ position: "absolute", inset: 0 }}>
+          <SceneTransition itemKey={item.id}>
+            {item.campaign ? (
+              <CampaignCard item={item} chain={chain} />
+            ) : item.type === "competition" ? (
+              <CompetitionCard item={item} qrUrl={qr[item.id]} />
+            ) : item.type === "gallery" ? (
+              <GalleryCard item={item} qrUrl={qr[item.id]} />
+            ) : item.offer ? (
+              <OfferCard item={item} chain={chain} orientation="landscape" />
+            ) : (
+              <LandscapePoster item={item} chain={chain} qrUrl={qr[item.id]} />
+            )}
+          </SceneTransition>
         </div>
       )}
     </main>
