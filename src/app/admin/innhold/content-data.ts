@@ -1,4 +1,5 @@
 import { requireRole } from "@/lib/admin/require-role"
+import { isDeckUrl } from "@/lib/content/deck"
 import { storedAudienceOf, audienceMatches, type Audience } from "./audience"
 import type { ContentRow } from "./_components/content-list-client"
 
@@ -68,6 +69,9 @@ export async function loadContentForAudience(audience: Audience): Promise<Conten
   const storeName = new Map((stores ?? []).map((s) => [s.id, s.name]))
   const tagName = new Map((tags ?? []).map((t) => [t.id, t.name]))
 
+  const firstString = (arr: unknown): string | null =>
+    Array.isArray(arr) ? (arr.find((p) => typeof p === "string" && p.length > 0) as string | undefined) ?? null : null
+
   // «begge»-innhold (fullskjerm-media) hører hjemme i BEGGE listene.
   const rows: ContentRow[] = (items ?? [])
     .filter((it) => audienceMatches(storedAudienceOf(it.type, (it.body as { audience?: unknown } | null)?.audience), audience))
@@ -87,13 +91,32 @@ export async function loadContentForAudience(audience: Audience): Promise<Conten
           ? tagIds.map((id) => tagName.get(id)).filter((x): x is string => !!x)
           : []
 
-      const body = (it.body ?? {}) as { imageUrl?: string | null; portraitUrl?: string | null; avdeling?: string | null; durationSeconds?: number | null }
+      const body = (it.body ?? {}) as {
+        imageUrl?: string | null
+        portraitUrl?: string | null
+        pages?: unknown
+        portraitPages?: unknown
+        gallery?: { items?: { imageUrl?: string | null }[] } | null
+        avdeling?: string | null
+        durationSeconds?: number | null
+      }
+      // Miniatyr speiler det skjermene faktisk viser: kundeavis/PPT bruker første
+      // forhåndsrendrede side (body.pages, samme kilde som PdfFlyer) og galleri
+      // bruker første varebilde. Deck uten ferdige sider beholder rå-URL-en så
+      // PDF/PowerPoint-fallbacken i miniatyrene fortsatt slår inn.
+      const deckPreview =
+        body.imageUrl && isDeckUrl(body.imageUrl)
+          ? firstString(body.pages)
+          : !body.imageUrl && body.portraitUrl && isDeckUrl(body.portraitUrl)
+            ? firstString(body.portraitPages)
+            : null
+      const galleryPreview = (body.gallery?.items ?? []).map((g) => g.imageUrl).find((u): u is string => !!u) ?? null
       return {
         id: it.id,
         title: it.title,
         type: it.type,
         status: it.status,
-        imageUrl: body.imageUrl ?? body.portraitUrl ?? null,
+        imageUrl: deckPreview ?? body.imageUrl ?? body.portraitUrl ?? galleryPreview,
         validFrom: it.valid_from,
         validTo: it.valid_to,
         updatedAt: it.updated_at,
