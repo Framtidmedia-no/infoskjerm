@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useRef, useState, type ReactNode } from "react"
+import { useEffect, useState, type ReactNode } from "react"
 import type { LiveItem } from "@/lib/content/live"
 
 /**
@@ -21,20 +21,25 @@ interface Scene {
   node: ReactNode
 }
 
+interface SceneState {
+  current: Scene
+  prev: Scene | null
+}
+
 export function SceneTransition({ itemKey, children }: { itemKey: string; children: ReactNode }) {
-  const [prev, setPrev] = useState<Scene | null>(null)
-  const lastRef = useRef<Scene>({ key: itemKey, node: children })
+  const [scenes, setScenes] = useState<SceneState>({ current: { key: itemKey, node: children }, prev: null })
 
-  // Betinget setState under render — Reacts offisielle mønster for derivert
-  // state: fanger forrige kort idet nøkkelen bytter, uten effekt-lag.
-  if (lastRef.current.key !== itemKey) {
-    setPrev(lastRef.current)
+  // Betinget setState under render — Reacts dokumenterte mønster for derivert
+  // state («adjusting state when props change»): fanger forrige kort idet
+  // nøkkelen bytter, uten ref-lesing i render og uten ekstra effekt-lag.
+  if (scenes.current.key !== itemKey) {
+    setScenes({ current: { key: itemKey, node: children }, prev: scenes.current })
   }
-  lastRef.current = { key: itemKey, node: children }
 
+  const prev = scenes.prev
   useEffect(() => {
     if (!prev) return
-    const id = setTimeout(() => setPrev(null), TRANSITION_MS)
+    const id = setTimeout(() => setScenes((s) => ({ ...s, prev: null })), TRANSITION_MS)
     return () => clearTimeout(id)
   }, [prev])
 
