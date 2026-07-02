@@ -10,6 +10,7 @@ import { saveContent, type ContentType, type TargetMode, type ImageMode, type Au
 import { lookupSparProduct } from "../spar-actions"
 import type { OfferFields, CampaignFields } from "@/lib/content/live"
 import { LivePreview } from "./live-preview"
+import { FullscreenMediaFields } from "./fullscreen-media-fields"
 import { useTenantConfig, useTenantFeature } from "@/components/admin/tenant-config-provider"
 import { toast } from "sonner"
 import {
@@ -60,6 +61,10 @@ export interface ContentInitial {
   /** Pre-rendered deck page images (kundeavis-PDF/PowerPoint) — for a true preview. */
   pages?: string[]
   imageMode?: ImageMode
+  /** Fullskjerm: stående variant + dens rendrede sider + «vis på begge flater». */
+  portraitUrl?: string | null
+  portraitPages?: string[]
+  audienceBoth?: boolean
   targetMode: TargetMode
   storeIds: string[]
   tagIds: string[]
@@ -170,7 +175,10 @@ export function ContentForm({ stores, tags, initial, audience = "intern", defaul
   const [contactPerson, setContactPerson] = useState(initial?.contactPerson ?? "")
   const [applyUrl, setApplyUrl] = useState(initial?.applyUrl ?? "")
   const [imageMode, setImageMode] = useState<ImageMode>(initial?.imageMode ?? "bakgrunn")
-  const [offerMode, setOfferMode] = useState<"struktur" | "kampanje" | "plakat" | "klubb">(initial?.offer ? "struktur" : initial?.campaign ? "kampanje" : initial?.klubb ? "klubb" : "plakat")
+  const [offerMode, setOfferMode] = useState<"struktur" | "kampanje" | "plakat" | "klubb" | "fullskjerm">(initial?.imageMode === "fullskjerm" ? "fullskjerm" : initial?.offer ? "struktur" : initial?.campaign ? "kampanje" : initial?.klubb ? "klubb" : "plakat")
+  // Fullskjerm-modus: stående variant + «vis på begge flater» (audience «begge»).
+  const [fsPortraitUrl, setFsPortraitUrl] = useState<string | null>(initial?.portraitUrl ?? null)
+  const [showBoth, setShowBoth] = useState(initial?.audienceBoth ?? false)
   const [offer, setOffer] = useState<OfferFields>(initial?.offer ?? EMPTY_OFFER)
   const [campaign, setCampaign] = useState<CampaignFields>(initial?.campaign ?? EMPTY_CAMPAIGN)
   const [klubb, setKlubb] = useState(initial?.klubb ?? { headline: "Bli medlem – det er gratis", subtext: "Medlemspriser, bonus og ukens beste tilbud." })
@@ -193,15 +201,17 @@ export function ContentForm({ stores, tags, initial, audience = "intern", defaul
   const isOfferStruktur = type === "slide" && offerMode === "struktur"
   const isKlubb = type === "slide" && offerMode === "klubb"
   const isCampaign = type === "slide" && offerMode === "kampanje"
+  const isFullscreen = type === "slide" && offerMode === "fullskjerm"
   // Utseende (bakgrunn/skrift) på alt innhold unntatt ticker, strukturert
-  // tilbudskort, kampanjekort og kundeklubb (de har egne, faste design).
-  const usesColors = type !== "ticker" && !isOfferStruktur && !isKlubb && !isCampaign
+  // tilbudskort, kampanjekort, kundeklubb og fullskjerm (egne/faste design).
+  const usesColors = type !== "ticker" && !isOfferStruktur && !isKlubb && !isCampaign && !isFullscreen
   // Kundeklubb styres per butikk (Butikker → butikk → Kundeklubb), ikke som
   // innholdselement — så ingen «klubb»-modus her.
-  const OFFER_MODES: { k: "struktur" | "kampanje" | "plakat" | "klubb"; label: string }[] = [
+  const OFFER_MODES: { k: "struktur" | "kampanje" | "plakat" | "klubb" | "fullskjerm"; label: string }[] = [
     ...(canOfferCards ? [{ k: "struktur" as const, label: "Bygg tilbudskort" }] : []),
     ...(canCampaignCards ? [{ k: "kampanje" as const, label: "Bygg kampanjekort" }] : []),
     { k: "plakat", label: "Last opp plakat / PDF" },
+    { k: "fullskjerm", label: "Fullskjerm (kun media)" },
   ]
   const setCa = (k: "category" | "subtext" | "price" | "accent", v: string) => setCampaign((p) => ({ ...p, [k]: v.trim() || null }))
 
@@ -307,14 +317,18 @@ export function ContentForm({ stores, tags, initial, audience = "intern", defaul
   }
 
   const usesImage = IMAGE_TYPES.includes(type) && !isKlubb
-  const usesBody = type !== "ticker" && type !== "gallery" && !isOfferStruktur && !isKlubb
+  const usesBody = type !== "ticker" && type !== "gallery" && !isOfferStruktur && !isKlubb && !isFullscreen
   // Standard visningstid per type/flate (matcher rotatorene). Vises til brukeren
   // så de vet hva «tom = standard» faktisk betyr.
-  const defaultDuration = audience === "kunde"
-    ? 18
-    : ({ stats: 12, job: 20, competition: 16, invitation: 18, gallery: 30 } as Record<string, number>)[type] ?? 16
-  // Tilbud/annonser må alltid ha en gyldig periode (fra + til).
-  const periodRequired = type === "slide" && !isKlubb
+  const fsDeck = isFullscreen && (isDeckUrl(imageUrls[0]) || isDeckUrl(fsPortraitUrl))
+  const defaultDuration = fsDeck
+    ? 8
+    : audience === "kunde"
+      ? 18
+      : ({ stats: 12, job: 20, competition: 16, invitation: 18, gallery: 30 } as Record<string, number>)[type] ?? 16
+  // Tilbud/annonser må alltid ha en gyldig periode (fra + til). Fullskjerm-media
+  // kan være evigvarende (f.eks. merkevarefilm) — periode er valgfri der.
+  const periodRequired = type === "slide" && !isKlubb && !isFullscreen
   const isDeck = isDeckUrl(imageUrls[0])
   const MAX_IMAGES = 4
   const isMulti = imageUrls.length >= 2
@@ -350,6 +364,7 @@ export function ContentForm({ stores, tags, initial, audience = "intern", defaul
     } else if (isKlubb) {
       if (!klubb.headline.trim()) { toast.error("Skriv en overskrift"); return }
     } else if (!title.trim()) { toast.error("Skriv en tittel først"); return }
+    if (isFullscreen && !imageUrls[0] && !fsPortraitUrl) { toast.error("Last opp minst én fil (liggende eller stående)"); return }
     if (!targetChosen) { toast.error("Velg hvor innholdet skal vises (Vis på)"); return }
     if (targetMode === "stores" && storeIds.length === 0) { toast.error(`Velg minst én ${unitLabel.toLowerCase()}`); return }
     if (targetMode === "tags" && tagIds.length === 0) { toast.error("Velg minst én tagg"); return }
@@ -368,8 +383,12 @@ export function ContentForm({ stores, tags, initial, audience = "intern", defaul
     const res = await saveContent(
       {
         title: isKlubb ? klubb.headline.trim() : isOfferStruktur ? offer.varenavn.trim() : isCampaign ? campaign.headline.trim() : title,
-        type, audience, bodyHtml: usesBody ? bodyHtml : "", imageUrl: usesImage ? imageUrls[0] ?? null : null,
+        type,
+        // Fullskjerm kan vises på begge flater med ett element (audience «begge»).
+        audience: isFullscreen && showBoth ? "begge" : audience,
+        bodyHtml: usesBody ? bodyHtml : "", imageUrl: usesImage ? imageUrls[0] ?? null : null,
         imageUrls: usesImage ? imageUrls : [],
+        portraitUrl: isFullscreen ? fsPortraitUrl : null,
         offer: isOfferStruktur ? offer : null,
         campaign: isCampaign ? campaign : null,
         klubb: isKlubb ? klubb : null,
@@ -382,7 +401,7 @@ export function ContentForm({ stores, tags, initial, audience = "intern", defaul
         } : null,
         avdeling,
         // 2+ images always render full-page (side by side), so force plakat-style.
-        imageMode: usesImage ? (type === "slide" || isMulti ? "plakat" : imageMode) : "bakgrunn",
+        imageMode: usesImage ? (isFullscreen ? "fullskjerm" : type === "slide" || isMulti ? "plakat" : imageMode) : "bakgrunn",
         targetMode, storeIds, tagIds,
         validFrom: validFrom || null, validTo: validTo || null, publish,
         contactPerson: type === "job" ? contactPerson || null : null,
@@ -414,7 +433,9 @@ export function ContentForm({ stores, tags, initial, audience = "intern", defaul
     // Vis ferdig-renderte deck-sider i previewen så lenge kildefila er den samme
     // (bytter redaktøren fil, forkastes de gamle sidene — de rendres på nytt).
     pages: isDeck && initial?.pages && initial.pages.length > 0 && imageUrls[0] === (initial.imageUrls?.[0] ?? initial.imageUrl) ? initial.pages : [],
-    imageMode: (type === "slide" || isMulti ? "plakat" : imageMode) as ImageMode,
+    portraitUrl: isFullscreen ? fsPortraitUrl : null,
+    portraitPages: isFullscreen && initial?.portraitPages?.length && fsPortraitUrl === initial?.portraitUrl ? initial.portraitPages : [],
+    imageMode: (isFullscreen ? "fullskjerm" : type === "slide" || isMulti ? "plakat" : imageMode) as ImageMode,
     offer: isOfferStruktur ? offer : null,
     campaign: isCampaign ? campaign : null,
     invitation: type === "invitation" ? invitation : null,
@@ -477,9 +498,10 @@ export function ContentForm({ stores, tags, initial, audience = "intern", defaul
                 type="text"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                placeholder={type === "slide" ? "Tittel på plakaten..." : type === "gallery" ? "Overskrift på galleriet..." : "Tittel på saken..."}
+                placeholder={isFullscreen ? "Internt navn (vises ikke på skjermen)..." : type === "slide" ? "Tittel på plakaten..." : type === "gallery" ? "Overskrift på galleriet..." : "Tittel på saken..."}
                 className="w-full text-2xl font-bold text-zinc-900 bg-transparent border-none focus:outline-none placeholder:text-zinc-300"
               />
+              {isFullscreen && <p className="text-[10px] text-zinc-400 mt-1">Tittelen er kun til admin-lista — den vises aldri på skjermen.</p>}
             </div>
           )}
 
@@ -617,7 +639,19 @@ export function ContentForm({ stores, tags, initial, audience = "intern", defaul
             </div>
           )}
 
-          {usesImage && (
+          {isFullscreen && (
+            <FullscreenMediaFields
+              landscapeUrl={imageUrls[0] ?? null}
+              portraitUrl={fsPortraitUrl}
+              onLandscape={(u) => setImageUrls(u ? [u] : [])}
+              onPortrait={setFsPortraitUrl}
+              showBoth={showBoth}
+              onShowBoth={setShowBoth}
+              surface={audience}
+            />
+          )}
+
+          {usesImage && !isFullscreen && (
             <div>
               <label className="block text-xs font-semibold text-zinc-600 mb-1.5">Bilde / PDF / PowerPoint</label>
               {imageUrls.length > 0 ? (
@@ -980,7 +1014,7 @@ export function ContentForm({ stores, tags, initial, audience = "intern", defaul
                   className="w-24 text-sm border border-zinc-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-zinc-300" />
                 <span className="text-xs text-zinc-500">sekunder</span>
               </div>
-              <p className="text-[10px] text-zinc-400 mt-1.5">Hvor lenge dette vises før skjermen bytter. Tom = standard for denne typen (<strong>{defaultDuration} sek</strong>).</p>
+              <p className="text-[10px] text-zinc-400 mt-1.5">{fsDeck ? <>Sekunder <strong>per side</strong> i dokumentet. Tom = standard (<strong>{defaultDuration} sek per side</strong>).</> : <>Hvor lenge dette vises før skjermen bytter. Tom = standard for denne typen (<strong>{defaultDuration} sek</strong>).</>}</p>
             </section>
           )}
 
