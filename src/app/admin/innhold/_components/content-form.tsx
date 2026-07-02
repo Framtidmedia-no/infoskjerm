@@ -181,6 +181,8 @@ export function ContentForm({ stores, tags, initial, audience = "intern", defaul
   // Fullskjerm-modus: stående variant + «vis på begge flater» (audience «begge»).
   const [fsPortraitUrl, setFsPortraitUrl] = useState<string | null>(initial?.portraitUrl ?? null)
   const [showBoth, setShowBoth] = useState(initial?.audienceBoth ?? false)
+  // Nyheter har samme fullskjerm-valg som slides (egen toggle — offerMode er slide-spesifikk).
+  const [newsFullscreen, setNewsFullscreen] = useState(initial?.type === "news" && initial?.imageMode === "fullskjerm")
   const [offer, setOffer] = useState<OfferFields>(initial?.offer ?? EMPTY_OFFER)
   const [campaign, setCampaign] = useState<CampaignFields>(initial?.campaign ?? EMPTY_CAMPAIGN)
   const [klubb, setKlubb] = useState(initial?.klubb ?? { headline: "Bli medlem – det er gratis", subtext: "Medlemspriser, bonus og ukens beste tilbud." })
@@ -203,7 +205,7 @@ export function ContentForm({ stores, tags, initial, audience = "intern", defaul
   const isOfferStruktur = type === "slide" && offerMode === "struktur"
   const isKlubb = type === "slide" && offerMode === "klubb"
   const isCampaign = type === "slide" && offerMode === "kampanje"
-  const isFullscreen = type === "slide" && offerMode === "fullskjerm"
+  const isFullscreen = (type === "slide" && offerMode === "fullskjerm") || (type === "news" && newsFullscreen)
   // Utseende (bakgrunn/skrift) på alt innhold unntatt ticker, strukturert
   // tilbudskort, kampanjekort, kundeklubb og fullskjerm (egne/faste design).
   const usesColors = type !== "ticker" && !isOfferStruktur && !isKlubb && !isCampaign && !isFullscreen
@@ -566,6 +568,18 @@ export function ContentForm({ stores, tags, initial, audience = "intern", defaul
             </p>
           )}
 
+          {/* Nyhet: standard artikkel vs fullskjerm-media (bilde/PDF/PPT uten tittel). */}
+          {type === "news" && (
+            <div className="flex gap-1.5">
+              {([[false, "Standard nyhet"], [true, "Fullskjerm (kun media)"]] as const).map(([v, label]) => (
+                <button key={label} type="button" onClick={() => setNewsFullscreen(v)}
+                  className={`flex-1 px-3 py-2 rounded-lg text-xs font-medium border transition-all ${newsFullscreen === v ? "border-zinc-900 bg-zinc-900 text-white" : "border-zinc-200 text-zinc-600 hover:border-zinc-300"}`}>
+                  {label}
+                </button>
+              ))}
+            </div>
+          )}
+
           {/* Offer authoring mode: structured price card vs uploaded poster */}
           {type === "slide" && OFFER_MODES.length > 1 && (
             <div className="flex gap-1.5">
@@ -783,7 +797,7 @@ export function ContentForm({ stores, tags, initial, audience = "intern", defaul
             </div>
           )}
 
-          {type === "news" && (
+          {type === "news" && !isFullscreen && (
             <div className="rounded-2xl border border-zinc-200/80 bg-white p-4 shadow-[0_1px_2px_rgba(16,24,40,0.04)] space-y-3">
               <h3 className="flex items-center gap-1.5 text-xs font-semibold text-zinc-600"><Globe className="w-3.5 h-3.5" /> Lenke / QR-kode</h3>
               <div>

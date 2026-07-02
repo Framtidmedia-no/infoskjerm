@@ -118,7 +118,7 @@ function buildBody(input: ContentInput): Json {
     imageUrl: imageUrls[0] ?? input.imageUrl ?? null,
     imageUrls,
     imageMode: input.imageMode ?? "bakgrunn",
-    ...(input.type === "slide" && input.imageMode === "fullskjerm" && input.portraitUrl ? { portraitUrl: input.portraitUrl } : {}),
+    ...(input.imageMode === "fullskjerm" && input.portraitUrl ? { portraitUrl: input.portraitUrl } : {}),
     audience: input.audience ?? audienceForType(input.type),
     ...(input.type === "job" ? { contactPerson: input.contactPerson ?? null, applyUrl: input.applyUrl ?? null } : {}),
     ...(input.type === "competition" ? { applyUrl: input.applyUrl ?? null } : {}),
