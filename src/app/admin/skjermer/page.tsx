@@ -6,6 +6,7 @@ import { SkjermerBoard, type BoardStore } from "./skjermer-board"
 import { StoreScreens, type DisplayLite, type ScreenRowLite } from "./store-screens"
 import { SkjermerTabs } from "./skjermer-tabs"
 import { getBaseUrl } from "@/lib/base-url"
+import type { OpeningHours } from "@/lib/power/schedule"
 
 /**
  * Skjermer = enhets-styring. To lag:
@@ -43,16 +44,17 @@ export default async function SkjermerPage() {
   )
   const byStore = await fetchScreensByStore(stores.map((s) => ({ id: s.id, name: s.name })))
 
-  // Kiosk-passord-status per butikk (kun boolean til klienten — aldri hashen).
+  // Kiosk-passord-status + åpningstider per butikk (kun boolean til klienten — aldri hashen).
   const { data: kioskRows } = await (supabase.from("stores") as unknown as {
-    select: (c: string) => { eq: (col: string, val: string) => Promise<{ data: { id: string; kiosk_password_hash: string | null }[] | null }> }
-  }).select("id, kiosk_password_hash").eq("tenant_id", tenantId)
+    select: (c: string) => { eq: (col: string, val: string) => Promise<{ data: { id: string; kiosk_password_hash: string | null; apningstider: OpeningHours | null }[] | null }> }
+  }).select("id, kiosk_password_hash, apningstider").eq("tenant_id", tenantId)
   const protectedStores = new Set((kioskRows ?? []).filter((r) => r.kiosk_password_hash).map((r) => r.id))
+  const hoursByStore = new Map((kioskRows ?? []).map((r) => [r.id, r.apningstider ?? null]))
 
-  // Våre screens-rader (enhets-styring: token + flate/avdeling/orientering + xibo-binding).
+  // Våre screens-rader (enhets-styring: token + flate/avdeling/orientering + xibo-binding + strøm).
   const { data: assignRows } = await supabase
     .from("screens")
-    .select("id, token, flate, avdeling, orientation, store_id, xibo_display_id")
+    .select("id, token, flate, avdeling, orientation, store_id, xibo_display_id, power_mode, power_on_lead_min, power_off_lag_min, power_override, power_override_until, power_state, power_state_at")
     .order("name")
   const rows = (assignRows ?? []) as unknown as (ScreenRowLite & { store_id: string })[]
   const rowsByStore = new Map<string, ScreenRowLite[]>()
@@ -115,6 +117,7 @@ export default async function SkjermerPage() {
                 displays={displaysByStore.get(s.id) ?? []}
                 rows={rowsByStore.get(s.id) ?? []}
                 origin={origin}
+                apningstider={hoursByStore.get(s.id) ?? null}
               />
             </div>
           ))}

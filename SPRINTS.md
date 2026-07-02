@@ -21,6 +21,19 @@ Gjeldende arkitektur (kort): **Xibo = motoren** (displays, display-grupper 1:1 m
 
 ---
 
+## Åpningstider + automatisk TV-styring (2026-07-02) ✅
+Åpningstider per butikk (`stores.apningstider`, admin-kort på butikksiden) driver
+automatisk skjerm-av/på: Pi-flåten via **HDMI-CEC-agent** (`scripts/pi/tvpower/`,
+systemd-timer som poller `/api/screen/power` hvert minutt og rapporterer faktisk
+TV-status → badge i admin), kiosk-skjermer via svart hvilevisning i `/skjerm/<token>`
+(SleepGate). Per skjerm: strømmodus (følger åpningstider ± lead/lag / alltid på) +
+manuell «slå av/på nå» (override til neste overgang). Beregning: `src/lib/power/schedule.ts`
+(ren, testet, Europe/Oslo). Trygg default: uten åpningstider står alt alltid på.
+Migrasjon `20260702233000`. Spec: docs/superpowers/specs/2026-07-02-apningstider-tv-styring-design.md
+Gjenstår fysisk: installer agenten på moa1/moa2 + CEC-verifisering mot faktisk TV (steg 9 i oppsett-doc).
+
+---
+
 ## Levende skjerm — motion & atmosfære (2026-07-02) ✅
 Crossfade mellom kort (SceneTransition + preload), kjedefarget levende bakgrunn
 (AmbientBackdrop), kjedefarge-chrome i nyheter/tilbud (erstattet hardkodet grønn — fikser
