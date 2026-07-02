@@ -29,6 +29,9 @@ export interface UserRow {
   role: UserRole
   storeIds: string[]
   storeNames: string[]
+  /** Ferdig formatert («2 timer siden» / «Aldri») — beregnes på serveren. */
+  lastSignIn: string
+  lastSignInExact: string | null
 }
 
 interface UsersListProps {
@@ -156,6 +159,7 @@ export function UsersList({ rows, allStores, canAdminister, unitLabelPlural }: U
                     <th className="text-left text-xs font-semibold text-zinc-400 uppercase tracking-wide px-5 py-3">Bruker</th>
                     <th className="text-left text-xs font-semibold text-zinc-400 uppercase tracking-wide px-4 py-3">Rolle</th>
                     <th className="text-left text-xs font-semibold text-zinc-400 uppercase tracking-wide px-4 py-3">Tilgang</th>
+                    <th className="text-left text-xs font-semibold text-zinc-400 uppercase tracking-wide px-4 py-3">Sist innlogget</th>
                     <th className="px-4 py-3" />
                   </tr>
                 </thead>
@@ -184,6 +188,14 @@ export function UsersList({ rows, allStores, canAdminister, unitLabelPlural }: U
                         </td>
                         <td className="px-4 py-3.5">
                           <AccessCell row={row} allStores={allStores} editable={canAdminister} unitLabelPlural={unitLabelPlural} />
+                        </td>
+                        <td className="px-4 py-3.5">
+                          <span
+                            className={cn("text-xs", row.lastSignIn === "Aldri" ? "text-zinc-400" : "text-zinc-600")}
+                            title={row.lastSignInExact ?? undefined}
+                          >
+                            {row.lastSignIn}
+                          </span>
                         </td>
                         <td className="px-4 py-3.5">
                           {canAdminister && (
@@ -223,9 +235,20 @@ export function UsersList({ rows, allStores, canAdminister, unitLabelPlural }: U
                       </div>
                     </div>
 
-                    <div className="space-y-1">
-                      <p className="text-[10px] font-semibold text-zinc-400 uppercase tracking-wide">Tilgang</p>
-                      <AccessCell row={row} allStores={allStores} editable={canAdminister} unitLabelPlural={unitLabelPlural} />
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-1">
+                        <p className="text-[10px] font-semibold text-zinc-400 uppercase tracking-wide">Tilgang</p>
+                        <AccessCell row={row} allStores={allStores} editable={canAdminister} unitLabelPlural={unitLabelPlural} />
+                      </div>
+                      <div className="space-y-1">
+                        <p className="text-[10px] font-semibold text-zinc-400 uppercase tracking-wide">Sist innlogget</p>
+                        <span
+                          className={cn("text-xs", row.lastSignIn === "Aldri" ? "text-zinc-400" : "text-zinc-600")}
+                          title={row.lastSignInExact ?? undefined}
+                        >
+                          {row.lastSignIn}
+                        </span>
+                      </div>
                     </div>
 
                     {canAdminister && (

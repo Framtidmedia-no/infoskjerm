@@ -17,6 +17,22 @@ describe('formatLastSeen', () => {
     expect(formatLastSeen(twoHoursAgo.toISOString())).toBe('2 timer siden')
   })
 
+  it('returnerer dager for timestamps 1-30 dager siden', () => {
+    const fiveDaysAgo = new Date(Date.now() - 5 * 24 * 60 * 60 * 1000)
+    expect(formatLastSeen(fiveDaysAgo.toISOString())).toBe('5 dager siden')
+  })
+
+  it('returnerer dato for timestamps over 30 dager siden', () => {
+    const old = new Date(Date.now() - 60 * 24 * 60 * 60 * 1000)
+    const expected = new Intl.DateTimeFormat('nb-NO', {
+      timeZone: 'Europe/Oslo',
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+    }).format(old)
+    expect(formatLastSeen(old.toISOString())).toBe(expected)
+  })
+
   it('returnerer "Aldri" for null', () => {
     expect(formatLastSeen(null)).toBe('Aldri')
   })
