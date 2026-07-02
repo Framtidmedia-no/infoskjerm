@@ -31,9 +31,13 @@ Beskytte de tre offentlige skjemaene mot bots/misbruk (credential stuffing, e-po
 
 Env-navn: `NEXT_PUBLIC_TURNSTILE_SITE_KEY` og `TURNSTILE_SECRET_KEY`.
 
-## Sikkerhetsnotat
+## Sikkerhetsnotat (oppdatert samme dag)
 
-Full håndheving mot direkte kall til Supabase Auth-endepunktet (utenom appens UI) krever i tillegg captcha aktivert i Supabase Dashboard (Auth → Attack Protection). Det er en Dashboard-innstilling Claude ikke kan endre — appen sender ikke `captchaToken` til Supabase i dag; slås dette på må det ettermonteres. Vår server-action-verifisering beskytter alle appens egne innganger.
+Innlogging håndheves av **Supabase Auth-captcha** (Dashboard → Auth → Attack Protection, provider Turnstile): `loginWithPassword` sender tokenet som `captchaToken` til `signInWithPassword`, og Supabase verifiserer mot Cloudflare. Dette tetter også direkte kall mot Supabase Auth-endepunktet. Appen verifiserer IKKE login-tokenet selv (engangs — dobbel verifisering ville feilet hos Supabase).
+
+`/glemt-passord` (admin.generateLink) og `/pamelding` (ikke auth) går utenom Supabase-captcha og beholder egen `verifyTurnstileToken`-håndheving.
+
+Konsekvens: med captcha aktivert i Supabase må ALLE miljøer bruke ekte site key (demo-tokens avvises av den ekte secreten i Dashboard). `localhost` og preview-domener må stå i widgetens hostname-liste i Cloudflare.
 
 ## Testplan
 

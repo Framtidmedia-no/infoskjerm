@@ -2,7 +2,7 @@
 
 import { createClient, createAdminClient } from "@/lib/supabase/server"
 import { logAudit } from "@/lib/admin/audit"
-import { verifyTurnstileToken, TURNSTILE_ERROR_MESSAGE } from "@/lib/turnstile/verify"
+import { TURNSTILE_ERROR_MESSAGE } from "@/lib/turnstile/verify"
 import { setTenantBrandHint } from "@/lib/tenant/brand-hint"
 
 interface LoginInput {
@@ -12,23 +12,33 @@ interface LoginInput {
 }
 
 /**
- * Logger inn med e-post/passord etter bestått Turnstile-sjekk. Kjøres som
- * server action slik at bot-sjekken håndheves på serveren; server-klienten
- * setter sesjonscookies via @supabase/ssr. Vellykket innlogging audit-logges
- * (best-effort).
+ * Logger inn med e-post/passord. Turnstile-tokenet sendes som captchaToken til
+ * Supabase Auth, som verifiserer det mot Cloudflare (Dashboard → Auth → Attack
+ * Protection). Tokens er engangs — derfor verifiserer vi IKKE selv i tillegg
+ * her; dobbel verifisering ville konsumert tokenet før Supabase fikk sett det.
+ * Server-klienten setter sesjonscookies via @supabase/ssr, og vellykket
+ * innlogging audit-logges (best-effort).
  */
 export async function loginWithPassword(
   input: LoginInput
 ): Promise<{ ok: true } | { ok: false; error: string }> {
-  const human = await verifyTurnstileToken(input.turnstileToken)
-  if (!human) return { ok: false, error: TURNSTILE_ERROR_MESSAGE }
+  if (!input.turnstileToken) return { ok: false, error: TURNSTILE_ERROR_MESSAGE }
 
   const email = input.email.trim().toLowerCase()
   if (!email || !input.password) return { ok: false, error: "Fyll inn e-post og passord." }
 
   const supabase = await createClient()
-  const { data, error } = await supabase.auth.signInWithPassword({ email, password: input.password })
-  if (error || !data.user) return { ok: false, error: "Feil e-post eller passord. Prøv igjen." }
+  const { data, error } = await supabase.auth.signInWithPassword({
+    email,
+    password: input.password,
+    options: { captchaToken: input.turnstileToken },
+  })
+  if (error || !data.user) {
+    const captchaRejected =
+      error?.code === "captcha_failed" || (error?.message.toLowerCase().includes("captcha") ?? false)
+    if (captchaRejected) return { ok: false, error: TURNSTILE_ERROR_MESSAGE }
+    return { ok: false, error: "Feil e-post eller passord. Prøv igjen." }
+  }
 
   await logAudit({
     userId: data.user.id,
