@@ -1,5 +1,6 @@
 import { Sidebar } from "@/components/admin/sidebar"
 import { MobileNav } from "@/components/admin/mobile-nav"
+import { CommandPalette } from "@/components/admin/command-palette"
 import { PwaManager } from "@/components/pwa/pwa-manager"
 import { QuickCapture } from "@/components/pwa/quick-capture"
 import { BiometricLock } from "@/components/pwa/biometric-lock"
@@ -91,6 +92,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
                 <Sidebar user={navUser} />
               </div>
               <MobileNav user={navUser} />
+              <CommandPalette role={role} />
               {/* *:min-w-0: sidene er kolonne-flex-items og får ellers content-basert
                   min-bredde — en bred tabell presser da hele siden bredere enn
                   viewporten i stedet for å scrolle i sin egen overflow-wrapper.
