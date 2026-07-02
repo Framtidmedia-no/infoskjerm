@@ -17,10 +17,10 @@ const MAX_LIMIT = 4000
 export default async function LoggPage({
   searchParams,
 }: {
-  searchParams: Promise<{ antall?: string }>
+  searchParams: Promise<{ antall?: string; q?: string; type?: string }>
 }) {
   const { tenantId } = await requireRole(["super_admin", "chain_manager"])
-  const { antall } = await searchParams
+  const { antall, q, type } = await searchParams
   // «Vis eldre» øker grensen via ?antall= — eldre hendelser var før utilgjengelige.
   const limit = Math.min(Math.max(Number(antall) || PAGE, PAGE), MAX_LIMIT)
   const admin = createAdminClient()
@@ -38,7 +38,13 @@ export default async function LoggPage({
     <div className="flex flex-col flex-1">
       <Topbar title="Logg" subtitle="Aktivitetslogg — innlogginger, endringer, publiseringer og slettinger" />
       <div className="mx-auto w-full max-w-4xl flex-1 p-4 sm:p-6">
-        <LoggClient rows={rows} limit={limit} hasMore={rows.length >= limit && limit < MAX_LIMIT} />
+        <LoggClient
+          rows={rows}
+          limit={limit}
+          hasMore={rows.length >= limit && limit < MAX_LIMIT}
+          initialSearch={q ?? ""}
+          initialEntity={type ?? ""}
+        />
       </div>
     </div>
   )
