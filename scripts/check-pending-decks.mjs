@@ -31,12 +31,28 @@ const items = await (
   await fetch(`${SB}/rest/v1/content_items?select=id,body&type=eq.slide&status=eq.live&limit=500`, { headers: H })
 ).json()
 
-const pending = (items || []).filter((x) => {
-  const u = String(x.body?.imageUrl || "").toLowerCase().split("?")[0]
-  if (!(u.endsWith(".pptx") || u.endsWith(".ppt"))) return false
-  const havePages = Array.isArray(x.body?.pages) && x.body.pages.length > 0
-  return !havePages || x.body?.pagesFor !== x.body?.imageUrl
-}).length
+// PDF forhåndsrendres KUN i fullskjerm-modus (ellers vises PDF som iframe i
+// widgetene). Fullskjerm-items kan i tillegg ha en stående variant (portraitUrl).
+const deckKind = (u) => {
+  const s = String(u || "").toLowerCase().split("?")[0]
+  return s.endsWith(".pptx") || s.endsWith(".ppt") ? "ppt" : s.endsWith(".pdf") ? "pdf" : null
+}
 
-console.log(`Ventende PowerPoint-decks: ${pending}`)
+const pending = (items || []).reduce((n, x) => {
+  const b = x.body || {}
+  const variants = [
+    { url: b.imageUrl, pages: b.pages, renderedFor: b.pagesFor },
+    { url: b.portraitUrl, pages: b.portraitPages, renderedFor: b.portraitPagesFor },
+  ]
+  for (const v of variants) {
+    const kind = deckKind(v.url)
+    if (!kind) continue
+    if (kind === "pdf" && b.imageMode !== "fullskjerm") continue
+    const have = Array.isArray(v.pages) && v.pages.length > 0
+    if (!have || v.renderedFor !== v.url) n++
+  }
+  return n
+}, 0)
+
+console.log(`Ventende deck-varianter: ${pending}`)
 if (process.env.GITHUB_OUTPUT) appendFileSync(process.env.GITHUB_OUTPUT, `pending=${pending}\n`)

@@ -28,7 +28,10 @@ interface PreviewData {
   imageUrls?: string[]
   /** Pre-rendered deck page images (kundeavis-PDF/PowerPoint) — vist 1:1 som på skjerm. */
   pages?: string[]
-  imageMode?: "plakat" | "bakgrunn" | "liten"
+  /** Fullskjerm: valgfri stående variant + dens forhåndsrendrede sider. */
+  portraitUrl?: string | null
+  portraitPages?: string[]
+  imageMode?: "plakat" | "bakgrunn" | "liten" | "fullskjerm"
   offer?: LiveItem["offer"]
   campaign?: LiveItem["campaign"]
   avdeling?: string | null
@@ -70,12 +73,14 @@ export default async function PreviewWidgetPage({ searchParams }: { searchParams
     blocks: htmlToBlocks(data.bodyHtml ?? ""),
     imageUrl: firstImage,
     imageUrls,
-    imageMode: data.imageMode === "plakat" ? "plakat" : data.imageMode === "liten" ? "liten" : "bakgrunn",
+    imageMode: data.imageMode === "plakat" ? "plakat" : data.imageMode === "liten" ? "liten" : data.imageMode === "fullskjerm" ? "fullskjerm" : "bakgrunn",
     isPdf: isPdfUrl(firstImage),
     isPpt: isPptUrl(firstImage),
     isVideo: /\.(mp4|webm|mov|m4v)$/.test((firstImage ?? "").toLowerCase().split("?")[0]),
     durationSeconds: null,
     pages: Array.isArray(data.pages) ? data.pages.filter(Boolean) : [],
+    portraitUrl: data.portraitUrl ?? null,
+    portraitPages: Array.isArray(data.portraitPages) ? data.portraitPages.filter(Boolean) : [],
     validFrom: data.validFrom || null,
     validTo: data.validTo || null,
     author: "",
