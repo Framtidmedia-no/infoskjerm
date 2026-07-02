@@ -1,5 +1,6 @@
 import { ChevronLeft } from "lucide-react"
 import Link from "next/link"
+import { CommandHint } from "./command-hint"
 
 interface TopbarProps {
   title: string
@@ -38,11 +39,10 @@ export function Topbar({ title, subtitle, actions, backHref }: TopbarProps) {
           </div>
         </div>
 
-        {actions && (
-          <div className="flex shrink-0 items-center gap-2 [&>*]:flex-1 sm:[&>*]:flex-none">
-            {actions}
-          </div>
-        )}
+        <div className="flex shrink-0 items-center gap-2 [&>*]:flex-1 sm:[&>*]:flex-none">
+          <CommandHint />
+          {actions}
+        </div>
       </div>
     </header>
   )
