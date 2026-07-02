@@ -2,11 +2,17 @@
 
 import { useEffect, useRef, useState, type CSSProperties } from "react"
 import type { LiveItem, Block } from "@/lib/content/live"
-import { OfferCard } from "@/app/widget/tilbud/offer-card"
+import { OfferCard, type ChainBrand } from "@/app/widget/tilbud/offer-card"
 import { PdfFlyer } from "@/app/widget/tilbud/pdf-flyer"
 import { CompetitionCard } from "@/app/widget/_shared/competition-card"
 import { InvitationCard } from "@/app/widget/_shared/invitation-card"
 import { GalleryCard } from "@/app/widget/_shared/gallery-card"
+import { AmbientBackdrop } from "@/app/widget/_shared/ambient-backdrop"
+import { SceneTransition, usePreloadNext } from "@/app/widget/_shared/scene-transition"
+import { SeasonLayer } from "@/app/widget/_shared/season-layer"
+import { formatPeriod, expiryLabel } from "@/app/widget/_shared/period"
+import { KEYFRAMES as TOKEN_KEYFRAMES, hexAlpha } from "@/app/widget/_shared/tokens"
+import type { Season } from "@/lib/season"
 
 const KICKER: Record<string, string> = {
   competition: "KONKURRANSE",
@@ -27,14 +33,14 @@ const frame: CSSProperties = {
   height: "100vh",
   overflow: "hidden",
   position: "relative",
-  // Subtil atmosfære-glød gir dybde bak alle kort — aldri flatt.
-  background: "radial-gradient(1200px 820px at 80% -10%, rgba(22,163,74,.16), transparent 62%), linear-gradient(135deg,#0a0a0a,#161616)",
+  // AmbientBackdrop (levende kjedefarget glød) ligger bakerst — dette er kun gulvet.
+  background: "#0a0a0c",
   fontFamily: "Arial, Helvetica, sans-serif",
   color: "#fff",
 }
 
 /** Renders parsed text blocks as React (no raw HTML injection). */
-function RichBlocks({ blocks }: { blocks: Block[] }) {
+function RichBlocks({ blocks, accent = "#16a34a" }: { blocks: Block[]; accent?: string }) {
   return (
     <div>
       {blocks.map((b, i) => {
@@ -47,7 +53,7 @@ function RichBlocks({ blocks }: { blocks: Block[] }) {
         if (b.kind === "li")
           return (
             <div key={i} style={{ display: "flex", gap: 14, fontSize: 34, lineHeight: 1.4, color: "currentColor", margin: "6px 0", opacity: 0.92 }}>
-              <span style={{ color: "#16a34a" }}>•</span>
+              <span style={{ color: accent }}>•</span>
               <span>{b.text}</span>
             </div>
           )
@@ -62,7 +68,7 @@ function RichBlocks({ blocks }: { blocks: Block[] }) {
 }
 
 /** Auto-scrolls its content (down then back) when it overflows the box. */
-function ScrollText({ blocks, style }: { blocks: Block[]; style?: CSSProperties }) {
+function ScrollText({ blocks, style, accent }: { blocks: Block[]; style?: CSSProperties; accent?: string }) {
   const wrap = useRef<HTMLDivElement>(null)
   const inner = useRef<HTMLDivElement>(null)
   useEffect(() => {
@@ -86,18 +92,18 @@ function ScrollText({ blocks, style }: { blocks: Block[]; style?: CSSProperties 
   return (
     <div ref={wrap} style={{ ...style, overflow: "hidden", position: "relative" }}>
       <div ref={inner}>
-        <RichBlocks blocks={blocks} />
+        <RichBlocks blocks={blocks} accent={accent} />
       </div>
     </div>
   )
 }
 
-function Kicker({ children }: { children: string }) {
+function Kicker({ children, accent = "#16a34a" }: { children: string; accent?: string }) {
   // Premium etikett: lysende aksent-bar + versaler. Konsistent på alle nyhets-kort.
   return (
     <div style={{ display: "inline-flex", alignItems: "center", gap: 16, margin: "0 0 20px" }}>
-      <span style={{ width: 46, height: 5, borderRadius: 9999, background: "#16a34a", boxShadow: "0 0 18px rgba(22,163,74,.75)" }} />
-      <span style={{ color: "#16a34a", fontWeight: 800, letterSpacing: 4, fontSize: 26, textTransform: "uppercase" }}>{children}</span>
+      <span style={{ width: 46, height: 5, borderRadius: 9999, background: accent, boxShadow: `0 0 18px ${hexAlpha(accent, 0.75)}` }} />
+      <span style={{ color: accent, fontWeight: 800, letterSpacing: 4, fontSize: 26, textTransform: "uppercase" }}>{children}</span>
     </div>
   )
 }
@@ -108,22 +114,16 @@ function Byline({ item }: { item: LiveItem }) {
   return <p style={{ fontSize: 24, color: "currentColor", opacity: 0.55, margin: "0 0 24px" }}>{parts.join(" · ")}</p>
 }
 
-function formatPeriod(from: string | null, to: string | null): string | null {
-  if (!from && !to) return null
-  const f = (d: string) => new Date(d).toLocaleDateString("nb-NO", { day: "numeric", month: "long" })
-  if (from && to) return `Gjelder ${f(from)} – ${f(to)}`
-  if (from) return `Gjelder fra ${f(from)}`
-  return `Gjelder til ${f(to!)}`
-}
-
-function PeriodChip({ item }: { item: LiveItem }) {
+function PeriodChip({ item, accent = "#16a34a", accentFg = "#fff" }: { item: LiveItem; accent?: string; accentFg?: string }) {
   // Only offers have a customer-relevant validity period. On regular posts the
   // date is just an internal publish/scheduling detail — don't show it.
   if (item.type !== "slide") return null
-  const label = formatPeriod(item.validFrom, item.validTo)
+  const urgent = expiryLabel(item.validTo)
+  const label = urgent ?? formatPeriod(item.validFrom, item.validTo)
   if (!label) return null
+  const pulse = urgent ? { animation: "wPulse 1.6s ease-in-out infinite", boxShadow: `0 0 24px ${hexAlpha(accent, 0.6)}` } : {}
   return (
-    <span style={{ display: "inline-block", alignSelf: "flex-start", background: "#16a34a", color: "#fff", fontSize: 26, fontWeight: 700, padding: "10px 24px", borderRadius: 9999, marginBottom: 20 }}>
+    <span style={{ display: "inline-block", alignSelf: "flex-start", background: accent, color: accentFg, fontSize: 26, fontWeight: 700, padding: "10px 24px", borderRadius: 9999, marginBottom: 20, ...pulse }}>
       {label}
     </span>
   )
@@ -156,7 +156,7 @@ function bgImage(url: string): CSSProperties {
   return { position: "absolute", inset: 0, backgroundImage: `url('${url}')`, backgroundSize: "cover", backgroundPosition: "center", opacity: 0.22, animation: "grKenBurns 26s ease-in-out infinite alternate", transformOrigin: "center" }
 }
 
-function StandardCard({ item, portrait = false }: { item: LiveItem; portrait?: boolean }) {
+function StandardCard({ item, portrait = false, accent = "#16a34a", accentFg = "#fff" }: { item: LiveItem; portrait?: boolean; accent?: string; accentFg?: string }) {
   // Base colour comes from the rotator wrapper; the background media (image or
   // video) overlays it dimmed, so a chosen colour always shows through. Uten bilde
   // sentreres innholdet vertikalt i stående, så korte tekst-kort ikke blir tomme.
@@ -188,11 +188,11 @@ function StandardCard({ item, portrait = false }: { item: LiveItem; portrait?: b
       )}
       {item.imageUrl && <div style={{ position: "absolute", inset: 0, background: scrim, pointerEvents: "none" }} />}
       <div style={{ position: "absolute", inset: 0, padding: portrait ? 76 : 70, boxSizing: "border-box", display: "flex", flexDirection: "column", justifyContent: centre ? "center" : "flex-start", color: item.textColor ?? "#fff" }}>
-        {KICKER[item.type] && <Kicker>{KICKER[item.type]}</Kicker>}
+        {KICKER[item.type] && <Kicker accent={accent}>{KICKER[item.type]}</Kicker>}
         <h1 style={{ fontSize: portrait ? 96 : 78, fontWeight: 900, margin: "0 0 18px", lineHeight: 1.02, letterSpacing: -1, textWrap: "balance" }}>{item.title}</h1>
         <Byline item={item} />
-        <PeriodChip item={item} />
-        <ScrollText blocks={item.blocks} style={centre ? { flex: "0 1 auto", maxHeight: "48%" } : { flex: "1 1 auto" }} />
+        <PeriodChip item={item} accent={accent} accentFg={accentFg} />
+        <ScrollText blocks={item.blocks} accent={accent} style={centre ? { flex: "0 1 auto", maxHeight: "48%" } : { flex: "1 1 auto" }} />
       </div>
     </>
   )
@@ -219,7 +219,7 @@ function Gallery({ urls }: { urls: string[] }) {
  * single-image "Lite bilde" mode — so the text stays readable next to the image
  * instead of disappearing (poster) or sitting on a dimmed background.
  */
-function SplitCard({ item, portrait = false }: { item: LiveItem; portrait?: boolean }) {
+function SplitCard({ item, portrait = false, accent = "#16a34a", accentFg = "#fff" }: { item: LiveItem; portrait?: boolean; accent?: string; accentFg?: string }) {
   const multi = item.imageUrls.length >= 2
   // «Lite bilde»: teksten er hovedsaken. Liggende: tekst venstre / bilde høyre.
   // Stående: tittel + tekst dominerer, bildet er et LITE bånd (ikke stort med
@@ -227,29 +227,29 @@ function SplitCard({ item, portrait = false }: { item: LiveItem; portrait?: bool
   return (
     <div style={{ position: "absolute", inset: 0, padding: portrait ? 68 : 60, boxSizing: "border-box", display: "flex", flexDirection: portrait ? "column" : "row", gap: portrait ? 34 : 44, alignItems: "stretch" }}>
       <div style={{ flex: portrait ? "0 0 auto" : (multi ? "0 0 40%" : "1 1 auto"), minWidth: 0, display: "flex", flexDirection: "column" }}>
-        {KICKER[item.type] && <Kicker>{KICKER[item.type]}</Kicker>}
+        {KICKER[item.type] && <Kicker accent={accent}>{KICKER[item.type]}</Kicker>}
         <h1 style={{ fontSize: portrait ? 82 : 60, fontWeight: 900, margin: "0 0 12px", lineHeight: 1.03, letterSpacing: -1, textWrap: "balance" }}>{item.title}</h1>
         <Byline item={item} />
-        <PeriodChip item={item} />
-        {!portrait && <ScrollText blocks={item.blocks} style={{ flex: "1 1 auto" }} />}
+        <PeriodChip item={item} accent={accent} accentFg={accentFg} />
+        {!portrait && <ScrollText blocks={item.blocks} accent={accent} style={{ flex: "1 1 auto" }} />}
       </div>
       {/* Bilde: liggende fyller høyre halvdel; stående = lite bånd (maks ~34%). */}
       <div style={{ flex: portrait ? "0 0 auto" : "1 1 auto", height: portrait ? "34%" : "auto", minHeight: 0, minWidth: 0, display: "flex" }}>
         <Gallery urls={item.imageUrls} />
       </div>
       {/* Stående: brødteksten er hovedsaken → får resten av høyden. */}
-      {portrait && item.blocks.length > 0 && <ScrollText blocks={item.blocks} style={{ flex: "1 1 auto", minHeight: 0 }} />}
+      {portrait && item.blocks.length > 0 && <ScrollText blocks={item.blocks} accent={accent} style={{ flex: "1 1 auto", minHeight: 0 }} />}
     </div>
   )
 }
 
-function PosterCard({ item, portrait = false }: { item: LiveItem; portrait?: boolean }) {
+function PosterCard({ item, portrait = false, accent = "#16a34a", accentFg = "#fff" }: { item: LiveItem; portrait?: boolean; accent?: string; accentFg?: string }) {
   return (
     <div style={{ position: "absolute", inset: 0, padding: portrait ? 60 : 50, boxSizing: "border-box", display: "flex", flexDirection: "column", gap: 18 }}>
       <div style={{ flex: "0 0 auto", display: "flex", flexDirection: "column" }}>
-        {KICKER[item.type] && <Kicker>{KICKER[item.type]}</Kicker>}
+        {KICKER[item.type] && <Kicker accent={accent}>{KICKER[item.type]}</Kicker>}
         <h1 style={{ fontSize: portrait ? 76 : 58, fontWeight: 900, margin: "0 0 12px", lineHeight: 1.03, letterSpacing: -1, textWrap: "balance" }}>{item.title}</h1>
-        <PeriodChip item={item} />
+        <PeriodChip item={item} accent={accent} accentFg={accentFg} />
       </div>
       <MediaFull item={item} />
     </div>
@@ -282,7 +282,7 @@ function QrPanel({ qrUrl, contact, portrait = false }: { qrUrl?: string; contact
   )
 }
 
-function JobCard({ item, qrUrl, portrait = false }: { item: LiveItem; qrUrl?: string; portrait?: boolean }) {
+function JobCard({ item, qrUrl, portrait = false, accent = "#16a34a" }: { item: LiveItem; qrUrl?: string; portrait?: boolean; accent?: string }) {
   const showQrPanel = !!qrUrl || !!item.contactPerson
   const poster = item.imageMode === "plakat" && item.imageUrl
   // Stående: tekst øverst, QR-linje nederst (stablet). Liggende: tekst venstre, QR-panel høyre.
@@ -291,13 +291,13 @@ function JobCard({ item, qrUrl, portrait = false }: { item: LiveItem; qrUrl?: st
       {!poster && item.imageUrl && <div style={bgImage(item.imageUrl)} />}
       <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: portrait ? "column" : "row" }}>
         <div style={{ flex: "1 1 auto", minHeight: 0, minWidth: 0, padding: portrait ? 76 : 60, boxSizing: "border-box", display: "flex", flexDirection: "column" }}>
-          <Kicker>STILLING LEDIG</Kicker>
+          <Kicker accent={accent}>STILLING LEDIG</Kicker>
           <h1 style={{ fontSize: portrait ? 86 : 60, fontWeight: 900, margin: "0 0 12px", lineHeight: 1.03, letterSpacing: -1, textWrap: "balance" }}>{item.title}</h1>
           <Byline item={item} />
           {poster ? (
             <div style={{ flex: "1 1 auto", minHeight: 0, backgroundImage: `url('${item.imageUrl}')`, backgroundSize: "contain", backgroundPosition: portrait ? "center" : "left center", backgroundRepeat: "no-repeat", borderRadius: 14 }} />
           ) : (
-            <ScrollText blocks={item.blocks} style={{ flex: "1 1 auto" }} />
+            <ScrollText blocks={item.blocks} accent={accent} style={{ flex: "1 1 auto" }} />
           )}
         </div>
         {showQrPanel && <QrPanel qrUrl={qrUrl} contact={item.contactPerson} portrait={portrait} />}
@@ -306,7 +306,7 @@ function JobCard({ item, qrUrl, portrait = false }: { item: LiveItem; qrUrl?: st
   )
 }
 
-function StatsCard({ item, portrait = false }: { item: LiveItem; portrait?: boolean }) {
+function StatsCard({ item, portrait = false, accent = "#16a34a" }: { item: LiveItem; portrait?: boolean; accent?: string }) {
   const change = item.statsChange?.trim() ?? ""
   const up = /(^[+▲])|opp|øk/i.test(change)
   const down = /(^[-▼])|ned|fall/i.test(change)
@@ -314,7 +314,7 @@ function StatsCard({ item, portrait = false }: { item: LiveItem; portrait?: bool
   const changeText = change.replace(/^[▲▼+\-]\s*/, "").trim()
   return (
     <div style={{ position: "absolute", inset: 0, padding: portrait ? 76 : 80, boxSizing: "border-box", display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "flex-start", gap: 8 }}>
-      <Kicker>SALGSTALL</Kicker>
+      <Kicker accent={accent}>SALGSTALL</Kicker>
       <h1 style={{ fontSize: portrait ? 60 : 56, fontWeight: 800, margin: "0 0 20px", color: "rgba(255,255,255,.8)", lineHeight: 1.05 }}>{item.title}</h1>
       {item.statsValue && <div style={{ fontSize: portrait ? 150 : 170, fontWeight: 900, lineHeight: 0.95, letterSpacing: -4, textWrap: "balance" }}>{item.statsValue}</div>}
       {change && (
@@ -348,19 +348,21 @@ function SlideCard({ item, portrait = false }: { item: LiveItem; portrait?: bool
   return <PosterCard item={item} portrait={portrait} />
 }
 
-function Card({ item, qrUrl, portrait = false }: { item: LiveItem; qrUrl?: string; portrait?: boolean }) {
+function Card({ item, qrUrl, portrait = false, accent = "#16a34a", accentFg = "#fff" }: { item: LiveItem; qrUrl?: string; portrait?: boolean; accent?: string; accentFg?: string }) {
+  // Kjedefarget chrome kun på kortene som bruker den delte chromen — kort med
+  // eget fargespråk (konkurranse/invitasjon/galleri/slide) røres ikke.
   if (item.type === "competition") return <CompetitionCard item={item} qrUrl={qrUrl} portrait={portrait} />
   if (item.type === "invitation") return <InvitationCard item={item} qrUrl={qrUrl} portrait={portrait} />
   if (item.type === "gallery") return <GalleryCard item={item} qrUrl={qrUrl} portrait={portrait} />
   if (item.type === "slide") return <SlideCard item={item} portrait={portrait} />
-  if (item.type === "stats") return <StatsCard item={item} portrait={portrait} />
-  if (item.type === "job") return <JobCard item={item} qrUrl={qrUrl} portrait={portrait} />
+  if (item.type === "stats") return <StatsCard item={item} portrait={portrait} accent={accent} />
+  if (item.type === "job") return <JobCard item={item} qrUrl={qrUrl} portrait={portrait} accent={accent} />
   // 2+ images, or single image in "Lite bilde" mode → text left, image(s) right.
-  if (item.imageUrls.length >= 2) return <SplitCard item={item} portrait={portrait} />
-  if (item.imageUrl && item.imageMode === "liten" && !item.isPdf) return <SplitCard item={item} portrait={portrait} />
+  if (item.imageUrls.length >= 2) return <SplitCard item={item} portrait={portrait} accent={accent} accentFg={accentFg} />
+  if (item.imageUrl && item.imageMode === "liten" && !item.isPdf) return <SplitCard item={item} portrait={portrait} accent={accent} accentFg={accentFg} />
   // Posters & PDFs always show full (never as a cropped background).
-  if (item.imageUrl && (item.imageMode === "plakat" || item.isPdf)) return <PosterCard item={item} portrait={portrait} />
-  return <StandardCard item={item} portrait={portrait} />
+  if (item.imageUrl && (item.imageMode === "plakat" || item.isPdf)) return <PosterCard item={item} portrait={portrait} accent={accent} accentFg={accentFg} />
+  return <StandardCard item={item} portrait={portrait} accent={accent} accentFg={accentFg} />
 }
 
 const TICKER_HEIGHT = 96
@@ -372,7 +374,7 @@ const TICKER_HEIGHT = 96
  * duplicated and translated -50% for a seamless loop; speed scales with the
  * total length so a long set isn't a blur.
  */
-function TickerOverlay({ messages }: { messages: string[] }) {
+function TickerOverlay({ messages, accent = "#16a34a", accentFg = "#fff" }: { messages: string[]; accent?: string; accentFg?: string }) {
   const totalChars = messages.reduce((n, m) => n + m.length + 6, 0)
   const dur = Math.max(24, Math.round(totalChars / 4)) // seconds for one full loop
 
@@ -388,9 +390,9 @@ function TickerOverlay({ messages }: { messages: string[] }) {
   )
 
   return (
-    <div style={{ position: "absolute", left: 0, right: 0, bottom: 0, height: TICKER_HEIGHT, display: "flex", alignItems: "center", overflow: "hidden", background: "#16a34a", color: "#fff" }}>
+    <div style={{ position: "absolute", left: 0, right: 0, bottom: 0, height: TICKER_HEIGHT, display: "flex", alignItems: "center", overflow: "hidden", background: accent, color: accentFg }}>
       <style>{`@keyframes gr-pulse{0%{box-shadow:0 0 0 0 rgba(255,255,255,.65)}70%{box-shadow:0 0 0 16px rgba(255,255,255,0)}100%{box-shadow:0 0 0 0 rgba(255,255,255,0)}}@keyframes gr-scroll{from{transform:translateX(0)}to{transform:translateX(-50%)}}`}</style>
-      <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "0 28px", height: "100%", flex: "0 0 auto", background: "#16a34a", zIndex: 2, fontWeight: 900, fontSize: 26, letterSpacing: 3 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "0 28px", height: "100%", flex: "0 0 auto", background: accent, zIndex: 2, fontWeight: 900, fontSize: 26, letterSpacing: 3 }}>
         <span style={{ width: 15, height: 15, borderRadius: 9999, background: "#ef4444", flex: "0 0 auto", animation: "gr-pulse 1.4s ease-out infinite" }} />
         <span>NYTT</span>
       </div>
@@ -404,7 +406,7 @@ function TickerOverlay({ messages }: { messages: string[] }) {
   )
 }
 
-export function NewsRotator({ items, qr, ticker, portrait = false }: { items: LiveItem[]; qr: Record<string, string>; ticker: string[]; portrait?: boolean }) {
+export function NewsRotator({ items, qr, ticker, portrait = false, chain = null, season = null }: { items: LiveItem[]; qr: Record<string, string>; ticker: string[]; portrait?: boolean; chain?: ChainBrand | null; season?: Season | null }) {
   const [i, setI] = useState(0)
   useEffect(() => {
     if (items.length <= 1) return
@@ -425,19 +427,30 @@ export function NewsRotator({ items, qr, ticker, portrait = false }: { items: Li
   // Reserve space at the bottom for the ticker only when it is showing.
   const contentInset: CSSProperties = hasTicker ? { position: "absolute", top: 0, left: 0, right: 0, bottom: TICKER_HEIGHT } : { position: "absolute", inset: 0 }
 
+  const accent = chain?.color || "#16a34a"
+  const accentFg = chain?.brandFg || "#fff"
+  const next = items.length > 1 ? items[(i + 1) % items.length] : null
+  usePreloadNext(next)
+
   return (
     <main style={frame}>
-      <style>{"@keyframes grFade{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}@keyframes grKenBurns{from{transform:scale(1)}to{transform:scale(1.1)}}"}</style>
+      <style>{"@keyframes grKenBurns{from{transform:scale(1)}to{transform:scale(1.1)}}" + TOKEN_KEYFRAMES}</style>
+      <AmbientBackdrop accent={accent} tint={season?.tint ?? null} intensity="subtle" />
+      <SeasonLayer season={season?.key ?? null} />
       {!item ? (
         <div style={{ ...contentInset, display: "flex", alignItems: "center", justifyContent: "center", color: "rgba(255,255,255,.4)", fontSize: 34 }}>
           Ingen publiserte nyheter
         </div>
       ) : (
-        <div key={item.id} style={{ ...contentInset, overflow: "hidden", animation: "grFade .6s ease-out", background: item.bgColor ?? undefined, color: item.textColor ?? undefined }}>
-          <Card item={item} qrUrl={qr[item.id]} portrait={portrait} />
+        <div style={contentInset}>
+          <SceneTransition itemKey={item.id}>
+            <div style={{ position: "absolute", inset: 0, overflow: "hidden", background: item.bgColor ?? undefined, color: item.textColor ?? undefined }}>
+              <Card item={item} qrUrl={qr[item.id]} portrait={portrait} accent={accent} accentFg={accentFg} />
+            </div>
+          </SceneTransition>
         </div>
       )}
-      {hasTicker && <TickerOverlay messages={ticker} />}
+      {hasTicker && <TickerOverlay messages={ticker} accent={accent} accentFg={accentFg} />}
     </main>
   )
 }
