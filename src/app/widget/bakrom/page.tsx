@@ -28,13 +28,13 @@ const NEWS_SECONDS: Record<string, number> = { stats: 12, job: 20, competition: 
 const NEWS_DEFAULT = 16
 const KPI_SECONDS = 10
 
-export default async function BakromWidgetPage({ searchParams }: { searchParams: Promise<{ store?: string; avdeling?: string }> }) {
-  const { store, avdeling } = await searchParams
+export default async function BakromWidgetPage({ searchParams }: { searchParams: Promise<{ store?: string; avdeling?: string; screen?: string }> }) {
+  const { store, avdeling, screen } = await searchParams
   const avd = avdeling && avdeling !== "felles" ? avdeling : undefined
 
   // Compute the news dwell from THIS store's own internal items: sum of each
   // item's on-screen time → every item shows once, its full time, then rotate on.
-  const newsItems = store ? await fetchLiveContent(store, INTERNAL_CARD_TYPES, "intern", avd) : []
+  const newsItems = store ? await fetchLiveContent(store, INTERNAL_CARD_TYPES, "intern", avd, screen) : []
   const newsDwell = newsItems.reduce(
     (sum, it) => sum + (it.durationSeconds ?? NEWS_SECONDS[it.type] ?? NEWS_DEFAULT),
     0,
@@ -43,7 +43,8 @@ export default async function BakromWidgetPage({ searchParams }: { searchParams:
   const panels: BakromPanel[] = []
   if (store && newsItems.length > 0) {
     const avdQs = avd ? `&avdeling=${encodeURIComponent(avd)}` : ""
-    panels.push({ src: `/widget/nyheter?store=${store}&flate=intern${avdQs}`, seconds: newsDwell })
+    const screenQs = screen ? `&screen=${encodeURIComponent(screen)}` : ""
+    panels.push({ src: `/widget/nyheter?store=${store}&flate=intern${avdQs}${screenQs}`, seconds: newsDwell })
   }
   // KPI-panelene krever store (utleder tenant) — ellers vises de ikke (fail-closed,
   // så konfidensielle tall aldri lekker på tvers av tenants).

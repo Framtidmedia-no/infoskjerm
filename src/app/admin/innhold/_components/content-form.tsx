@@ -19,7 +19,7 @@ import {
 import {
   Newspaper, Trophy, ImageIcon, Briefcase, PartyPopper, Megaphone, FileText, Ticket, MapPin, LayoutGrid, Plus, Trash2, QrCode,
   Store as StoreIcon, Tag, Globe, X, Calendar, Save, Send, ChevronLeft, Image as ImageLucide, Maximize2, PanelRight, CalendarOff, Search,
-  Loader2,
+  Loader2, Monitor,
 } from "lucide-react"
 import Link from "next/link"
 import { ConfirmDialog } from "@/components/admin/confirm-dialog"
@@ -27,6 +27,8 @@ import { PublishMoment } from "@/components/admin/publish-moment"
 
 export interface StoreOption { id: string; name: string; chain: string | null; city: string | null; tagIds?: string[] }
 export interface TagOption { id: string; name: string; color: string | null }
+/** Skjerm for per-skjerm-målretting — kallenavn (screens.name) + flate/avdeling til visning. */
+export interface ScreenOption { id: string; name: string; storeId: string; flate: "kunde" | "intern"; avdeling: string }
 
 // Background/text colour presets for internal text cards.
 const COLOR_PRESETS: { label: string; bg: string; fg: string }[] = [
@@ -71,6 +73,7 @@ export interface ContentInitial {
   targetMode: TargetMode
   storeIds: string[]
   tagIds: string[]
+  screenIds?: string[]
   validFrom: string | null
   validTo: string | null
   contactPerson?: string | null
@@ -146,7 +149,7 @@ const AUDIENCE_TYPES: Record<Audience, ContentType[]> = {
   intern: ["news", "competition", "job", "birthday", "invitation", "gallery", "ticker", "slide"],
 }
 
-export function ContentForm({ stores, tags, initial, audience = "intern", defaultType, listHref: listHrefProp, prefillImage, canTargetAll = true }: { stores: StoreOption[]; tags: TagOption[]; initial?: ContentInitial; audience?: Audience; defaultType?: ContentType; listHref?: string; prefillImage?: string; canTargetAll?: boolean }) {
+export function ContentForm({ stores, tags, screens = [], initial, audience = "intern", defaultType, listHref: listHrefProp, prefillImage, canTargetAll = true }: { stores: StoreOption[]; tags: TagOption[]; screens?: ScreenOption[]; initial?: ContentInitial; audience?: Audience; defaultType?: ContentType; listHref?: string; prefillImage?: string; canTargetAll?: boolean }) {
   const router = useRouter()
   // Avdeling-lista følger flaten: intern-innhold merkes med INTERNE avdelinger,
   // kunde-innhold med kunde-avdelinger (egne lister per tenant, migrasjon 037).
@@ -173,6 +176,7 @@ export function ContentForm({ stores, tags, initial, audience = "intern", defaul
   const [targetChosen, setTargetChosen] = useState<boolean>(audience !== "kunde" || !!initial)
   const [storeIds, setStoreIds] = useState<string[]>(initial?.storeIds ?? [])
   const [tagIds, setTagIds] = useState<string[]>(initial?.tagIds ?? [])
+  const [screenIds, setScreenIds] = useState<string[]>(initial?.screenIds ?? [])
   const [validFrom, setValidFrom] = useState(initial?.validFrom ?? "")
   const [validTo, setValidTo] = useState(initial?.validTo ?? "")
   const [contactPerson, setContactPerson] = useState(initial?.contactPerson ?? "")
@@ -221,10 +225,19 @@ export function ContentForm({ stores, tags, initial, audience = "intern", defaul
   ]
   const setCa = (k: "category" | "subtext" | "price" | "accent", v: string) => setCampaign((p) => ({ ...p, [k]: v.trim() || null }))
 
-  // How many stores the current targeting reaches (live feedback).
+  // Skjermvelgeren viser kun skjermer i butikker brukeren ser (stores er allerede
+  // rolle-scopet) og på riktig flate — kunde-innhold treffer aldri intern-skjermer.
+  const storeById = new Map(stores.map((s) => [s.id, s]))
+  const screenOptions = screens.filter((sc) =>
+    storeById.has(sc.storeId) && ((isFullscreen && showBoth) || sc.flate === (audience === "kunde" ? "kunde" : "intern"))
+  )
+  const screenLabel = (sc: ScreenOption) => `${storeById.get(sc.storeId)?.name ?? ""} · ${sc.name}`
+
+  // How many stores/screens the current targeting reaches (live feedback).
   const reach = (() => {
     if (targetMode === "all") return stores.length
     if (targetMode === "stores") return storeIds.length
+    if (targetMode === "screens") return screenIds.length
     const hit = new Set<string>()
     for (const s of stores) if ((s.tagIds ?? []).some((t) => tagIds.includes(t))) hit.add(s.id)
     return hit.size
@@ -234,6 +247,7 @@ export function ContentForm({ stores, tags, initial, audience = "intern", defaul
   const resolvedUnits = (() => {
     if (targetMode === "all") return stores.map((s) => s.name)
     if (targetMode === "stores") return stores.filter((s) => storeIds.includes(s.id)).map((s) => s.name)
+    if (targetMode === "screens") return screenOptions.filter((sc) => screenIds.includes(sc.id)).map(screenLabel)
     return stores.filter((s) => (s.tagIds ?? []).some((t) => tagIds.includes(t))).map((s) => s.name)
   })()
   const avdelingLabel = AVDELINGER.find((a) => a.key === avdeling)?.label ?? avdeling
@@ -296,6 +310,7 @@ export function ContentForm({ stores, tags, initial, audience = "intern", defaul
       if (d.targetMode) { setTargetMode(d.targetMode); setTargetChosen(true) }
       if (Array.isArray(d.storeIds)) setStoreIds(d.storeIds)
       if (Array.isArray(d.tagIds)) setTagIds(d.tagIds)
+      if (Array.isArray(d.screenIds)) setScreenIds(d.screenIds)
       if (d.bgColor) setBgColor(d.bgColor)
       if (d.textColor) setTextColor(d.textColor)
       if (d.contactPerson) setContactPerson(d.contactPerson)
@@ -310,12 +325,12 @@ export function ContentForm({ stores, tags, initial, audience = "intern", defaul
     const hasContent = title.trim() || offer.varenavn.trim() || bodyHtml.trim() || imageUrls.length > 0
     const id = setTimeout(() => {
       try {
-        if (hasContent) localStorage.setItem(draftKey, JSON.stringify({ title, type, bodyHtml, imageUrls, offer, offerMode, avdeling, validFrom, validTo, targetMode, storeIds, tagIds, bgColor, textColor, contactPerson, applyUrl }))
+        if (hasContent) localStorage.setItem(draftKey, JSON.stringify({ title, type, bodyHtml, imageUrls, offer, offerMode, avdeling, validFrom, validTo, targetMode, storeIds, tagIds, screenIds, bgColor, textColor, contactPerson, applyUrl }))
         else localStorage.removeItem(draftKey)
       } catch { /* storage full/blocked — non-fatal */ }
     }, 600)
     return () => clearTimeout(id)
-  }, [draftKey, title, type, bodyHtml, imageUrls, offer, offerMode, avdeling, validFrom, validTo, targetMode, storeIds, tagIds, bgColor, textColor, contactPerson, applyUrl])
+  }, [draftKey, title, type, bodyHtml, imageUrls, offer, offerMode, avdeling, validFrom, validTo, targetMode, storeIds, tagIds, screenIds, bgColor, textColor, contactPerson, applyUrl])
 
   const discardDraft = () => {
     if (draftKey) { try { localStorage.removeItem(draftKey) } catch {} }
@@ -344,6 +359,7 @@ export function ContentForm({ stores, tags, initial, audience = "intern", defaul
 
   const toggleStore = (id: string) => setStoreIds((p) => (p.includes(id) ? p.filter((x) => x !== id) : [...p, id]))
   const toggleTag = (id: string) => setTagIds((p) => (p.includes(id) ? p.filter((x) => x !== id) : [...p, id]))
+  const toggleScreen = (id: string) => setScreenIds((p) => (p.includes(id) ? p.filter((x) => x !== id) : [...p, id]))
 
   // Store picker: search + chain filter + select-all over the filtered set.
   const chains = Array.from(new Set(stores.map((s) => s.chain).filter(Boolean))) as string[]
@@ -366,7 +382,7 @@ export function ContentForm({ stores, tags, initial, audience = "intern", defaul
   // eksisterende oppslag trenger eksplisitt vern mot å miste endringer.
   const formSnapshot = JSON.stringify({
     title, type, bodyHtml, imageUrls, offer, campaign, klubb, invitation, gallery,
-    offerMode, avdeling, imageMode, validFrom, validTo, targetMode, storeIds, tagIds,
+    offerMode, avdeling, imageMode, validFrom, validTo, targetMode, storeIds, tagIds, screenIds,
     bgColor, textColor, contactPerson, applyUrl, durationSeconds, fsPortraitUrl,
   })
   const initialSnapshot = useRef<string | null>(null)
@@ -398,6 +414,7 @@ export function ContentForm({ stores, tags, initial, audience = "intern", defaul
     if (!targetChosen) { toast.error("Velg hvor innholdet skal vises (Vis på)"); return }
     if (targetMode === "stores" && storeIds.length === 0) { toast.error(`Velg minst én ${unitLabel.toLowerCase()}`); return }
     if (targetMode === "tags" && tagIds.length === 0) { toast.error("Velg minst én tagg"); return }
+    if (targetMode === "screens" && screenIds.length === 0) { toast.error("Velg minst én skjerm"); return }
     // Tilbud/annonser MÅ ha både fra- og til-dato — de skal aldri gå evig.
     if (publish && periodRequired && (!validFrom || !validTo)) {
       toast.error("Tilbud må ha både fra- og til-dato")
@@ -437,7 +454,7 @@ export function ContentForm({ stores, tags, initial, audience = "intern", defaul
         avdeling,
         // 2+ images always render full-page (side by side), so force plakat-style.
         imageMode: usesImage ? (isFullscreen ? "fullskjerm" : type === "slide" || isMulti ? "plakat" : imageMode) : "bakgrunn",
-        targetMode, storeIds, tagIds,
+        targetMode, storeIds, tagIds, screenIds,
         validFrom: validFrom || null, validTo: validTo || null, publish,
         contactPerson: type === "job" ? contactPerson || null : null,
         applyUrl: (type === "job" || type === "competition" || type === "news") ? applyUrl || null : null,
@@ -970,9 +987,11 @@ export function ContentForm({ stores, tags, initial, audience = "intern", defaul
           <section className="rounded-2xl border border-zinc-200/80 bg-white p-4 shadow-[0_1px_2px_rgba(16,24,40,0.04)]">
             <h3 className="text-xs font-semibold text-zinc-600 mb-2.5">Vis på</h3>
             <div className="flex gap-1.5 mb-3">
-              {(([["all", "Alle", Globe], ["stores", unitLabelPlural, StoreIcon], ["tags", "Tagger", Tag]] as const)
-                // Butikk-roller kan kun målrette egne butikker — skjul «Alle»/«Tagger».
-                .filter(([mode]) => canTargetAll || mode === "stores")
+              {(([["all", "Alle", Globe], ["stores", unitLabelPlural, StoreIcon], ["tags", "Tagger", Tag], ["screens", "Skjermer", Monitor]] as const)
+                // Butikk-roller kan kun målrette egne butikker/skjermer — skjul «Alle»/«Tagger».
+                .filter(([mode]) => canTargetAll || mode === "stores" || mode === "screens")
+                // Skjermer-modus gir bare mening når det finnes skjermer på riktig flate.
+                .filter(([mode]) => mode !== "screens" || screenOptions.length > 0)
               ).map(([mode, label, Icon]) => (
                 <button key={mode} onClick={() => { setTargetMode(mode); setTargetChosen(true) }}
                   className={`flex-1 flex items-center justify-center gap-1 px-2 py-1.5 rounded-lg text-[11px] font-medium border transition-all ${targetChosen && targetMode === mode ? "border-[var(--brand-primary)] bg-zinc-50 text-zinc-900" : "border-zinc-200 text-zinc-500"}`}>
@@ -984,7 +1003,9 @@ export function ContentForm({ stores, tags, initial, audience = "intern", defaul
             {targetChosen ? (
               <>
                 <p className={`text-[11px] font-medium mb-2 ${reach === 0 ? "text-red-500" : "text-emerald-600"}`}>
-                  → Vises på {reach} av {stores.length} {unitLabelPlural.toLowerCase()}
+                  {targetMode === "screens"
+                    ? <>→ Vises på {reach} av {screenOptions.length} skjermer</>
+                    : <>→ Vises på {reach} av {stores.length} {unitLabelPlural.toLowerCase()}</>}
                 </p>
                 {targetMode === "all" && <p className="text-[11px] text-zinc-400">Vises på alle {unitLabelPlural.toLowerCase()}s skjermer.</p>}
               </>
@@ -1038,6 +1059,29 @@ export function ContentForm({ stores, tags, initial, audience = "intern", defaul
                     <span className="text-xs text-zinc-700">{t.name}</span>
                   </label>
                 ))}
+              </div>
+            )}
+
+            {targetMode === "screens" && (
+              <div className="space-y-2">
+                {screenIds.length > 0 && <p className="text-[11px] text-zinc-400 px-1 text-right">{screenIds.length} valgt</p>}
+                <div className="max-h-56 overflow-y-auto space-y-2 -mx-1 px-1">
+                  {stores.filter((s) => screenOptions.some((sc) => sc.storeId === s.id)).map((s) => (
+                    <div key={s.id}>
+                      <p className="text-[10px] font-semibold uppercase tracking-wide text-zinc-400 px-2 mb-0.5">{s.name}</p>
+                      {screenOptions.filter((sc) => sc.storeId === s.id).map((sc) => (
+                        <label key={sc.id} className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-zinc-50 cursor-pointer">
+                          <input type="checkbox" checked={screenIds.includes(sc.id)} onChange={() => toggleScreen(sc.id)} className="rounded border-zinc-300" />
+                          <span className="text-xs text-zinc-700 flex-1 truncate">{sc.name}</span>
+                          <span className="text-[10px] text-zinc-400 flex-shrink-0">
+                            {sc.flate === "intern" ? "Intern" : "Kunde"}{sc.avdeling !== "felles" ? ` · ${sc.avdeling}` : ""}
+                          </span>
+                        </label>
+                      ))}
+                    </div>
+                  ))}
+                </div>
+                <p className="text-[10px] text-zinc-400 px-1">Innholdet vises kun på skjermene du velger her. Gi skjermene kallenavn under Skjermer.</p>
               </div>
             )}
           </section>
@@ -1132,17 +1176,19 @@ export function ContentForm({ stores, tags, initial, audience = "intern", defaul
               <Send className="h-5 w-5" />
             </div>
             <DialogTitle>
-              Publisere til {reach} {reach === 1 ? unitLabel.toLowerCase() : unitLabelPlural.toLowerCase()}?
+              Publisere til {reach} {targetMode === "screens" ? (reach === 1 ? "skjerm" : "skjermer") : reach === 1 ? unitLabel.toLowerCase() : unitLabelPlural.toLowerCase()}?
             </DialogTitle>
             <DialogDescription>
-              {audience === "kunde" ? "Vises på kundeskjermene" : "Vises på interne skjermer"}
+              {targetMode === "screens" ? "Vises kun på valgte skjermer" : audience === "kunde" ? "Vises på kundeskjermene" : "Vises på interne skjermer"}
               {(type === "slide" || type === "competition") && avdeling && avdeling !== "felles" ? ` · avdeling: ${avdelingLabel}` : ""}
               {" — "}
               {targetMode === "all"
                 ? `alle ${unitLabelPlural.toLowerCase()}`
                 : targetMode === "tags"
                   ? `${tagIds.length} tagg${tagIds.length === 1 ? "" : "er"}`
-                  : `valgte ${unitLabelPlural.toLowerCase()}`}
+                  : targetMode === "screens"
+                    ? "enkeltskjermer"
+                    : `valgte ${unitLabelPlural.toLowerCase()}`}
               .
             </DialogDescription>
           </DialogHeader>

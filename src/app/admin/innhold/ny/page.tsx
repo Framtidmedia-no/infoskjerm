@@ -1,7 +1,7 @@
 import { requireRole } from "@/lib/admin/require-role"
 import { canTargetAllStores } from "@/lib/roles"
 import { ContentForm, type TagOption } from "../_components/content-form"
-import { loadStoreOptions } from "../store-options"
+import { loadStoreOptions, loadScreenOptions } from "../store-options"
 
 export const dynamic = "force-dynamic"
 
@@ -15,10 +15,11 @@ export default async function NewContentPage({
   const { supabase, role, tenantId } = await requireRole([...AUTHOR_ROLES])
   const { image } = await searchParams
 
-  const [storeOptions, { data: tags }] = await Promise.all([
+  const [storeOptions, screenOptions, { data: tags }] = await Promise.all([
     loadStoreOptions(supabase, tenantId),
+    loadScreenOptions(supabase, tenantId),
     supabase.from("tags").select("id, name, color").eq("tenant_id", tenantId).order("name"),
   ])
 
-  return <ContentForm stores={storeOptions} tags={(tags ?? []) as TagOption[]} prefillImage={image} canTargetAll={canTargetAllStores(role)} />
+  return <ContentForm stores={storeOptions} tags={(tags ?? []) as TagOption[]} screens={screenOptions} prefillImage={image} canTargetAll={canTargetAllStores(role)} />
 }

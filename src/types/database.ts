@@ -322,6 +322,7 @@ export type Database = {
           chain_id: string | null
           content_item_id: string
           id: string
+          screen_id: string | null
           store_id: string | null
           tag_id: string | null
           target_all: boolean | null
@@ -330,6 +331,7 @@ export type Database = {
           chain_id?: string | null
           content_item_id: string
           id?: string
+          screen_id?: string | null
           store_id?: string | null
           tag_id?: string | null
           target_all?: boolean | null
@@ -338,6 +340,7 @@ export type Database = {
           chain_id?: string | null
           content_item_id?: string
           id?: string
+          screen_id?: string | null
           store_id?: string | null
           tag_id?: string | null
           target_all?: boolean | null
@@ -348,6 +351,13 @@ export type Database = {
             columns: ["chain_id"]
             isOneToOne: false
             referencedRelation: "chains"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "content_targets_screen_id_fkey"
+            columns: ["screen_id"]
+            isOneToOne: false
+            referencedRelation: "screens"
             referencedColumns: ["id"]
           },
           {
