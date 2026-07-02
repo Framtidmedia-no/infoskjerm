@@ -1,7 +1,7 @@
 "use client"
 
-import { useMemo, useState } from "react"
-import { LogIn, FilePlus, FileEdit, Send, EyeOff, Trash2, Copy, CalendarPlus, UserPlus, Shield, Store, Tag, Palette, Monitor, Search, Activity, Zap } from "lucide-react"
+import { useEffect, useMemo, useState } from "react"
+import { LogIn, FilePlus, FileEdit, Send, EyeOff, Trash2, Copy, CalendarPlus, UserPlus, Shield, Store, Tag, Palette, Monitor, Search, Activity, Zap, Type, Building2 } from "lucide-react"
 import { CountUp } from "@/components/ui/count-up"
 import { Sparkline } from "@/components/ui/sparkline"
 
@@ -32,6 +32,9 @@ const ACTION_META: Record<string, { label: string; icon: React.ElementType; cls:
   "tag.create": { label: "Tagg opprettet", icon: Tag, cls: "bg-zinc-100 text-zinc-700" },
   "settings.branding": { label: "Merkevare", icon: Palette, cls: "bg-fuchsia-50 text-fuchsia-700" },
   "settings.logo": { label: "Logo", icon: Palette, cls: "bg-fuchsia-50 text-fuchsia-700" },
+  "settings.tenant_logo": { label: "Logo", icon: Palette, cls: "bg-fuchsia-50 text-fuchsia-700" },
+  "settings.terminology": { label: "Terminologi", icon: Type, cls: "bg-fuchsia-50 text-fuchsia-700" },
+  "settings.avdelinger": { label: "Avdelinger", icon: Building2, cls: "bg-fuchsia-50 text-fuchsia-700" },
   "screen.create": { label: "Skjerm opprettet", icon: Monitor, cls: "bg-zinc-100 text-zinc-700" },
   "screen.delete": { label: "Skjerm slettet", icon: Trash2, cls: "bg-red-50 text-red-700" },
   "screen.token": { label: "Ny token", icon: Monitor, cls: "bg-zinc-100 text-zinc-700" },
@@ -67,13 +70,42 @@ const ENTITY_FILTERS = [
   { key: "auth", label: "Innlogging" },
   { key: "user", label: "Brukere" },
   { key: "store", label: "Butikker" },
+  { key: "tag", label: "Tagger" },
   { key: "chain", label: "Merkevare" },
+  { key: "tenant", label: "Innstillinger" },
   { key: "screen", label: "Skjermer" },
 ]
 
-export function LoggClient({ rows, limit, hasMore }: { rows: LogRow[]; limit: number; hasMore: boolean }) {
-  const [search, setSearch] = useState("")
-  const [entity, setEntity] = useState("")
+interface LoggClientProps {
+  rows: LogRow[]
+  limit: number
+  hasMore: boolean
+  initialSearch?: string
+  initialEntity?: string
+}
+
+export function LoggClient({ rows, limit, hasMore, initialSearch = "", initialEntity = "" }: LoggClientProps) {
+  const [search, setSearch] = useState(initialSearch)
+  const [entity, setEntity] = useState(() =>
+    ENTITY_FILTERS.some((f) => f.key === initialEntity) ? initialEntity : ""
+  )
+
+  // Speil søk/filter i URL-en (?q=, ?type=) så tilstanden overlever refresh,
+  // deling og «Vis eldre»-navigasjonen. replaceState er integrert med
+  // Next-routeren og treffer ikke serveren; debounce holder oss under
+  // Safaris rate-limit ved rask skriving.
+  useEffect(() => {
+    const t = setTimeout(() => {
+      const params = new URLSearchParams(window.location.search)
+      if (search) params.set("q", search)
+      else params.delete("q")
+      if (entity) params.set("type", entity)
+      else params.delete("type")
+      const qs = params.toString()
+      window.history.replaceState(null, "", qs ? `?${qs}` : window.location.pathname)
+    }, 200)
+    return () => clearTimeout(t)
+  }, [search, entity])
 
   const filtered = useMemo(() => rows.filter((r) => {
     if (entity && r.entity_type !== entity) return false
@@ -130,6 +162,14 @@ export function LoggClient({ rows, limit, hasMore }: { rows: LogRow[]; limit: nu
     return [...counts.values()]
   }, [rows, mountedAt])
   const seriesTotal = series.reduce((a, b) => a + b, 0)
+
+  // «Vis eldre» er en full navigasjon — ta med aktivt søk/filter så de overlever.
+  const olderHref = useMemo(() => {
+    const params = new URLSearchParams({ antall: String(limit + 400) })
+    if (search) params.set("q", search)
+    if (entity) params.set("type", entity)
+    return `/admin/logg?${params.toString()}`
+  }, [limit, search, entity])
 
   return (
     <div className="space-y-4">
@@ -237,7 +277,7 @@ export function LoggClient({ rows, limit, hasMore }: { rows: LogRow[]; limit: nu
       <p className="text-[11px] text-zinc-400">Viser de siste {rows.length} hendelsene.</p>
       {hasMore && (
         <a
-          href={`/admin/logg?antall=${limit + 400}`}
+          href={olderHref}
           className="inline-block rounded-lg border border-zinc-200 bg-white px-3 py-1.5 text-xs font-medium text-zinc-600 hover:border-zinc-300 hover:bg-zinc-50"
         >
           Vis eldre hendelser
