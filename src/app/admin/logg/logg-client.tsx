@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react"
 import { LogIn, FilePlus, FileEdit, Send, EyeOff, Trash2, Copy, CalendarPlus, UserPlus, Shield, Store, Tag, Palette, Monitor, Search, Activity, Zap } from "lucide-react"
 import { CountUp } from "@/components/ui/count-up"
+import { Sparkline } from "@/components/ui/sparkline"
 
 export interface LogRow {
   id: string
@@ -118,9 +119,21 @@ export function LoggClient({ rows, limit, hasMore }: { rows: LogRow[]; limit: nu
     ]
   }, [rows, mountedAt])
 
+  // Aktivitet per dag siste 14 dager (Oslo) — for sparkline-kortet.
+  const series = useMemo(() => {
+    const counts = new Map<string, number>()
+    for (let i = 13; i >= 0; i--) counts.set(dayFmt.format(new Date(mountedAt - i * 86_400_000)), 0)
+    for (const r of rows) {
+      const k = dayFmt.format(new Date(r.created_at))
+      if (counts.has(k)) counts.set(k, (counts.get(k) ?? 0) + 1)
+    }
+    return [...counts.values()]
+  }, [rows, mountedAt])
+  const seriesTotal = series.reduce((a, b) => a + b, 0)
+
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
         {stats.map(({ label, value, icon: Icon, iconCls, glow }, i) => (
           <div
             key={label}
@@ -137,10 +150,20 @@ export function LoggClient({ rows, limit, hasMore }: { rows: LogRow[]; limit: nu
             </span>
             <span className="min-w-0">
               <span className="font-display block text-2xl font-bold leading-none tracking-tight text-zinc-900 tabular-nums"><CountUp value={value} /></span>
-              <span className="mt-1 block truncate text-[11px] text-zinc-500">{label}</span>
+              <span className="mt-1 block text-[11px] leading-tight text-zinc-500">{label}</span>
             </span>
           </div>
         ))}
+        <div
+          className="fx-rise relative col-span-2 overflow-hidden rounded-2xl border border-zinc-200/80 bg-white px-4 py-3 shadow-[0_1px_2px_rgba(16,24,40,0.04)]"
+          style={{ animationDelay: "180ms" }}
+        >
+          <div className="flex items-baseline justify-between">
+            <span className="text-[11px] font-semibold uppercase tracking-widest text-zinc-500">Aktivitet siste 14 dager</span>
+            <span className="font-display text-sm font-bold tabular-nums text-zinc-900"><CountUp value={seriesTotal} /></span>
+          </div>
+          <Sparkline values={series} className="mt-1.5 h-12 w-full" />
+        </div>
       </div>
 
       <div className="flex flex-wrap items-center gap-2">
