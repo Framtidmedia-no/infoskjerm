@@ -579,14 +579,14 @@ export function ContentForm({ stores, tags, initial, audience = "intern", defaul
           )}
 
           {isOfferStruktur && (
-            <div className="space-y-4 rounded-xl border border-zinc-200 bg-white p-4">
+            <div className="space-y-4 rounded-2xl border border-zinc-200/80 bg-white p-4 shadow-[0_1px_2px_rgba(16,24,40,0.04)]">
               <div className="rounded-lg bg-zinc-50 border border-zinc-200 p-3">
                 <label className="block text-[10px] text-zinc-400 mb-1">Hent fra spar.no (lim inn lenke eller GTIN)</label>
                 <div className="flex gap-2">
                   <input value={gtinInput} onChange={(e) => setGtinInput(e.target.value)}
                     onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); doLookup() } }}
                     placeholder="https://spar.no/varer/… eller 54492653"
-                    className="flex-1 text-sm border border-zinc-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-zinc-300" />
+                    className="flex-1 text-sm rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 transition-colors focus:border-[var(--brand-primary)] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)]/15" />
                   <button type="button" onClick={doLookup} disabled={looking}
                     className="px-3 py-2 rounded-lg text-xs font-semibold text-white disabled:opacity-50 whitespace-nowrap" style={{ backgroundColor: "var(--brand-primary)" }}>
                     {looking ? "Henter…" : "Hent"}
@@ -597,12 +597,12 @@ export function ContentForm({ stores, tags, initial, audience = "intern", defaul
               <div>
                 <label className="block text-[10px] text-zinc-400 mb-1">Varenavn *</label>
                 <input value={offer.varenavn} onChange={(e) => setOffer((p) => ({ ...p, varenavn: e.target.value }))} placeholder="Reker 40/60"
-                  className="w-full text-lg font-bold border border-zinc-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-zinc-300" />
+                  className="w-full text-lg font-bold rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 transition-colors focus:border-[var(--brand-primary)] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)]/15" />
               </div>
               <div>
                 <label className="block text-[10px] text-zinc-400 mb-1">Vareinfo</label>
                 <input value={offer.vareinfo ?? ""} onChange={(e) => setOf("vareinfo", e.target.value)} placeholder="Kystfrost, fryst, 1 kg"
-                  className="w-full text-sm border border-zinc-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-zinc-300" />
+                  className="w-full text-sm rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 transition-colors focus:border-[var(--brand-primary)] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)]/15" />
               </div>
               <div>
                 <label className="block text-[10px] text-zinc-400 mb-1">Merkelapp</label>
@@ -615,14 +615,14 @@ export function ContentForm({ stores, tags, initial, audience = "intern", defaul
                   ))}
                 </div>
                 <input value={offer.badge ?? ""} onChange={(e) => setOf("badge", e.target.value)} placeholder="…eller skriv egen merkelapp"
-                  className="w-full text-sm border border-zinc-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-zinc-300" />
+                  className="w-full text-sm rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 transition-colors focus:border-[var(--brand-primary)] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)]/15" />
               </div>
               <div className="grid grid-cols-2 gap-3">
                 {OFFER_GRID.map(({ k, label, ph }) => (
                   <div key={k}>
                     <label className="block text-[10px] text-zinc-400 mb-1">{label}</label>
                     <input value={(offer[k] as string | null) ?? ""} onChange={(e) => setOf(k, e.target.value)} placeholder={ph}
-                      className="w-full text-sm border border-zinc-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-zinc-300" />
+                      className="w-full text-sm rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 transition-colors focus:border-[var(--brand-primary)] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)]/15" />
                   </div>
                 ))}
                 <label className="flex items-center gap-2 text-xs text-zinc-700 self-end pb-2">
@@ -635,54 +635,54 @@ export function ContentForm({ stores, tags, initial, audience = "intern", defaul
           )}
 
           {isCampaign && (
-            <div className="space-y-4 rounded-xl border border-zinc-200 bg-white p-4">
+            <div className="space-y-4 rounded-2xl border border-zinc-200/80 bg-white p-4 shadow-[0_1px_2px_rgba(16,24,40,0.04)]">
               <p className="text-[11px] text-zinc-500 bg-blue-50 border border-blue-100 rounded-lg px-3 py-2">
                 Liggende <strong>kampanjekort</strong>: helbilde-bakgrunn med kategori-fane, overskrift og pris i farget boble. Bildet du laster opp under blir bakgrunnen.
               </p>
               <div>
                 <label className="block text-[10px] text-zinc-400 mb-1">Kategori (fane øverst)</label>
                 <input value={campaign.category ?? ""} onChange={(e) => setCa("category", e.target.value)} placeholder="SOMMERTILBUD"
-                  className="w-full text-sm border border-zinc-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-zinc-300" />
+                  className="w-full text-sm rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 transition-colors focus:border-[var(--brand-primary)] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)]/15" />
               </div>
               <div>
                 <label className="block text-[10px] text-zinc-400 mb-1">Overskrift *</label>
                 <input value={campaign.headline} onChange={(e) => setCampaign((p) => ({ ...p, headline: e.target.value }))} placeholder="Sommerens smarteste oppgradering"
-                  className="w-full text-lg font-bold border border-zinc-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-zinc-300" />
+                  className="w-full text-lg font-bold rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 transition-colors focus:border-[var(--brand-primary)] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)]/15" />
               </div>
               <div>
                 <label className="block text-[10px] text-zinc-400 mb-1">Støttelinje</label>
                 <input value={campaign.subtext ?? ""} onChange={(e) => setCa("subtext", e.target.value)} placeholder="Tilbud på takbokser – ut juli."
-                  className="w-full text-sm border border-zinc-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-zinc-300" />
+                  className="w-full text-sm rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 transition-colors focus:border-[var(--brand-primary)] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)]/15" />
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-[10px] text-zinc-400 mb-1">Pris / rabatt</label>
                   <input value={campaign.price ?? ""} onChange={(e) => setCa("price", e.target.value)} placeholder="Kun kr 990 / -15 %"
-                    className="w-full text-sm border border-zinc-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-zinc-300" />
+                    className="w-full text-sm rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 transition-colors focus:border-[var(--brand-primary)] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)]/15" />
                 </div>
                 <div>
                   <label className="block text-[10px] text-zinc-400 mb-1">Aksentfarge (valgfri)</label>
                   <input type="text" value={campaign.accent ?? ""} onChange={(e) => setCa("accent", e.target.value)} placeholder="#ea6a1e"
-                    className="w-full text-sm border border-zinc-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-zinc-300 font-mono" />
+                    className="w-full text-sm rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 transition-colors focus:border-[var(--brand-primary)] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)]/15 font-mono" />
                 </div>
               </div>
             </div>
           )}
 
           {isKlubb && (
-            <div className="space-y-4 rounded-xl border border-zinc-200 bg-white p-4">
+            <div className="space-y-4 rounded-2xl border border-zinc-200/80 bg-white p-4 shadow-[0_1px_2px_rgba(16,24,40,0.04)]">
               <p className="text-[11px] text-zinc-500 bg-emerald-50 border border-emerald-100 rounded-lg px-3 py-2">
                 Kundeklubb-kort med <strong>QR-kode</strong> som tar kunden til {unitLabel.toLowerCase()}ens egen påmeldingsside. QR-koden lages automatisk per {unitLabel.toLowerCase()} — du velger kun tekst og hvilke skjermer den vises på.
               </p>
               <div>
                 <label className="block text-[10px] text-zinc-400 mb-1">Overskrift *</label>
                 <input value={klubb.headline} onChange={(e) => setKlubb((p) => ({ ...p, headline: e.target.value }))} placeholder="Bli medlem – det er gratis"
-                  className="w-full text-lg font-bold border border-zinc-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-zinc-300" />
+                  className="w-full text-lg font-bold rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 transition-colors focus:border-[var(--brand-primary)] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)]/15" />
               </div>
               <div>
                 <label className="block text-[10px] text-zinc-400 mb-1">Undertekst</label>
                 <input value={klubb.subtext} onChange={(e) => setKlubb((p) => ({ ...p, subtext: e.target.value }))} placeholder="Medlemspriser, bonus og ukens beste tilbud."
-                  className="w-full text-sm border border-zinc-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-zinc-300" />
+                  className="w-full text-sm rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 transition-colors focus:border-[var(--brand-primary)] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)]/15" />
               </div>
             </div>
           )}
@@ -772,58 +772,58 @@ export function ContentForm({ stores, tags, initial, audience = "intern", defaul
           )}
 
           {type === "competition" && (
-            <div className="rounded-xl border border-zinc-200 bg-white p-4 space-y-3">
+            <div className="rounded-2xl border border-zinc-200/80 bg-white p-4 shadow-[0_1px_2px_rgba(16,24,40,0.04)] space-y-3">
               <h3 className="flex items-center gap-1.5 text-xs font-semibold text-zinc-600"><Trophy className="w-3.5 h-3.5" /> Konkurranse</h3>
               <div>
                 <label className="block text-[10px] text-zinc-400 mb-1">Lenke for QR-kode (valgfri)</label>
                 <input type="text" value={applyUrl} onChange={(e) => setApplyUrl(e.target.value)} placeholder="gangerolv.no/konkurranse"
-                  className="w-full text-sm border border-zinc-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-zinc-300" />
+                  className="w-full text-sm rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 transition-colors focus:border-[var(--brand-primary)] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)]/15" />
                 <p className="text-[10px] text-zinc-400 mt-1">Vises som QR-kode på skjermen så kundene kan delta direkte.</p>
               </div>
             </div>
           )}
 
           {type === "news" && (
-            <div className="rounded-xl border border-zinc-200 bg-white p-4 space-y-3">
+            <div className="rounded-2xl border border-zinc-200/80 bg-white p-4 shadow-[0_1px_2px_rgba(16,24,40,0.04)] space-y-3">
               <h3 className="flex items-center gap-1.5 text-xs font-semibold text-zinc-600"><Globe className="w-3.5 h-3.5" /> Lenke / QR-kode</h3>
               <div>
                 <label className="block text-[10px] text-zinc-400 mb-1">Lenke for QR-kode (valgfri)</label>
                 <input type="text" value={applyUrl} onChange={(e) => setApplyUrl(e.target.value)} placeholder="gangerolvkjokkenet.no"
-                  className="w-full text-sm border border-zinc-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-zinc-300" />
+                  className="w-full text-sm rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 transition-colors focus:border-[var(--brand-primary)] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)]/15" />
                 <p className="text-[10px] text-zinc-400 mt-1">Vises som QR-kode nederst på artikkelen — kundene skanner for mer.</p>
               </div>
             </div>
           )}
 
           {type === "job" && (
-            <div className="rounded-xl border border-zinc-200 bg-white p-4 space-y-3">
+            <div className="rounded-2xl border border-zinc-200/80 bg-white p-4 shadow-[0_1px_2px_rgba(16,24,40,0.04)] space-y-3">
               <h3 className="flex items-center gap-1.5 text-xs font-semibold text-zinc-600"><Briefcase className="w-3.5 h-3.5" /> Stillingsinfo</h3>
               <div>
                 <label className="block text-[10px] text-zinc-400 mb-1">Kontaktperson</label>
                 <input type="text" value={contactPerson} onChange={(e) => setContactPerson(e.target.value)} placeholder="Navn på kontaktperson"
-                  className="w-full text-sm border border-zinc-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-zinc-300" />
+                  className="w-full text-sm rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 transition-colors focus:border-[var(--brand-primary)] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)]/15" />
               </div>
               <div>
                 <label className="block text-[10px] text-zinc-400 mb-1">Søknadslenke</label>
                 <input type="text" value={applyUrl} onChange={(e) => setApplyUrl(e.target.value)} placeholder="gangerolv.no/stillinger"
-                  className="w-full text-sm border border-zinc-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-zinc-300" />
+                  className="w-full text-sm rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 transition-colors focus:border-[var(--brand-primary)] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)]/15" />
               </div>
             </div>
           )}
 
           {type === "invitation" && (
-            <div className="rounded-xl border border-zinc-200 bg-white p-4 space-y-3">
+            <div className="rounded-2xl border border-zinc-200/80 bg-white p-4 shadow-[0_1px_2px_rgba(16,24,40,0.04)] space-y-3">
               <h3 className="flex items-center gap-1.5 text-xs font-semibold text-zinc-600"><Ticket className="w-3.5 h-3.5" /> Arrangement</h3>
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-[10px] text-zinc-400 mb-1">Dato og tid</label>
                   <input type="datetime-local" value={invitation.eventDate ?? ""} onChange={(e) => setInvitation((p) => ({ ...p, eventDate: e.target.value || null }))}
-                    className="w-full text-sm border border-zinc-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-zinc-300" />
+                    className="w-full text-sm rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 transition-colors focus:border-[var(--brand-primary)] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)]/15" />
                 </div>
                 <div>
                   <label className="block text-[10px] text-zinc-400 mb-1 flex items-center gap-1"><MapPin className="w-3 h-3" /> Sted</label>
                   <input type="text" value={invitation.eventPlace ?? ""} onChange={(e) => setInvitation((p) => ({ ...p, eventPlace: e.target.value || null }))} placeholder="Kantina, 2. etg."
-                    className="w-full text-sm border border-zinc-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-zinc-300" />
+                    className="w-full text-sm rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 transition-colors focus:border-[var(--brand-primary)] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)]/15" />
                 </div>
               </div>
               <label className="flex items-center gap-2 text-xs font-medium text-zinc-700">
@@ -835,7 +835,7 @@ export function ContentForm({ stores, tags, initial, audience = "intern", defaul
                   <div>
                     <label className="block text-[10px] text-zinc-400 mb-1">Lenke for QR-kode (valgfri)</label>
                     <input type="text" value={invitation.signupUrl ?? ""} onChange={(e) => setInvitation((p) => ({ ...p, signupUrl: e.target.value || null }))} placeholder="gangerolv.no/julebord"
-                      className="w-full text-sm border border-zinc-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-zinc-300" />
+                      className="w-full text-sm rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 transition-colors focus:border-[var(--brand-primary)] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)]/15" />
                     <p className="text-[10px] text-zinc-400 mt-1">
                       {invitation.signupUrl?.trim()
                         ? "QR-koden peker til denne lenken."
@@ -845,7 +845,7 @@ export function ContentForm({ stores, tags, initial, audience = "intern", defaul
                   <div>
                     <label className="block text-[10px] text-zinc-400 mb-1">Påmeldingsfrist (valgfri)</label>
                     <input type="date" value={invitation.signupDeadline ?? ""} onChange={(e) => setInvitation((p) => ({ ...p, signupDeadline: e.target.value || null }))}
-                      className="w-full text-sm border border-zinc-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-zinc-300" />
+                      className="w-full text-sm rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 transition-colors focus:border-[var(--brand-primary)] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)]/15" />
                   </div>
                 </>
               )}
@@ -853,7 +853,7 @@ export function ContentForm({ stores, tags, initial, audience = "intern", defaul
           )}
 
           {type === "gallery" && (
-            <div className="rounded-xl border border-zinc-200 bg-white p-4 space-y-4">
+            <div className="rounded-2xl border border-zinc-200/80 bg-white p-4 shadow-[0_1px_2px_rgba(16,24,40,0.04)] space-y-4">
               <div>
                 <h3 className="flex items-center gap-1.5 text-xs font-semibold text-zinc-600 mb-2"><LayoutGrid className="w-3.5 h-3.5" /> Galleri</h3>
                 <div className="flex gap-1.5">
@@ -891,12 +891,12 @@ export function ContentForm({ stores, tags, initial, audience = "intern", defaul
                       </div>
                     )}
                     <input value={it.name} onChange={(e) => setGallery((p) => ({ ...p, items: p.items.map((x, idx) => idx === i ? { ...x, name: e.target.value } : x) }))} placeholder="Navn på rett/vare"
-                      className="w-full text-sm font-semibold border border-zinc-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-zinc-300" />
+                      className="w-full text-sm font-semibold rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 transition-colors focus:border-[var(--brand-primary)] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)]/15" />
                     <div className="grid grid-cols-2 gap-2">
                       <input value={it.price ?? ""} onChange={(e) => setGallery((p) => ({ ...p, items: p.items.map((x, idx) => idx === i ? { ...x, price: e.target.value || null } : x) }))} placeholder="Pris (149,-)"
-                        className="w-full text-sm border border-zinc-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-zinc-300" />
+                        className="w-full text-sm rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 transition-colors focus:border-[var(--brand-primary)] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)]/15" />
                       <input value={it.priceInfo ?? ""} onChange={(e) => setGallery((p) => ({ ...p, items: p.items.map((x, idx) => idx === i ? { ...x, priceInfo: e.target.value || null } : x) }))} placeholder="Prisinfo (/pers)"
-                        className="w-full text-sm border border-zinc-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-zinc-300" />
+                        className="w-full text-sm rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 transition-colors focus:border-[var(--brand-primary)] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)]/15" />
                     </div>
                   </div>
                 ))}
@@ -909,9 +909,9 @@ export function ContentForm({ stores, tags, initial, audience = "intern", defaul
               <div className="border-t border-zinc-100 pt-3 space-y-2.5">
                 <h4 className="flex items-center gap-1.5 text-[11px] font-semibold text-zinc-600"><QrCode className="w-3.5 h-3.5" /> QR-kode (valgfri)</h4>
                 <input value={gallery.qrUrl ?? ""} onChange={(e) => setGallery((p) => ({ ...p, qrUrl: e.target.value || null }))} placeholder="gangerolv.no/catering"
-                  className="w-full text-sm border border-zinc-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-zinc-300" />
+                  className="w-full text-sm rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 transition-colors focus:border-[var(--brand-primary)] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)]/15" />
                 <input value={gallery.qrLabel ?? ""} onChange={(e) => setGallery((p) => ({ ...p, qrLabel: e.target.value || null }))} placeholder="Tekst over QR (Bestill her)"
-                  className="w-full text-sm border border-zinc-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-zinc-300" />
+                  className="w-full text-sm rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 transition-colors focus:border-[var(--brand-primary)] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)]/15" />
                 <p className="text-[10px] text-zinc-400">Tom lenke = ingen QR-kode på galleriet.</p>
               </div>
             </div>
@@ -921,7 +921,7 @@ export function ContentForm({ stores, tags, initial, audience = "intern", defaul
         {/* Sidebar column */}
         <div className="space-y-5">
           {/* Universal live preview — exactly as it appears on the screen */}
-          <section className="rounded-xl border border-zinc-200 bg-white p-4">
+          <section className="rounded-2xl border border-zinc-200/80 bg-white p-4 shadow-[0_1px_2px_rgba(16,24,40,0.04)]">
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-xs font-semibold text-zinc-600">Forhåndsvisning</h3>
               {type !== "ticker" && (
@@ -943,7 +943,7 @@ export function ContentForm({ stores, tags, initial, audience = "intern", defaul
 
 
           {/* Targeting */}
-          <section className="rounded-xl border border-zinc-200 bg-white p-4">
+          <section className="rounded-2xl border border-zinc-200/80 bg-white p-4 shadow-[0_1px_2px_rgba(16,24,40,0.04)]">
             <h3 className="text-xs font-semibold text-zinc-600 mb-2.5">Vis på</h3>
             <div className="flex gap-1.5 mb-3">
               {(([["all", "Alle", Globe], ["stores", unitLabelPlural, StoreIcon], ["tags", "Tagger", Tag]] as const)
@@ -974,10 +974,10 @@ export function ContentForm({ stores, tags, initial, audience = "intern", defaul
                   <div className="relative flex-1">
                     <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-zinc-400" />
                     <input value={storeSearch} onChange={(e) => setStoreSearch(e.target.value)} placeholder={`Søk ${unitLabel.toLowerCase()}…`}
-                      className="w-full text-xs border border-zinc-200 rounded-lg pl-7 pr-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-zinc-300" />
+                      className="w-full text-xs rounded-xl border border-zinc-200 bg-zinc-50 pl-7 pr-2 py-1.5 transition-colors focus:border-[var(--brand-primary)] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)]/15" />
                   </div>
                   {chains.length > 1 && (
-                    <select value={chainF} onChange={(e) => setChainF(e.target.value)} className="text-xs border border-zinc-200 rounded-lg px-2 py-1.5 text-zinc-600 focus:outline-none focus:ring-1 focus:ring-zinc-300">
+                    <select value={chainF} onChange={(e) => setChainF(e.target.value)} className="text-xs rounded-xl border border-zinc-200 bg-zinc-50 px-2 py-1.5 text-zinc-600 transition-colors focus:border-[var(--brand-primary)] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)]/15">
                       <option value="">Alle kjeder</option>
                       {chains.map((c) => <option key={c} value={c}>{c}</option>)}
                     </select>
@@ -1019,10 +1019,10 @@ export function ContentForm({ stores, tags, initial, audience = "intern", defaul
           </section>
 
           {/* Avdeling — gjelder alle innholdstyper; avdelingsskjermer filtrerer på dette. */}
-          <section className="rounded-xl border border-zinc-200 bg-white p-4">
+          <section className="rounded-2xl border border-zinc-200/80 bg-white p-4 shadow-[0_1px_2px_rgba(16,24,40,0.04)]">
             <h3 className="text-xs font-semibold text-zinc-600 mb-2.5">Avdeling</h3>
             <select value={avdeling} onChange={(e) => setAvdeling(e.target.value)}
-              className="w-full text-xs border border-zinc-200 rounded-lg px-2.5 py-2 focus:outline-none focus:ring-1 focus:ring-zinc-300">
+              className="w-full text-xs rounded-xl border border-zinc-200 bg-zinc-50 px-2.5 py-2 transition-colors focus:border-[var(--brand-primary)] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)]/15">
               {AVDELINGER.map((a) => <option key={a.key} value={a.key}>{a.label}</option>)}
             </select>
             <p className="text-[10px] text-zinc-400 mt-1.5">Vises på skjermer i denne avdelingen. «Hele {unitLabel.toLowerCase()}en» vises på alle skjermer.</p>
@@ -1030,7 +1030,7 @@ export function ContentForm({ stores, tags, initial, audience = "intern", defaul
 
           {/* Appearance — background + text colour for text cards */}
           {usesColors && (
-            <section className="rounded-xl border border-zinc-200 bg-white p-4">
+            <section className="rounded-2xl border border-zinc-200/80 bg-white p-4 shadow-[0_1px_2px_rgba(16,24,40,0.04)]">
               <h3 className="text-xs font-semibold text-zinc-600 mb-2.5">Utseende</h3>
               <div className="flex flex-wrap gap-1.5 mb-3">
                 {COLOR_PRESETS.map((p) => {
@@ -1062,11 +1062,11 @@ export function ContentForm({ stores, tags, initial, audience = "intern", defaul
 
           {/* Display time per item */}
           {type !== "ticker" && (
-            <section className="rounded-xl border border-zinc-200 bg-white p-4">
+            <section className="rounded-2xl border border-zinc-200/80 bg-white p-4 shadow-[0_1px_2px_rgba(16,24,40,0.04)]">
               <h3 className="text-xs font-semibold text-zinc-600 mb-2.5">Visningstid</h3>
               <div className="flex items-center gap-2">
                 <input type="number" min={3} max={600} value={durationSeconds} onChange={(e) => setDurationSeconds(e.target.value)} placeholder={`${defaultDuration}`}
-                  className="w-24 text-sm border border-zinc-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-zinc-300" />
+                  className="w-24 text-sm rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 transition-colors focus:border-[var(--brand-primary)] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)]/15" />
                 <span className="text-xs text-zinc-500">sekunder</span>
               </div>
               <p className="text-[10px] text-zinc-400 mt-1.5">{fsDeck ? <>Sekunder <strong>per side</strong> i dokumentet. Tom = standard (<strong>{defaultDuration} sek per side</strong>).</> : <>Hvor lenge dette vises før skjermen bytter. Tom = standard for denne typen (<strong>{defaultDuration} sek</strong>).</>}</p>
@@ -1074,7 +1074,7 @@ export function ContentForm({ stores, tags, initial, audience = "intern", defaul
           )}
 
           {/* Period */}
-          <section className="rounded-xl border border-zinc-200 bg-white p-4">
+          <section className="rounded-2xl border border-zinc-200/80 bg-white p-4 shadow-[0_1px_2px_rgba(16,24,40,0.04)]">
             <h3 className="flex items-center gap-1.5 text-xs font-semibold text-zinc-600 mb-2.5"><Calendar className="w-3.5 h-3.5" /> Periode <span className={`font-normal ${periodRequired ? "text-red-500" : "text-zinc-400"}`}>{periodRequired ? "(påkrevd)" : "(valgfritt)"}</span></h3>
             <div className="flex flex-wrap gap-1.5 mb-2.5">
               {([["Denne uka", () => campaignWeek(0)], ["Neste uke", () => campaignWeek(1)], ["Ut måneden", () => restOfMonth()]] as const).map(([label, range]) => (

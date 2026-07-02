@@ -81,7 +81,7 @@ function periodStatus(from: string | null, to: string | null): { label: string; 
 
 const PAGE_SIZE = 12
 
-const selectCls = "w-full sm:w-auto text-xs bg-white border border-zinc-200 rounded-lg px-2.5 py-2.5 sm:py-2 text-zinc-600 focus:outline-none focus:ring-1 focus:ring-zinc-300"
+const selectCls = "w-full sm:w-auto text-xs bg-white rounded-xl border border-zinc-200 bg-zinc-50 px-2.5 py-2.5 sm:py-2 text-zinc-600 transition-colors focus:border-[var(--brand-primary)] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)]/15"
 
 export function ContentListClient({ items, stores, tags, newHref = "/admin/innhold/ny", editBase = "/admin/innhold", audience = "intern" }: { items: ContentRow[]; stores: Option[]; tags: Option[]; newHref?: string; editBase?: string; audience?: "kunde" | "intern" }) {
   // Avdeling-filteret følger flaten: intern-liste bruker interne avdelinger.
@@ -183,7 +183,7 @@ export function ContentListClient({ items, stores, tags, newHref = "/admin/innho
             placeholder="Søk i tittel..."
             value={search}
             onChange={(e) => resetPage(setSearch)(e.target.value)}
-            className="w-full text-sm bg-white border border-zinc-200 rounded-lg pl-8 pr-3 py-2.5 sm:py-2 focus:outline-none focus:ring-1 focus:ring-zinc-300"
+            className="w-full text-sm rounded-xl border border-zinc-200 bg-zinc-50 pl-8 pr-3 py-2.5 sm:py-2 transition-colors focus:border-[var(--brand-primary)] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)]/15"
           />
         </div>
         <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:items-center">

@@ -132,7 +132,7 @@ export function ScreenPreview({
           <select
             value={storeId}
             onChange={(e) => setStoreId(e.target.value)}
-            className="w-full sm:w-auto appearance-none text-sm font-semibold text-zinc-900 bg-white border border-zinc-200 rounded-lg pl-3 pr-9 py-2 focus:outline-none focus:ring-1 focus:ring-zinc-300"
+            className="w-full sm:w-auto appearance-none text-sm font-semibold text-zinc-900 bg-white rounded-xl border border-zinc-200 bg-zinc-50 pl-3 pr-9 py-2 transition-colors focus:border-[var(--brand-primary)] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)]/15"
           >
             {stores.map((s) => {
               const n = screens[s.id]?.length ?? 0
@@ -185,7 +185,7 @@ export function ScreenPreview({
         {(flate === "kunde" || view === "intern-innhold") && (
           <div className="relative">
             <select value={avdeling} onChange={(e) => setAvdeling(e.target.value)}
-              className="appearance-none text-xs font-medium text-zinc-700 bg-white border border-zinc-200 rounded-lg pl-2.5 pr-7 py-1.5 focus:outline-none focus:ring-1 focus:ring-zinc-300">
+              className="appearance-none text-xs font-medium text-zinc-700 bg-white rounded-xl border border-zinc-200 bg-zinc-50 pl-2.5 pr-7 py-1.5 transition-colors focus:border-[var(--brand-primary)] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)]/15">
               {avdelingerForFlate.map((a) => <option key={a.key} value={a.key}>Avdeling: {a.label}</option>)}
             </select>
             <ChevronDown className="w-3.5 h-3.5 text-zinc-400 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" />

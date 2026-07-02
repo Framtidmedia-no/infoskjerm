@@ -4,6 +4,7 @@ import { PwaManager } from "@/components/pwa/pwa-manager"
 import { QuickCapture } from "@/components/pwa/quick-capture"
 import { BiometricLock } from "@/components/pwa/biometric-lock"
 import { ChainThemeProvider } from "@/components/admin/chain-theme-provider"
+import { PageTransition } from "@/components/admin/page-transition"
 import { TenantConfigProvider } from "@/components/admin/tenant-config-provider"
 import { getTenantConfig } from "@/lib/tenant/config-server"
 import { displayFont } from "@/lib/fonts"
@@ -92,9 +93,10 @@ export default async function AdminLayout({ children }: { children: React.ReactN
               <MobileNav user={navUser} />
               {/* *:min-w-0: sidene er kolonne-flex-items og får ellers content-basert
                   min-bredde — en bred tabell presser da hele siden bredere enn
-                  viewporten i stedet for å scrolle i sin egen overflow-wrapper. */}
+                  viewporten i stedet for å scrolle i sin egen overflow-wrapper.
+                  (PageTransition har samme guard for sine barn.) */}
               <main className="md:ml-64 min-h-screen flex flex-col *:min-w-0">
-                {children}
+                <PageTransition>{children}</PageTransition>
               </main>
             </>
           )
