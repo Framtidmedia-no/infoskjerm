@@ -33,9 +33,13 @@ export default async function StoresPage() {
     getAllTags(supabase, tenantId),
   ])
 
-  // Real screen counts from the engine (Xibo), keyed by store id.
+  // Skjermtellinger fra motoren (Xibo) STREAMES: boardet rendres umiddelbart,
+  // og promiset resolves i klienten når Xibo-kallet er ferdig — siden venter
+  // ikke lenger synkront på et tregt eksternt API. null = kunne ikke hentes.
   const allStores = rawChains.flatMap((c) => ((c.stores as unknown as RawStore[]) ?? []).map((s) => ({ id: s.id, name: s.name })))
-  const screensByStore = await fetchScreensByStore(allStores)
+  const screenCountsPromise: Promise<Record<string, number> | null> = fetchScreensByStore(allStores)
+    .then((m) => Object.fromEntries(Array.from(m, ([id, screens]) => [id, screens.length])))
+    .catch(() => null)
 
   const chains: BoardChain[] = rawChains.map((chain) => {
     const stores: BoardStore[] = ((chain.stores as unknown as RawStore[]) ?? [])
@@ -47,7 +51,6 @@ export default async function StoresPage() {
         email: store.email,
         org_number: store.org_number,
         gln: store.gln,
-        screenCount: screensByStore.get(store.id)?.length ?? 0,
         tags: (store.store_tags ?? [])
           .map((st) => st.tags)
           .filter((t): t is BoardTag => Boolean(t)),
@@ -71,7 +74,7 @@ export default async function StoresPage() {
         }
       />
 
-      <StoresBoard chains={chains} allTags={allTags as BoardTag[]} />
+      <StoresBoard chains={chains} allTags={allTags as BoardTag[]} screenCountsPromise={screenCountsPromise} />
     </div>
   )
 }

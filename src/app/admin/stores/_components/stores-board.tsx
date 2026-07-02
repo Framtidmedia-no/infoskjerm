@@ -13,6 +13,8 @@ import { withAlpha } from "./types"
 interface StoresBoardProps {
   chains: BoardChain[]
   allTags: BoardTag[]
+  /** Streames fra serveren — boardet rendres uten å vente på Xibo. null = feilet. */
+  screenCountsPromise: Promise<Record<string, number> | null>
 }
 
 function buildTagMap(chains: BoardChain[]): Record<string, BoardTag[]> {
@@ -25,10 +27,26 @@ function buildTagMap(chains: BoardChain[]): Record<string, BoardTag[]> {
   return map
 }
 
-export function StoresBoard({ chains, allTags }: StoresBoardProps) {
+export function StoresBoard({ chains, allTags, screenCountsPromise }: StoresBoardProps) {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [, startTransition] = useTransition()
+
+  // undefined = laster fortsatt, null = Xibo-kallet feilet, ellers id → antall.
+  const [screenCounts, setScreenCounts] = useState<Record<string, number> | null | undefined>(undefined)
+  useEffect(() => {
+    let active = true
+    screenCountsPromise.then((counts) => {
+      if (active) setScreenCounts(counts)
+    })
+    return () => {
+      active = false
+    }
+  }, [screenCountsPromise])
+
+  // Per kort: undefined = laster, null = ukjent (Xibo nede), tall = fasit.
+  const countFor = (storeId: string): number | null | undefined =>
+    screenCounts === undefined ? undefined : screenCounts === null ? null : (screenCounts[storeId] ?? 0)
 
   // Filtrene bor i URL-en så de overlever «Åpne» → tilbake og kan deles.
   const [search, setSearch] = useState(searchParams.get("q") ?? "")
@@ -328,6 +346,7 @@ export function StoresBoard({ chains, allTags }: StoresBoardProps) {
                   <StoreCard
                     key={store.id}
                     store={store}
+                    screenCount={countFor(store.id)}
                     chainName={chain.name}
                     chainColor={chain.color}
                     tags={tagsByStore[store.id] ?? store.tags}
