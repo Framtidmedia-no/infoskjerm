@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react"
 import { LogIn, FilePlus, FileEdit, Send, EyeOff, Trash2, Copy, CalendarPlus, UserPlus, Shield, Store, Tag, Palette, Monitor, Search, Activity, Zap } from "lucide-react"
+import { CountUp } from "@/components/ui/count-up"
 
 export interface LogRow {
   id: string
@@ -135,7 +136,7 @@ export function LoggClient({ rows, limit, hasMore }: { rows: LogRow[]; limit: nu
               <Icon className="h-[18px] w-[18px]" />
             </span>
             <span className="min-w-0">
-              <span className="font-display block text-2xl font-bold leading-none tracking-tight text-zinc-900 tabular-nums">{value}</span>
+              <span className="font-display block text-2xl font-bold leading-none tracking-tight text-zinc-900 tabular-nums"><CountUp value={value} /></span>
               <span className="mt-1 block truncate text-[11px] text-zinc-500">{label}</span>
             </span>
           </div>
@@ -183,13 +184,14 @@ export function LoggClient({ rows, limit, hasMore }: { rows: LogRow[]; limit: nu
                 <span className="text-[11px] tabular-nums text-zinc-400">{group.items.length}</span>
               </header>
               <ul className="space-y-2">
-                {group.items.map((r) => {
+                {group.items.map((r, idx) => {
                   const m = metaFor(r.action)
                   const Icon = m.icon
                   return (
                     <li
                       key={r.id}
-                      className="flex items-center gap-3.5 rounded-2xl border border-zinc-200/70 bg-white px-4 py-3 shadow-[0_1px_2px_rgba(16,24,40,0.03)] transition-all hover:-translate-y-px hover:border-zinc-300/70 hover:shadow-[0_6px_16px_-8px_rgba(16,24,40,0.14)]"
+                      className="fx-rise flex items-center gap-3.5 rounded-2xl border border-zinc-200/70 bg-white px-4 py-3 shadow-[0_1px_2px_rgba(16,24,40,0.03)] transition-all hover:-translate-y-px hover:border-zinc-300/70 hover:shadow-[0_6px_16px_-8px_rgba(16,24,40,0.14)]"
+                      style={{ animationDelay: `${Math.min(idx, 12) * 30}ms` }}
                     >
                       <span className={`flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl ${m.cls}`}>
                         <Icon className="h-[18px] w-[18px]" />

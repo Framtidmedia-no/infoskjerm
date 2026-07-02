@@ -27,10 +27,10 @@ export default async function PlattformSkjermerPage() {
           <SoftTh>Sist sett</SoftTh>
         </SoftThead>
         <tbody>
-          {screens.map((s) => {
+          {screens.map((s, idx) => {
             const chip = STATUS_CHIP[s.color]
             return (
-              <SoftTr key={s.id}>
+              <SoftTr key={s.id} index={idx}>
                 <SoftTd className="text-zinc-700">{s.tenantName}</SoftTd>
                 <SoftTd className="text-zinc-700">{s.storeName}</SoftTd>
                 <SoftTd className="font-semibold text-zinc-900">{s.name}</SoftTd>
