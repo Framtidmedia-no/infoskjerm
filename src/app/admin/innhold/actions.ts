@@ -3,7 +3,7 @@
 import { requireRole } from "@/lib/admin/require-role"
 import { logAudit } from "@/lib/admin/audit"
 import { revalidatePath } from "next/cache"
-import { audienceForType, type Audience } from "./audience"
+import { audienceForType, type StoredAudience } from "./audience"
 import type { OfferFields, CampaignFields } from "@/lib/content/live"
 import { isDeckUrl } from "@/lib/content/deck"
 import { triggerDeckRender } from "@/lib/content/trigger-render"
@@ -47,8 +47,8 @@ export interface InvitationFields {
   /** Egen lenke QR-koden skal peke til. Tom → innebygd påmeldingsside (/pamelding/<id>). */
   signupUrl: string | null
 }
-export type ImageMode = "plakat" | "bakgrunn" | "liten"
-export type { Audience } from "./audience"
+export type ImageMode = "plakat" | "bakgrunn" | "liten" | "fullskjerm"
+export type { Audience, StoredAudience } from "./audience"
 
 export interface ContentInput {
   title: string
@@ -58,8 +58,10 @@ export interface ContentInput {
   /** All attached images. 2+ → rendered full-page, side by side (no dimmed bg). */
   imageUrls?: string[]
   imageMode?: ImageMode
-  /** Customer screens vs staff/back-room. Falls back to audienceForType. */
-  audience?: Audience
+  /** Fullskjerm-modus: valgfri stående variant (bilde/video/PDF/PPT). imageUrl = liggende. */
+  portraitUrl?: string | null
+  /** Customer screens vs staff/back-room («begge» = begge flater). Falls back to audienceForType. */
+  audience?: StoredAudience
   targetMode: TargetMode
   storeIds: string[]
   tagIds: string[]
@@ -116,6 +118,7 @@ function buildBody(input: ContentInput): Json {
     imageUrl: imageUrls[0] ?? input.imageUrl ?? null,
     imageUrls,
     imageMode: input.imageMode ?? "bakgrunn",
+    ...(input.type === "slide" && input.imageMode === "fullskjerm" && input.portraitUrl ? { portraitUrl: input.portraitUrl } : {}),
     audience: input.audience ?? audienceForType(input.type),
     ...(input.type === "job" ? { contactPerson: input.contactPerson ?? null, applyUrl: input.applyUrl ?? null } : {}),
     ...(input.type === "competition" ? { applyUrl: input.applyUrl ?? null } : {}),
@@ -138,11 +141,14 @@ export async function saveContent(input: ContentInput, id?: string): Promise<Sav
   const tenantId = effectiveTenant(rawTenant)
 
   if (!input.title.trim()) return { ok: false, error: "Tittel er påkrevd" }
+  if (input.imageMode === "fullskjerm" && !input.imageUrl && !input.portraitUrl)
+    return { ok: false, error: "Last opp minst én fil (liggende eller stående)" }
 
   const body = buildBody(input)
   const status = input.publish ? "live" : "draft"
   const deckUrl = (input.imageUrls?.filter(Boolean)[0]) ?? input.imageUrl ?? null
-  const isDeck = isDeckUrl(deckUrl)
+  const portraitDeckUrl = input.imageMode === "fullskjerm" ? (input.portraitUrl ?? null) : null
+  const isDeck = isDeckUrl(deckUrl) || isDeckUrl(portraitDeckUrl)
 
   let contentId = id
   if (id) {
@@ -154,9 +160,16 @@ export async function saveContent(input: ContentInput, id?: string): Promise<Sav
       const { data: existing } = await supabase
         .from("content_items").select("body").eq("id", id).eq("tenant_id", tenantId).maybeSingle()
       const eb = (existing?.body ?? {}) as Record<string, unknown>
+      const merged = { ...(body as Record<string, unknown>) }
       if (Array.isArray(eb.pages) && eb.pages.length > 0 && eb.pagesFor === deckUrl) {
-        bodyToSave = { ...(body as Record<string, unknown>), pages: eb.pages, pagesFor: eb.pagesFor } as Json
+        merged.pages = eb.pages
+        merged.pagesFor = eb.pagesFor
       }
+      if (portraitDeckUrl && Array.isArray(eb.portraitPages) && eb.portraitPages.length > 0 && eb.portraitPagesFor === portraitDeckUrl) {
+        merged.portraitPages = eb.portraitPages
+        merged.portraitPagesFor = eb.portraitPagesFor
+      }
+      bodyToSave = merged as Json
     }
     const { error } = await supabase
       .from("content_items")

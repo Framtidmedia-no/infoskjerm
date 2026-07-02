@@ -7,6 +7,8 @@ import { PdfFlyer } from "./pdf-flyer"
 import { CompetitionCard } from "@/app/widget/_shared/competition-card"
 import { KundeklubbCard } from "@/app/widget/_shared/kundeklubb-card"
 import { GalleryCard } from "@/app/widget/_shared/gallery-card"
+import { FullscreenMedia } from "@/app/widget/_shared/fullscreen-media"
+import { fullscreenItemSeconds } from "@/lib/content/fullscreen"
 
 /**
  * Full-screen offer presentation: a left side panel with the heading, period and
@@ -162,7 +164,7 @@ export function TilbudRotator({ items, ticker, storeName, chain = null, qr = {} 
     if (items.length <= 1) return
     // PDF flyers (kundeavis) get longer so several pages show before advancing.
     const it = items[i % items.length]
-    const secs = it?.durationSeconds ?? (it?.isPdf ? 45 : SECONDS)
+    const secs = (it ? fullscreenItemSeconds(it, true, SECONDS) : null) ?? it?.durationSeconds ?? (it?.isPdf ? 45 : SECONDS)
     const id = setTimeout(() => setI((v) => (v + 1) % items.length), secs * 1000)
     return () => clearTimeout(id)
   }, [i, items])
@@ -183,6 +185,11 @@ export function TilbudRotator({ items, ticker, storeName, chain = null, qr = {} 
       {!item ? (
         <div style={{ ...inset, display: "flex", alignItems: "center", justifyContent: "center", color: "rgba(255,255,255,.4)", fontSize: 34 }}>
           Ingen aktive tilbud
+        </div>
+      ) : item.imageMode === "fullskjerm" ? (
+        // Fullskjerm-media: kant til kant uten tittel/panel — foran alle kort-typer.
+        <div key={item.id} style={{ ...inset, animation: "grFade .6s ease-out" }}>
+          <FullscreenMedia item={item} portrait />
         </div>
       ) : item.klubb ? (
         // Customer-club invite → full-bleed QR card (per-store sign-up link).
