@@ -37,7 +37,7 @@ export default async function LoggPage({
   return (
     <div className="flex flex-col flex-1">
       <Topbar title="Logg" subtitle="Aktivitetslogg — innlogginger, endringer, publiseringer og slettinger" />
-      <div className="flex-1 p-4 sm:p-6 max-w-4xl w-full">
+      <div className="mx-auto w-full max-w-4xl flex-1 p-4 sm:p-6">
         <LoggClient rows={rows} limit={limit} hasMore={rows.length >= limit && limit < MAX_LIMIT} />
       </div>
     </div>
