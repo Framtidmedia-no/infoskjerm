@@ -11,7 +11,7 @@ import {
   type PowerMode,
   type PowerValue,
 } from "@/lib/power/schedule"
-import { setScreenPowerMode, overrideScreenPower, clearScreenPowerOverride } from "./actions"
+import { setScreenPowerMode, setScreenPowerMargins, overrideScreenPower, clearScreenPowerOverride } from "./actions"
 
 /**
  * Strømstyring per skjerm: modus (følg åpningstider / alltid på), manuell
@@ -48,11 +48,13 @@ export function ScreenPowerControls({
   isPi: boolean
 }) {
   const router = useRouter()
-  const [busy, setBusy] = useState<"mode" | "override" | "clear" | null>(null)
+  const [busy, setBusy] = useState<"mode" | "override" | "clear" | "margin" | null>(null)
 
   const mode: PowerMode = power.power_mode === "always_on" ? "always_on" : "auto"
   const leadMin = power.power_on_lead_min ?? 15
   const lagMin = power.power_off_lag_min ?? 15
+  const [leadDraft, setLeadDraft] = useState(String(leadMin))
+  const [lagDraft, setLagDraft] = useState(String(lagMin))
   const configured = hasConfiguredHours(hours)
 
   const decision = useMemo(
@@ -99,6 +101,21 @@ export function ScreenPowerControls({
       toast.success(value === "on" ? "Skjermen slås på (innen ett minutt)" : "Skjermen slås av (innen ett minutt)")
       router.refresh()
     } else toast.error(res.error ?? "Kunne ikke overstyre")
+  }
+
+  // Slingring (min før åpning / etter stenging) lagres på blur når verdien er
+  // endret — alt styres herfra, Pi-en trenger aldri re-provisjonering.
+  async function saveMargins() {
+    const lead = Math.min(180, Math.max(0, Math.round(Number(leadDraft)) || 0))
+    const lag = Math.min(180, Math.max(0, Math.round(Number(lagDraft)) || 0))
+    setLeadDraft(String(lead))
+    setLagDraft(String(lag))
+    if (busy || (lead === leadMin && lag === lagMin)) return
+    setBusy("margin")
+    const res = await setScreenPowerMargins(screenId, lead, lag)
+    setBusy(null)
+    if (res.ok) { toast.success(`Slår på ${lead} min før åpning, av ${lag} min etter stenging`); router.refresh() }
+    else toast.error(res.error ?? "Kunne ikke lagre slingring")
   }
 
   async function clearOverride() {
@@ -190,9 +207,30 @@ export function ScreenPowerControls({
       </div>
 
       {mode === "auto" && configured && (
-        <p className="text-[10px] leading-relaxed text-zinc-400">
-          Slår på {leadMin} min før åpning og av {lagMin} min etter stenging.
-          {!isPi && " Kiosk-skjermer viser svart hvilevisning når de er «av»."}
+        <p className="flex flex-wrap items-center gap-1 text-[10px] leading-relaxed text-zinc-400">
+          Slår på
+          <input
+            type="number" min={0} max={180} value={leadDraft}
+            onChange={(e) => setLeadDraft(e.target.value)}
+            onBlur={saveMargins}
+            onKeyDown={(e) => { if (e.key === "Enter") (e.target as HTMLInputElement).blur() }}
+            disabled={busy !== null && busy !== "margin"}
+            aria-label="Minutter på før åpning"
+            className="w-12 rounded border border-zinc-200 bg-white px-1 py-0.5 text-center text-[10px] tabular-nums text-zinc-600 focus:border-[var(--brand-primary)] focus:outline-none focus:ring-1 focus:ring-[var(--brand-primary)]/20"
+          />
+          min før åpning og av
+          <input
+            type="number" min={0} max={180} value={lagDraft}
+            onChange={(e) => setLagDraft(e.target.value)}
+            onBlur={saveMargins}
+            onKeyDown={(e) => { if (e.key === "Enter") (e.target as HTMLInputElement).blur() }}
+            disabled={busy !== null && busy !== "margin"}
+            aria-label="Minutter på etter stenging"
+            className="w-12 rounded border border-zinc-200 bg-white px-1 py-0.5 text-center text-[10px] tabular-nums text-zinc-600 focus:border-[var(--brand-primary)] focus:outline-none focus:ring-1 focus:ring-[var(--brand-primary)]/20"
+          />
+          min etter stenging.
+          {busy === "margin" && <Loader2 className="w-3 h-3 animate-spin text-zinc-400" />}
+          {!isPi && <span>Kiosk-skjermer viser svart hvilevisning når de er «av».</span>}
         </p>
       )}
     </div>

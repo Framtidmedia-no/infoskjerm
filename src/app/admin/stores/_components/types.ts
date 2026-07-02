@@ -1,3 +1,5 @@
+import type { OpeningHours } from "@/lib/power/schedule"
+
 export interface BoardTag {
   id: string
   name: string
@@ -12,6 +14,7 @@ export interface BoardStore {
   email: string | null
   org_number: string | null
   gln: string | null
+  apningstider: OpeningHours | null
   tags: BoardTag[]
 }
 
