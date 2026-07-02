@@ -290,7 +290,8 @@ export function ContentListClient({ items, stores, tags, newHref = "/admin/innho
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4">
-          {visible.map((item) => {
+          {visible.map((item, i) => {
+            const featured = i === 0 && visible.length > 2
             const tm = TYPE_META[item.type] ?? TYPE_META.slide
             const sm = STATUS_META[item.status ?? "draft"] ?? STATUS_META.draft
             const TypeIcon = tm.icon
@@ -306,7 +307,7 @@ export function ContentListClient({ items, stores, tags, newHref = "/admin/innho
               : item.target.mode === "none" ? "Ikke målrettet"
               : item.target.names.slice(0, 2).join(", ") + (item.target.names.length > 2 ? ` +${item.target.names.length - 2}` : "")
             return (
-              <div key={item.id} className={`group relative rounded-2xl bg-white border overflow-hidden hover:shadow-lg transition-all ${selected.has(item.id) ? "border-zinc-900 ring-2 ring-zinc-900" : "border-zinc-200 hover:border-zinc-300"} ${busyId === item.id ? "opacity-50" : ""}`}>
+              <div key={item.id} className={`group relative rounded-2xl bg-white border overflow-hidden hover:shadow-lg transition-all ${featured ? "sm:col-span-2" : ""} ${selected.has(item.id) ? "border-zinc-900 ring-2 ring-zinc-900" : "border-zinc-200 hover:border-zinc-300"} ${busyId === item.id ? "opacity-50" : ""}`}>
                 <button
                   onClick={() => toggleSelect(item.id)}
                   aria-label={selected.has(item.id) ? "Fjern fra valg" : "Velg"}
