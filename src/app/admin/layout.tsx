@@ -91,7 +91,11 @@ export default async function AdminLayout({ children }: { children: React.ReactN
                 <Sidebar user={navUser} />
               </div>
               <MobileNav user={navUser} />
-              <main className="md:ml-64 min-h-screen flex flex-col">
+              {/* *:min-w-0: sidene er kolonne-flex-items og får ellers content-basert
+                  min-bredde — en bred tabell presser da hele siden bredere enn
+                  viewporten i stedet for å scrolle i sin egen overflow-wrapper.
+                  (PageTransition har samme guard for sine barn.) */}
+              <main className="md:ml-64 min-h-screen flex flex-col *:min-w-0">
                 <PageTransition>{children}</PageTransition>
               </main>
             </>

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useTransition } from "react"
 import { Check, ChevronsUpDown, Loader2, Search } from "lucide-react"
 import { setActiveTenant } from "@/app/admin/plattform/actions"
 import { cn } from "@/lib/utils"
@@ -34,13 +34,15 @@ function TenantAvatar({ logoUrl, name, className, textClass }: { logoUrl: string
  * opptre som mer enn én tenant — én-tenant-brukere ser den aldri. Erstatter den
  * gamle full-side «Plattform»-kortvelgeren: knapp med aktiv org → nedtrekk med
  * søkefelt + liste. Valg kaller setActiveTenant (cookie + redirect).
+ *
+ * Valget kjøres imperativt via useTransition (ikke <form action>): da kan
+ * nedtrekket og mobil-skuffen lukkes umiddelbart uten å unmounte et skjema
+ * midt i innsendingen. onSelect lar MobileNav lukke skuffen ved valg.
  */
-export function TenantSwitcher({ tenants, activeTenantId }: { tenants: SwitcherTenant[]; activeTenantId: string | null }) {
+export function TenantSwitcher({ tenants, activeTenantId, onSelect }: { tenants: SwitcherTenant[]; activeTenantId: string | null; onSelect?: () => void }) {
   const [open, setOpen] = useState(false)
   const [query, setQuery] = useState("")
-  // Byttet er cookie + redirect server-side — vis spinner og lås listen imens,
-  // ellers ser det dødt ut på treg linje og man kan klikke flere tenants.
-  const [switchingTo, setSwitchingTo] = useState<string | null>(null)
+  const [isPending, startTransition] = useTransition()
 
   // Ingenting å bytte mellom → ikke vis velgeren i det hele tatt.
   if (tenants.length < 2) return null
@@ -49,21 +51,35 @@ export function TenantSwitcher({ tenants, activeTenantId }: { tenants: SwitcherT
   const q = query.trim().toLowerCase()
   const filtered = q ? tenants.filter((t) => `${t.name} ${t.slug}`.toLowerCase().includes(q)) : tenants
 
+  const choose = (tenantId: string) => {
+    setOpen(false)
+    setQuery("")
+    onSelect?.()
+    startTransition(async () => {
+      await setActiveTenant(tenantId)
+    })
+  }
+
   return (
-    <div className="relative mb-3">
+    <div className="relative">
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
         aria-haspopup="listbox"
         aria-expanded={open}
-        className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg border border-zinc-200 bg-white hover:border-zinc-300 hover:bg-zinc-50 transition-all text-left"
+        disabled={isPending}
+        className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg border border-zinc-200 bg-white hover:border-zinc-300 hover:bg-zinc-50 transition-all text-left disabled:opacity-60"
       >
         <TenantAvatar logoUrl={active?.logoUrl ?? null} name={active?.name ?? "?"} className="w-7 h-7" textClass="text-xs" />
         <span className="flex-1 min-w-0">
           <span className="block text-[10px] font-semibold uppercase tracking-wider text-zinc-400 leading-none">Organisasjon</span>
           <span className="block text-sm font-semibold text-zinc-900 truncate leading-tight mt-0.5">{active?.name ?? "Velg organisasjon"}</span>
         </span>
-        <ChevronsUpDown className="w-4 h-4 text-zinc-400 flex-shrink-0" />
+        {isPending ? (
+          <Loader2 className="w-4 h-4 text-zinc-400 flex-shrink-0 animate-spin" />
+        ) : (
+          <ChevronsUpDown className="w-4 h-4 text-zinc-400 flex-shrink-0" />
+        )}
       </button>
 
       {open && (
@@ -80,7 +96,8 @@ export function TenantSwitcher({ tenants, activeTenantId }: { tenants: SwitcherT
                 className="w-full text-sm bg-zinc-50 rounded-lg pl-8 pr-3 py-2 transition-colors focus:border-[var(--brand-primary)] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)]/15"
               />
             </div>
-            <ul className="max-h-72 overflow-y-auto py-1" role="listbox">
+            {/* 55dvh-taket hindrer at lista går under skjermkanten på lave/liggende mobiler. */}
+            <ul className="max-h-[min(18rem,55dvh)] overflow-y-auto py-1" role="listbox">
               {filtered.length === 0 && (
                 <li className="px-3 py-4 text-center text-xs text-zinc-400">Ingen treff</li>
               )}
@@ -88,29 +105,23 @@ export function TenantSwitcher({ tenants, activeTenantId }: { tenants: SwitcherT
                 const isActive = t.id === activeTenantId
                 return (
                   <li key={t.id}>
-                    <form action={setActiveTenant.bind(null, t.id)} onSubmit={() => setSwitchingTo(t.id)}>
-                      <button
-                        type="submit"
-                        role="option"
-                        aria-selected={isActive}
-                        disabled={switchingTo !== null}
-                        className={cn(
-                          "w-full flex items-center gap-2 px-3 py-2 text-left hover:bg-zinc-50 transition-colors disabled:opacity-60",
-                          isActive && "bg-zinc-50"
-                        )}
-                      >
-                        <TenantAvatar logoUrl={t.logoUrl} name={t.name} className="w-6 h-6" textClass="text-[10px]" />
-                        <span className="flex-1 min-w-0">
-                          <span className="block text-sm font-medium text-zinc-900 truncate">{t.name}</span>
-                          <span className="block text-[11px] text-zinc-400 truncate">{t.slug}</span>
-                        </span>
-                        {switchingTo === t.id ? (
-                          <Loader2 className="w-4 h-4 text-zinc-400 animate-spin flex-shrink-0" />
-                        ) : (
-                          isActive && <Check className="w-4 h-4 text-emerald-600 flex-shrink-0" />
-                        )}
-                      </button>
-                    </form>
+                    <button
+                      type="button"
+                      role="option"
+                      aria-selected={isActive}
+                      onClick={() => choose(t.id)}
+                      className={cn(
+                        "w-full flex items-center gap-2 px-3 py-2 text-left hover:bg-zinc-50 transition-colors",
+                        isActive && "bg-zinc-50"
+                      )}
+                    >
+                      <TenantAvatar logoUrl={t.logoUrl} name={t.name} className="w-6 h-6" textClass="text-[10px]" />
+                      <span className="flex-1 min-w-0">
+                        <span className="block text-sm font-medium text-zinc-900 truncate">{t.name}</span>
+                        <span className="block text-[11px] text-zinc-400 truncate">{t.slug}</span>
+                      </span>
+                      {isActive && <Check className="w-4 h-4 text-emerald-600 flex-shrink-0" />}
+                    </button>
                   </li>
                 )
               })}

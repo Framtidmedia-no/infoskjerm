@@ -744,7 +744,7 @@ export function ContentForm({ stores, tags, initial, audience = "intern", defaul
                             // eslint-disable-next-line @next/next/no-img-element
                             <img src={url} alt="" className={`w-full h-36 ${isMulti || imageMode === "plakat" || imageMode === "liten" ? "object-contain bg-zinc-900" : "object-cover"}`} />
                           )}
-                          <button onClick={() => removeImage(url)} aria-label="Fjern bilde" className="absolute top-2 right-2 w-7 h-7 rounded-full bg-black/60 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity">
+                          <button onClick={() => removeImage(url)} aria-label="Fjern bilde" className="absolute top-2 right-2 w-7 h-7 rounded-full bg-black/60 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 focus:opacity-100 pointer-coarse:opacity-100 transition-opacity">
                             <X className="w-4 h-4" />
                           </button>
                         </div>

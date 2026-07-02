@@ -7,7 +7,9 @@ export default async function PlattformLayout({ children }: { children: React.Re
   if (!ctx) redirect("/login")
   if (ctx.role !== "super_admin") redirect("/admin")
   return (
-    <div className="p-6 md:p-10 max-w-5xl mx-auto">
+    // w-full: uten den slår mx-auto av flex-stretch (auto-marger på tverraksen)
+    // og containeren får fit-content-bredde — bredt innhold sprenger da viewporten.
+    <div className="w-full p-6 md:p-10 max-w-5xl mx-auto">
       <PlattformNav />
       {children}
     </div>
