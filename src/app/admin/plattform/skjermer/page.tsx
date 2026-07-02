@@ -1,10 +1,11 @@
 import { getCrossTenantScreens } from "@/lib/admin/cross-tenant-queries"
 import { formatLastSeen } from "@/lib/admin/queries"
+import { SoftTable, SoftTd, SoftTh, SoftThead, SoftTr } from "@/components/ui/soft-table"
 
-const DOT_COLOR: Record<"green" | "yellow" | "red", string> = {
-  green: "bg-emerald-500",
-  yellow: "bg-amber-500",
-  red: "bg-red-500",
+const STATUS_CHIP: Record<"green" | "yellow" | "red", { dot: string; cls: string; label: string }> = {
+  green: { dot: "bg-emerald-500", cls: "bg-emerald-50 text-emerald-700", label: "Tilkoblet" },
+  yellow: { dot: "bg-amber-500", cls: "bg-amber-50 text-amber-700", label: "Ustabil" },
+  red: { dot: "bg-red-500", cls: "bg-red-50 text-red-700", label: "Frakoblet" },
 }
 
 export default async function PlattformSkjermerPage() {
@@ -12,42 +13,39 @@ export default async function PlattformSkjermerPage() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-zinc-900 mb-1">Skjermer</h1>
+      <h1 className="font-display text-2xl font-semibold tracking-tight text-zinc-900 mb-1">Skjermer</h1>
       <p className="text-zinc-500 mb-6">
         Drift på tvers av alle tenants ({screens.length}).
       </p>
 
-      <div className="overflow-x-auto contain-inline-size rounded-2xl border border-zinc-200/80 bg-white shadow-[0_1px_2px_rgba(16,24,40,0.04)]">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="bg-zinc-900 text-left text-[11px] font-semibold uppercase tracking-widest text-zinc-400">
-              <th className="px-4 py-3 font-medium">Tenant</th>
-              <th className="px-4 py-3 font-medium">Butikk</th>
-              <th className="px-4 py-3 font-medium">Skjerm</th>
-              <th className="px-4 py-3 font-medium">Status</th>
-              <th className="px-4 py-3 font-medium">Sist sett</th>
-            </tr>
-          </thead>
-          <tbody>
-            {screens.map((s) => (
-              <tr key={s.id} className="border-b border-zinc-50 last:border-b-0">
-                <td className="px-4 py-3 text-zinc-700">{s.tenantName}</td>
-                <td className="px-4 py-3 text-zinc-700">{s.storeName}</td>
-                <td className="px-4 py-3 font-medium text-zinc-900">{s.name}</td>
-                <td className="px-4 py-3">
-                  <span
-                    className={`inline-block h-2.5 w-2.5 rounded-full ${DOT_COLOR[s.color]}`}
-                    aria-label={s.color}
-                  />
-                </td>
-                <td className="px-4 py-3 text-zinc-500">
-                  {formatLastSeen(s.lastHeartbeat)}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      <SoftTable>
+        <SoftThead>
+          <SoftTh>Tenant</SoftTh>
+          <SoftTh>Butikk</SoftTh>
+          <SoftTh>Skjerm</SoftTh>
+          <SoftTh>Status</SoftTh>
+          <SoftTh>Sist sett</SoftTh>
+        </SoftThead>
+        <tbody>
+          {screens.map((s) => {
+            const chip = STATUS_CHIP[s.color]
+            return (
+              <SoftTr key={s.id}>
+                <SoftTd className="text-zinc-700">{s.tenantName}</SoftTd>
+                <SoftTd className="text-zinc-700">{s.storeName}</SoftTd>
+                <SoftTd className="font-semibold text-zinc-900">{s.name}</SoftTd>
+                <SoftTd>
+                  <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium ${chip.cls}`}>
+                    <span className={`inline-block h-1.5 w-1.5 rounded-full ${chip.dot}`} aria-hidden />
+                    {chip.label}
+                  </span>
+                </SoftTd>
+                <SoftTd className="text-zinc-500">{formatLastSeen(s.lastHeartbeat)}</SoftTd>
+              </SoftTr>
+            )
+          })}
+        </tbody>
+      </SoftTable>
     </div>
   )
 }

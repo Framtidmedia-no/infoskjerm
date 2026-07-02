@@ -1,5 +1,6 @@
 import { getCrossTenantUsers } from "@/lib/admin/cross-tenant-queries"
 import { ROLE_LABELS, type UserRole } from "@/lib/roles"
+import { SoftTable, SoftTd, SoftTh, SoftThead, SoftTr } from "@/components/ui/soft-table"
 
 function roleLabel(role: string): string {
   return ROLE_LABELS[role as UserRole] ?? role
@@ -10,34 +11,41 @@ export default async function PlattformBrukerePage() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-zinc-900 mb-1">Brukere</h1>
+      <h1 className="font-display text-2xl font-semibold tracking-tight text-zinc-900 mb-1">Brukere</h1>
       <p className="text-zinc-500 mb-6">
         Alle brukere på tvers av tenants ({users.length}).
       </p>
 
-      <div className="overflow-x-auto contain-inline-size rounded-2xl border border-zinc-200/80 bg-white shadow-[0_1px_2px_rgba(16,24,40,0.04)]">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="bg-zinc-900 text-left text-[11px] font-semibold uppercase tracking-widest text-zinc-400">
-              <th className="px-4 py-3 font-medium">Tenant</th>
-              <th className="px-4 py-3 font-medium">Navn / E-post</th>
-              <th className="px-4 py-3 font-medium">Rolle</th>
-            </tr>
-          </thead>
-          <tbody>
-            {users.map((u) => (
-              <tr key={u.id} className="border-b border-zinc-50 last:border-b-0">
-                <td className="px-4 py-3 text-zinc-700">{u.tenantName}</td>
-                <td className="px-4 py-3">
-                  <p className="font-medium text-zinc-900">{u.fullName || "—"}</p>
-                  <p className="text-xs text-zinc-400">{u.email}</p>
-                </td>
-                <td className="px-4 py-3 text-zinc-700">{roleLabel(u.role)}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      <SoftTable>
+        <SoftThead>
+          <SoftTh>Tenant</SoftTh>
+          <SoftTh>Navn / E-post</SoftTh>
+          <SoftTh>Rolle</SoftTh>
+        </SoftThead>
+        <tbody>
+          {users.map((u) => (
+            <SoftTr key={u.id}>
+              <SoftTd className="text-zinc-700">{u.tenantName}</SoftTd>
+              <SoftTd>
+                <div className="flex items-center gap-3">
+                  <span className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl bg-zinc-100 font-display text-sm font-bold text-zinc-600">
+                    {(u.fullName || u.email || "?").charAt(0).toUpperCase()}
+                  </span>
+                  <div>
+                    <p className="font-semibold text-zinc-900">{u.fullName || "—"}</p>
+                    <p className="text-xs text-zinc-400">{u.email}</p>
+                  </div>
+                </div>
+              </SoftTd>
+              <SoftTd>
+                <span className="inline-flex items-center rounded-full bg-zinc-100 px-2.5 py-1 text-xs font-medium text-zinc-700">
+                  {roleLabel(u.role)}
+                </span>
+              </SoftTd>
+            </SoftTr>
+          ))}
+        </tbody>
+      </SoftTable>
     </div>
   )
 }
