@@ -18,7 +18,7 @@ export default async function PlattformBrukerePage() {
       <div className="overflow-x-auto contain-inline-size rounded-2xl border border-zinc-200/80 bg-white shadow-[0_1px_2px_rgba(16,24,40,0.04)]">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-zinc-100 bg-zinc-50/60 text-left text-xs uppercase tracking-wide text-zinc-400">
+            <tr className="bg-zinc-900 text-left text-[11px] font-semibold uppercase tracking-widest text-zinc-400">
               <th className="px-4 py-3 font-medium">Tenant</th>
               <th className="px-4 py-3 font-medium">Navn / E-post</th>
               <th className="px-4 py-3 font-medium">Rolle</th>

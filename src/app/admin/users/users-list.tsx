@@ -155,11 +155,11 @@ export function UsersList({ rows, allStores, canAdminister, unitLabelPlural }: U
             <CardContent className="p-0">
               <table className="w-full">
                 <thead>
-                  <tr className="border-b border-zinc-100">
-                    <th className="text-left text-xs font-semibold text-zinc-400 uppercase tracking-wide px-5 py-3">Bruker</th>
-                    <th className="text-left text-xs font-semibold text-zinc-400 uppercase tracking-wide px-4 py-3">Rolle</th>
-                    <th className="text-left text-xs font-semibold text-zinc-400 uppercase tracking-wide px-4 py-3">Tilgang</th>
-                    <th className="text-left text-xs font-semibold text-zinc-400 uppercase tracking-wide px-4 py-3">Sist innlogget</th>
+                  <tr className="bg-zinc-900 text-left text-[11px] font-semibold uppercase tracking-widest text-zinc-400">
+                    <th className="px-5 py-3 font-semibold">Bruker</th>
+                    <th className="px-4 py-3 font-semibold">Rolle</th>
+                    <th className="px-4 py-3 font-semibold">Tilgang</th>
+                    <th className="px-4 py-3 font-semibold">Sist innlogget</th>
                     <th className="px-4 py-3" />
                   </tr>
                 </thead>
