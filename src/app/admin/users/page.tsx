@@ -1,4 +1,4 @@
-import { getUsersWithDetails } from "@/lib/admin/queries"
+import { formatLastSeen, getLastSignInAtMap, getUsersWithDetails } from "@/lib/admin/queries"
 import { requireRole } from "@/lib/admin/require-role"
 import { getTenantConfig } from "@/lib/tenant/config-server"
 import { createAdminClient } from "@/lib/supabase/server"
@@ -15,6 +15,15 @@ import {
 
 export const dynamic = "force-dynamic"
 
+const exactSignInFmt = new Intl.DateTimeFormat("nb-NO", {
+  timeZone: "Europe/Oslo",
+  day: "2-digit",
+  month: "2-digit",
+  year: "numeric",
+  hour: "2-digit",
+  minute: "2-digit",
+})
+
 export default async function UsersPage() {
   const { supabase, tenantId, userId, role } = await requireRole(USER_MANAGER_ROLES)
   const { unitLabelPlural } = await getTenantConfig(supabase, tenantId)
@@ -28,10 +37,12 @@ export default async function UsersPage() {
   // butikker en kollega også styrer utenfor mitt scope). null = ingen begrensning.
   let visibleStoreIds: Set<string> | null = null
 
+  // Service role: brukes til butikk-scopet lesing og sist innlogget (auth.users).
+  const admin = createAdminClient()
+
   if (scoped) {
     // Butikk-admin: les via admin-klient etter rolle-gate, scopet til egne enheter.
     // Uavhengig av RLS-drift, og samme mønster som Logg-siden.
-    const admin = createAdminClient()
     const { data: myStores } = await admin.from("user_stores").select("store_id").eq("user_id", userId)
     const myStoreIds = (myStores ?? []).map((r) => r.store_id)
 
@@ -63,12 +74,15 @@ export default async function UsersPage() {
     allStores = (storesData ?? []) as { id: string; name: string }[]
   }
 
+  const lastSignInByUser = await getLastSignInAtMap(admin, users.map((u) => u.id))
+
   const rows: UserRow[] = users.map((user) => {
     const userRole = (user.role ?? "store_employee") as UserRole
     const userStores = (user.user_stores as unknown as Array<{ stores: { id: string; name: string } | null }>) ?? []
     const visibleStores = userStores
       .map((us) => us.stores)
       .filter((s): s is { id: string; name: string } => !!s && (visibleStoreIds === null || visibleStoreIds.has(s.id)))
+    const lastSignInAt = lastSignInByUser.get(user.id) ?? null
     return {
       id: user.id,
       email: user.email,
@@ -76,6 +90,8 @@ export default async function UsersPage() {
       role: userRole,
       storeIds: visibleStores.map((s) => s.id),
       storeNames: visibleStores.map((s) => s.name),
+      lastSignIn: formatLastSeen(lastSignInAt),
+      lastSignInExact: lastSignInAt ? exactSignInFmt.format(new Date(lastSignInAt)) : null,
     }
   })
 
