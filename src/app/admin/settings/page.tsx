@@ -7,6 +7,7 @@ import { NotificationsCard } from "./notifications-card"
 import { BiometricCard } from "./biometric-card"
 import { TenantTerminologyCard } from "./tenant-terminology-card"
 import { AvdelingerCard } from "./avdelinger-card"
+import { SettingsNav } from "./settings-nav"
 import { requireRole } from "@/lib/admin/require-role"
 import Link from "next/link"
 
@@ -28,17 +29,30 @@ export default async function SettingsPage() {
     .eq("tenant_id", tenantId)
     .order("name")
 
+  const isLedelse = role === "super_admin" || role === "chain_manager"
+  const sections = [
+    ...(isLedelse ? [{ id: "organisasjon", label: "Organisasjon" }] : []),
+    { id: "avdelinger", label: "Avdelinger" },
+    ...(isLedelse && chains && chains.length > 0 ? [{ id: "merkevare", label: "Merkevare" }] : []),
+    { id: "varsler", label: "Varsler" },
+    { id: "sikkerhet", label: "Sikkerhet" },
+    { id: "skjermer", label: "Skjermer" },
+  ]
+
   return (
     <div className="flex flex-col flex-1">
       <Topbar title="Innstillinger" subtitle="Merkevare og systemkonfigurasjon" />
 
-      <div className="flex-1 p-4 sm:p-6 space-y-6 max-w-4xl">
-        {(role === "super_admin" || role === "chain_manager") && <TenantTerminologyCard />}
+      <div className="flex w-full max-w-5xl flex-1 gap-8 p-4 sm:p-6">
+        <SettingsNav sections={sections} />
+        <div className="min-w-0 flex-1 space-y-6">
+        {isLedelse && <section id="organisasjon" className="scroll-mt-24"><TenantTerminologyCard /></section>}
 
         {/* Avdelinger: også enhets-/flerenhetsadmin (de bygger egne skjermer). */}
-        <AvdelingerCard />
+        <section id="avdelinger" className="scroll-mt-24"><AvdelingerCard /></section>
 
-        {(role === "super_admin" || role === "chain_manager") && chains && chains.length > 0 && (
+        {isLedelse && chains && chains.length > 0 && (
+          <section id="merkevare" className="scroll-mt-24">
           <BrandingPanel
             chains={chains.map((c) => ({
               id: c.id,
@@ -49,14 +63,15 @@ export default async function SettingsPage() {
               logo_url: c.logo_url,
             }))}
           />
+          </section>
         )}
 
-        <NotificationsCard />
+        <section id="varsler" className="scroll-mt-24"><NotificationsCard /></section>
 
-        <BiometricCard label={userLabel} />
+        <section id="sikkerhet" className="scroll-mt-24"><BiometricCard label={userLabel} /></section>
 
         {/* Screens are managed by the screen engine (Xibo), not here */}
-        <Card>
+        <Card id="skjermer" className="scroll-mt-24">
           <CardHeader className="pb-3">
             <CardTitle className="text-sm flex items-center gap-2">
               <Monitor className="w-4 h-4 text-zinc-500" />
@@ -77,6 +92,7 @@ export default async function SettingsPage() {
             </Link>
           </CardContent>
         </Card>
+        </div>
       </div>
     </div>
   )

@@ -92,15 +92,15 @@ export function UsersList({ rows, allStores, canAdminister, unitLabelPlural }: U
 
   return (
     <div className="space-y-4">
-      {/* Søk + rollefilter */}
-      <div className="flex flex-wrap items-center gap-3">
+      {/* Søk + rollefilter — kommandofelt */}
+      <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-zinc-200/80 bg-white px-3 py-2.5 shadow-[0_1px_2px_rgba(16,24,40,0.04)]">
         <div className="relative min-w-[14rem] flex-1">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Søk på navn, e-post eller enhet…"
-            className="h-9 w-full rounded-xl border border-zinc-200 bg-white pl-9 pr-9 text-sm outline-none transition-shadow placeholder:text-zinc-400 focus:border-zinc-300 focus:ring-2 focus:ring-zinc-900/10"
+            className="h-9 w-full rounded-xl border border-transparent bg-zinc-50 pl-9 pr-9 text-sm outline-none transition-colors placeholder:text-zinc-400 focus:border-[var(--brand-primary)] focus:bg-white focus:ring-2 focus:ring-[var(--brand-primary)]/15"
           />
           {search && (
             <button
@@ -168,14 +168,14 @@ export function UsersList({ rows, allStores, canAdminister, unitLabelPlural }: U
                     const cfg = roleConfig[row.role] ?? roleConfig.store_employee
                     const Icon = cfg.icon
                     return (
-                      <tr key={row.id} className="border-b border-zinc-50 transition-colors hover:bg-zinc-50/70">
+                      <tr key={row.id} className="group border-b border-zinc-50 transition-colors hover:bg-zinc-50/70">
                         <td className="px-5 py-3.5">
                           <div className="flex items-center gap-3">
-                            <div className={`w-8 h-8 rounded-full ${cfg.bg} flex items-center justify-center ring-1 ring-inset ring-black/5`}>
+                            <div className={`h-9 w-9 rounded-full ${cfg.bg} flex items-center justify-center ring-1 ring-inset ring-black/5`}>
                               <span className={`text-xs font-bold ${cfg.color}`}>{row.displayName.charAt(0).toUpperCase()}</span>
                             </div>
                             <div>
-                              <p className="text-sm font-medium text-zinc-900">{row.displayName}</p>
+                              <p className="text-sm font-semibold text-zinc-900">{row.displayName}</p>
                               <p className="text-xs text-zinc-400">{row.email}</p>
                             </div>
                           </div>
@@ -201,7 +201,9 @@ export function UsersList({ rows, allStores, canAdminister, unitLabelPlural }: U
                           {canAdminister && (
                             <div className="flex items-center gap-2">
                               <UserRoleSelect userId={row.id} currentRole={row.role} />
-                              <UserDeleteButton userId={row.id} userLabel={row.displayName} />
+                              <span className="opacity-0 transition-opacity focus-within:opacity-100 group-hover:opacity-100 pointer-coarse:opacity-100">
+                                <UserDeleteButton userId={row.id} userLabel={row.displayName} />
+                              </span>
                             </div>
                           )}
                         </td>
