@@ -27,8 +27,9 @@ export async function EditContentView({ id, listHref }: { id: string; listHref?:
   if (!item) notFound()
 
   const body = (item.body ?? {}) as {
-    html?: string; imageUrl?: string | null; imageUrls?: string[]; imageMode?: "plakat" | "bakgrunn" | "liten"
-    audience?: Audience
+    html?: string; imageUrl?: string | null; imageUrls?: string[]; imageMode?: "plakat" | "bakgrunn" | "liten" | "fullskjerm"
+    portraitUrl?: string | null; portraitPages?: string[]
+    audience?: string
     contactPerson?: string | null; applyUrl?: string | null; statsValue?: string | null; statsChange?: string | null
     offer?: import("@/lib/content/live").OfferFields | null
     campaign?: import("@/lib/content/live").CampaignFields | null
@@ -40,7 +41,9 @@ export async function EditContentView({ id, listHref }: { id: string; listHref?:
     durationSeconds?: number | null
     pages?: string[]
   }
-  const audience: Audience = body.audience === "kunde" || body.audience === "intern" ? body.audience : audienceForType(item.type as ContentType)
+  // «begge»-innhold (fullskjerm) redigeres under flaten det ble åpnet fra.
+  const stored = body.audience === "kunde" || body.audience === "intern" || body.audience === "begge" ? body.audience : audienceForType(item.type as ContentType)
+  const audience: Audience = stored === "begge" ? (listHref?.includes("kundeinnhold") ? "kunde" : "intern") : stored
   const targetRows = targets ?? []
   let targetMode: TargetMode = "all"
   if (targetRows.some((t) => t.store_id)) targetMode = "stores"
@@ -55,6 +58,9 @@ export async function EditContentView({ id, listHref }: { id: string; listHref?:
     imageUrl: body.imageUrl ?? null,
     imageUrls: body.imageUrls?.length ? body.imageUrls : body.imageUrl ? [body.imageUrl] : [],
     pages: Array.isArray(body.pages) ? body.pages.filter(Boolean) : undefined,
+    portraitUrl: body.portraitUrl ?? null,
+    portraitPages: Array.isArray(body.portraitPages) ? body.portraitPages.filter(Boolean) : undefined,
+    audienceBoth: stored === "begge",
     targetMode,
     storeIds: targetRows.filter((t) => t.store_id).map((t) => t.store_id as string),
     tagIds: targetRows.filter((t) => t.tag_id).map((t) => t.tag_id as string),

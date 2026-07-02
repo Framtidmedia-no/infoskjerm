@@ -7,6 +7,8 @@ import { PdfFlyer } from "@/app/widget/tilbud/pdf-flyer"
 import { CompetitionCard } from "@/app/widget/_shared/competition-card"
 import { InvitationCard } from "@/app/widget/_shared/invitation-card"
 import { GalleryCard } from "@/app/widget/_shared/gallery-card"
+import { FullscreenMedia } from "@/app/widget/_shared/fullscreen-media"
+import { fullscreenItemSeconds } from "@/lib/content/fullscreen"
 
 const KICKER: Record<string, string> = {
   competition: "KONKURRANSE",
@@ -349,6 +351,8 @@ function SlideCard({ item, portrait = false }: { item: LiveItem; portrait?: bool
 }
 
 function Card({ item, qrUrl, portrait = false }: { item: LiveItem; qrUrl?: string; portrait?: boolean }) {
+  // Fullskjerm-media: kant til kant uten tittel/kicker/ramme — foran alt annet.
+  if (item.imageMode === "fullskjerm") return <FullscreenMedia item={item} portrait={portrait} />
   if (item.type === "competition") return <CompetitionCard item={item} qrUrl={qrUrl} portrait={portrait} />
   if (item.type === "invitation") return <InvitationCard item={item} qrUrl={qrUrl} portrait={portrait} />
   if (item.type === "gallery") return <GalleryCard item={item} qrUrl={qrUrl} portrait={portrait} />
@@ -409,10 +413,10 @@ export function NewsRotator({ items, qr, ticker, portrait = false }: { items: Li
   useEffect(() => {
     if (items.length <= 1) return
     const it = items[i % items.length]
-    const secs = it?.durationSeconds ?? SECONDS[it?.type ?? ""] ?? DEFAULT_SECONDS
+    const secs = (it ? fullscreenItemSeconds(it, portrait, DEFAULT_SECONDS) : null) ?? it?.durationSeconds ?? SECONDS[it?.type ?? ""] ?? DEFAULT_SECONDS
     const id = setTimeout(() => setI((v) => (v + 1) % items.length), secs * 1000)
     return () => clearTimeout(id)
-  }, [i, items])
+  }, [i, items, portrait])
 
   // Refresh the page periodically so newly published content appears on screen.
   useEffect(() => {
