@@ -21,7 +21,7 @@ export function PlattformNav() {
   return (
     <nav
       aria-label="Plattform-navigasjon"
-      className="mb-6 flex gap-1 border-b border-zinc-200 overflow-x-auto whitespace-nowrap"
+      className="mb-6 inline-flex max-w-full overflow-x-auto whitespace-nowrap rounded-xl border border-zinc-200 bg-white p-0.5 shadow-[0_1px_2px_rgba(16,24,40,0.05)]"
     >
       {NAV_ITEMS.map((item) => {
         const isActive =
@@ -33,10 +33,10 @@ export function PlattformNav() {
             key={item.href}
             href={item.href}
             aria-current={isActive ? "page" : undefined}
-            className={`-mb-px border-b-2 px-3 py-2 text-sm font-medium transition-colors ${
+            className={`rounded-[10px] px-3.5 py-1.5 text-sm font-semibold transition-all ${
               isActive
-                ? "border-zinc-900 text-zinc-900"
-                : "border-transparent text-zinc-500 hover:text-zinc-800"
+                ? "bg-zinc-900 text-white shadow-sm"
+                : "text-zinc-500 hover:text-zinc-900"
             }`}
           >
             {item.label}
