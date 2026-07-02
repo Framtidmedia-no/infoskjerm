@@ -37,17 +37,17 @@ const navGroups: NavGroup[] = [
     ],
   },
   {
-    label: "Kampanjer",
-    items: [
-      { href: "/admin/invitasjoner", label: "Invitasjoner", icon: Ticket, roles: ALL_AUTHORS, matchPrefix: true },
-      { href: "/admin/kundeklubb", label: "Kundeklubb", icon: QrCode, roles: ["super_admin", "chain_manager", "area_manager", "store_manager"], matchPrefix: true },
-    ],
-  },
-  {
     label: "Oversikt",
     items: [
       { href: "/admin/plan", label: "Planen", icon: CalendarRange, roles: ALL_AUTHORS, matchPrefix: true },
       { href: "/admin/cms", label: "Forhåndsvisning", icon: Monitor, roles: ["super_admin", "chain_manager", "area_manager", "store_manager"], matchPrefix: true },
+    ],
+  },
+  {
+    label: "Kampanjer",
+    items: [
+      { href: "/admin/invitasjoner", label: "Invitasjoner", icon: Ticket, roles: ALL_AUTHORS, matchPrefix: true },
+      { href: "/admin/kundeklubb", label: "Kundeklubb", icon: QrCode, roles: ["super_admin", "chain_manager", "area_manager", "store_manager"], matchPrefix: true },
     ],
   },
   {
