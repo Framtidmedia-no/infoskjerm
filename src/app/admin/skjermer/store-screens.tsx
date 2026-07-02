@@ -3,13 +3,13 @@
 import { useEffect, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
-import { Monitor, Wrench, Copy, Check, Plus, Trash2, Loader2, Smartphone, Wifi, WifiOff } from "lucide-react"
+import { Monitor, Wrench, Copy, Check, Plus, Trash2, Loader2, Smartphone, Wifi, WifiOff, PenLine } from "lucide-react"
 import { useTenantConfig } from "@/components/admin/tenant-config-provider"
 import { ConfirmDialog } from "@/components/admin/confirm-dialog"
 import { ScreenPowerControls, type ScreenPowerInfo } from "./power-controls"
 import type { OpeningHours } from "@/lib/power/schedule"
 import {
-  assignDisplay, setScreenAssignment, addKiosk, deleteScreenRow,
+  assignDisplay, setScreenAssignment, addKiosk, deleteScreenRow, renameScreen,
   type Flate, type Orientation, type Assignment,
 } from "./actions"
 
@@ -35,6 +35,8 @@ export interface DisplayLite {
 
 export interface ScreenRowLite extends ScreenPowerInfo {
   id: string
+  /** Kallenavn (screens.name) — tenant-redigerbart, vises også i skjermvelgeren ved publisering. */
+  name: string
   token: string
   flate: Flate
   avdeling: string
@@ -95,6 +97,83 @@ function AssignmentControls({
         </select>
       </label>
     </div>
+  )
+}
+
+/**
+ * Kallenavn med inline-redigering. HELE navnet er klikkflaten (ikke bare
+ * blyanten): hover gir bakgrunn + stiplet understrek, og skjermer uten eget
+ * kallenavn viser en tydelig «Gi kallenavn»-pille — så det er selvforklarende
+ * at navnet kan endres, også på touch. Enter/blur lagrer, Escape avbryter.
+ * Navnet brukes i skjermvelgeren ved publisering («Kassaskjerm», «Vindu mot
+ * gata»). screenId null = ingen rad ennå (utildelt Xibo-display) → kun visning.
+ */
+function ScreenName({ screenId, name, fallback }: { screenId: string | null; name: string | null; fallback: string }) {
+  const router = useRouter()
+  const [editing, setEditing] = useState(false)
+  const [saving, setSaving] = useState(false)
+  const [localName, setLocalName] = useState<string | null>(null)
+  const unnamed = !localName && !name?.trim()
+  const shown = localName ?? (name?.trim() || fallback)
+  const [draft, setDraft] = useState(shown)
+
+  async function save() {
+    const next = draft.trim()
+    setEditing(false)
+    if (!screenId || !next || next === shown) return
+    setSaving(true)
+    const res = await renameScreen(screenId, next)
+    setSaving(false)
+    if (res.ok) { setLocalName(next); toast.success("Kallenavn lagret"); router.refresh() }
+    else toast.error(res.error ?? "Kunne ikke lagre navn")
+  }
+
+  if (editing) {
+    return (
+      <input
+        autoFocus
+        value={draft}
+        maxLength={60}
+        placeholder="F.eks. Kassaskjerm"
+        onChange={(e) => setDraft(e.target.value)}
+        onBlur={save}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") (e.target as HTMLInputElement).blur()
+          if (e.key === "Escape") { setDraft(shown); setEditing(false) }
+        }}
+        aria-label="Kallenavn på skjermen (Enter lagrer, Escape avbryter)"
+        className="flex-1 min-w-0 rounded-lg border border-zinc-300 bg-white px-2 py-1 font-display text-sm font-semibold tracking-tight text-zinc-900 placeholder:font-sans placeholder:font-normal placeholder:text-zinc-300 focus:border-[var(--brand-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)]/15"
+      />
+    )
+  }
+
+  // Uten rad (utildelt display) er navnet ren visning — ingen klikkflate.
+  if (!screenId) {
+    return <span className="font-display text-sm font-semibold tracking-tight text-zinc-900 truncate flex-1 min-w-0">{shown}</span>
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={() => { setDraft(unnamed ? "" : shown); setEditing(true) }}
+      disabled={saving}
+      title="Klikk for å gi skjermen kallenavn"
+      aria-label={`Gi skjermen «${shown}» kallenavn`}
+      className="group flex items-center gap-1.5 flex-1 min-w-0 text-left rounded-lg -mx-1.5 px-1.5 py-1 transition-colors hover:bg-zinc-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)]/30 disabled:opacity-60"
+    >
+      <span className="font-display text-sm font-semibold tracking-tight text-zinc-900 truncate underline-offset-4 decoration-dashed decoration-zinc-300 group-hover:underline">
+        {shown}
+      </span>
+      {saving ? (
+        <Loader2 className="w-3 h-3 text-zinc-400 animate-spin flex-shrink-0" />
+      ) : unnamed ? (
+        <span className="inline-flex items-center gap-1 rounded-full border border-dashed border-zinc-300 px-2 py-0.5 text-[10px] font-medium text-zinc-400 transition-colors group-hover:border-zinc-400 group-hover:text-zinc-600 flex-shrink-0">
+          <PenLine className="w-2.5 h-2.5" /> Gi kallenavn
+        </span>
+      ) : (
+        <PenLine className="w-3 h-3 text-zinc-400 transition-colors group-hover:text-zinc-700 flex-shrink-0" />
+      )}
+    </button>
   )
 }
 
@@ -210,7 +289,12 @@ function DisplayCard({
         <span className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-zinc-100">
           <Monitor className="w-4 h-4 text-zinc-500" />
         </span>
-        <span className="font-display text-sm font-semibold tracking-tight text-zinc-900 truncate flex-1">{display.name}</span>
+        {/* Kallenavn når raden finnes; default-navnet «Skjerm <id>» regnes som usatt → vis Xibo-navnet. */}
+        <ScreenName
+          screenId={row?.id ?? null}
+          name={row && row.name !== `Skjerm ${display.displayId}` ? row.name : null}
+          fallback={display.name}
+        />
         <span className={`inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1 rounded-full flex-shrink-0 ${display.online ? "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200" : "bg-red-50 text-red-500 ring-1 ring-red-100"}`}>
           <span className={`h-1.5 w-1.5 rounded-full ${display.online ? "animate-pulse bg-emerald-500" : "bg-red-400"}`} />
           {display.online ? <Wifi className="w-3 h-3" /> : <WifiOff className="w-3 h-3" />}
@@ -277,7 +361,12 @@ function KioskCard({
         <span className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-zinc-100">
           {value.flate === "intern" ? <Wrench className="w-4 h-4 text-zinc-500" /> : <Smartphone className="w-4 h-4 text-zinc-500" />}
         </span>
-        <span className="font-display text-sm font-semibold tracking-tight text-zinc-900 truncate flex-1">Kiosk-skjerm {value.flate === "intern" ? "(intern)" : "(kunde)"}</span>
+        {/* Kiosk-defaults («Kiosk kundeskjerm»/«Kiosk internskjerm») regnes som usatt → «Gi kallenavn»-pille. */}
+        <ScreenName
+          screenId={row.id}
+          name={row.name === "Kiosk kundeskjerm" || row.name === "Kiosk internskjerm" ? null : row.name}
+          fallback={`Kiosk-skjerm ${value.flate === "intern" ? "(intern)" : "(kunde)"}`}
+        />
         {saving && <Loader2 className="w-3.5 h-3.5 text-zinc-400 animate-spin" />}
         <button onClick={() => setConfirmOpen(true)} disabled={saving} title="Slett" aria-label="Slett kiosk-skjerm" className="p-1 rounded text-zinc-400 hover:text-red-600 disabled:opacity-50">
           <Trash2 className="w-3.5 h-3.5" />

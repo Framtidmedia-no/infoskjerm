@@ -56,7 +56,7 @@ export default async function StoreDetailPage({ params }: PageProps) {
   // Våre screens-rader (enhets-styring: token + flate/avdeling/orientering + xibo-binding).
   const { data: assignRows } = await supabase
     .from("screens")
-    .select("id, token, flate, avdeling, orientation, xibo_display_id, power_mode, power_on_lead_min, power_off_lag_min, power_override, power_override_until, power_state, power_state_at")
+    .select("id, name, token, flate, avdeling, orientation, xibo_display_id, power_mode, power_on_lead_min, power_off_lag_min, power_override, power_override_until, power_state, power_state_at")
     .eq("store_id", store.id)
     .order("name")
   const assignRowsLite = (assignRows ?? []) as unknown as ScreenRowLite[]

@@ -2,7 +2,7 @@ import { requireRole } from "@/lib/admin/require-role"
 import { canTargetAllStores } from "@/lib/roles"
 import { notFound } from "next/navigation"
 import { ContentForm, type TagOption, type ContentInitial } from "./content-form"
-import { loadStoreOptions } from "../store-options"
+import { loadStoreOptions, loadScreenOptions } from "../store-options"
 import type { ContentType, TargetMode } from "../actions"
 import { audienceForType, type Audience } from "../audience"
 
@@ -17,11 +17,12 @@ const AUTHOR_ROLES = ["super_admin", "chain_manager", "area_manager", "store_man
 export async function EditContentView({ id, listHref }: { id: string; listHref?: string }) {
   const { supabase, role, tenantId } = await requireRole([...AUTHOR_ROLES])
 
-  const [{ data: item }, storeOptions, { data: tags }, { data: targets }] = await Promise.all([
+  const [{ data: item }, storeOptions, screenOptions, { data: tags }, { data: targets }] = await Promise.all([
     supabase.from("content_items").select("id, title, type, body, valid_from, valid_to").eq("id", id).eq("tenant_id", tenantId).single(),
     loadStoreOptions(supabase, tenantId),
+    loadScreenOptions(supabase, tenantId),
     supabase.from("tags").select("id, name, color").eq("tenant_id", tenantId).order("name"),
-    supabase.from("content_targets").select("target_all, store_id, tag_id").eq("content_item_id", id),
+    supabase.from("content_targets").select("target_all, store_id, tag_id, screen_id").eq("content_item_id", id),
   ])
 
   if (!item) notFound()
@@ -46,7 +47,8 @@ export async function EditContentView({ id, listHref }: { id: string; listHref?:
   const audience: Audience = stored === "begge" ? (listHref?.includes("kundeinnhold") ? "kunde" : "intern") : stored
   const targetRows = targets ?? []
   let targetMode: TargetMode = "all"
-  if (targetRows.some((t) => t.store_id)) targetMode = "stores"
+  if (targetRows.some((t) => t.screen_id)) targetMode = "screens"
+  else if (targetRows.some((t) => t.store_id)) targetMode = "stores"
   else if (targetRows.some((t) => t.tag_id)) targetMode = "tags"
   else if (targetRows.some((t) => t.target_all)) targetMode = "all"
 
@@ -64,6 +66,7 @@ export async function EditContentView({ id, listHref }: { id: string; listHref?:
     targetMode,
     storeIds: targetRows.filter((t) => t.store_id).map((t) => t.store_id as string),
     tagIds: targetRows.filter((t) => t.tag_id).map((t) => t.tag_id as string),
+    screenIds: targetRows.filter((t) => t.screen_id).map((t) => t.screen_id as string),
     validFrom: item.valid_from ? item.valid_from.slice(0, 10) : null,
     validTo: item.valid_to ? item.valid_to.slice(0, 10) : null,
     imageMode: body.imageMode ?? "bakgrunn",
@@ -97,5 +100,5 @@ export async function EditContentView({ id, listHref }: { id: string; listHref?:
     durationSeconds: body.durationSeconds ?? null,
   }
 
-  return <ContentForm stores={storeOptions} tags={(tags ?? []) as TagOption[]} initial={initial} audience={audience} listHref={listHref} canTargetAll={canTargetAllStores(role)} />
+  return <ContentForm stores={storeOptions} tags={(tags ?? []) as TagOption[]} screens={screenOptions} initial={initial} audience={audience} listHref={listHref} canTargetAll={canTargetAllStores(role)} />
 }

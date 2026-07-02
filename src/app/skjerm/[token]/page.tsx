@@ -29,6 +29,7 @@ export const viewport: Viewport = {
 }
 
 type ScreenRow = {
+  id: string
   store_id: string | null
   flate: string | null
   avdeling: string | null
@@ -44,7 +45,9 @@ function widgetFor(row: ScreenRow, grocery: boolean): string {
   const store = row.store_id ?? ""
   const avdeling = row.avdeling || "felles"
   const landscape = row.orientation === "landscape" || row.orientation === "liggende"
-  const q = `store=${store}&avdeling=${encodeURIComponent(avdeling)}`
+  // screen=<id> gir widgeten skjermkontekst, så innhold målrettet mot akkurat
+  // denne skjermen (content_targets.screen_id) slipper gjennom leveringsfilteret.
+  const q = `store=${store}&avdeling=${encodeURIComponent(avdeling)}&screen=${row.id}`
   if (row.flate === "intern") {
     return grocery ? `/widget/bakrom?${q}` : `/widget/nyheter?${q}&flate=intern`
   }
@@ -59,7 +62,7 @@ export default async function SkjermPage({ params }: { params: Promise<{ token: 
   const supabase = createAdminClient()
   const { data } = await supabase
     .from("screens")
-    .select("store_id, tenant_id, flate, avdeling, orientation")
+    .select("id, store_id, tenant_id, flate, avdeling, orientation")
     .eq("token", token)
     .maybeSingle()
   const row = data as (ScreenRow & { tenant_id: string | null }) | null

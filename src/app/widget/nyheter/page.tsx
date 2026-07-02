@@ -29,8 +29,8 @@ function normalizeUrl(raw: string): string {
   return /^https?:\/\//i.test(v) ? v : `https://${v}`
 }
 
-export default async function NewsWidgetPage({ searchParams }: { searchParams: Promise<{ store?: string; flate?: string; avdeling?: string; o?: string }> }) {
-  const { store, flate, avdeling, o } = await searchParams
+export default async function NewsWidgetPage({ searchParams }: { searchParams: Promise<{ store?: string; flate?: string; avdeling?: string; o?: string; screen?: string }> }) {
+  const { store, flate, avdeling, o, screen } = await searchParams
   // Orientering: ?o=portrait → stående layout (nå ekte for alle intern-kort).
   const portrait = o === "portrait"
   // flate=intern → bakrom/ansatte: internt innhold (nyheter/gratulerer/stilling) + ticker.
@@ -39,8 +39,8 @@ export default async function NewsWidgetPage({ searchParams }: { searchParams: P
   const cardTypes = audience === "intern" ? INTERNAL_CARD_TYPES : CARD_TYPES
   // Avdeling-filtrering: «felles»/ingen → alt; ellers kun innhold for avdelingen.
   const [items, tickerItems, storeRow, season] = await Promise.all([
-    fetchLiveContent(store ?? null, cardTypes, audience, avdeling),
-    audience === "intern" ? fetchLiveContent(store ?? null, ["ticker"], "intern", avdeling) : Promise.resolve([]),
+    fetchLiveContent(store ?? null, cardTypes, audience, avdeling, screen),
+    audience === "intern" ? fetchLiveContent(store ?? null, ["ticker"], "intern", avdeling, screen) : Promise.resolve([]),
     store
       ? createAdminClient().from("stores").select("chains(name, logo_url, color, brand_fg)").eq("id", store).maybeSingle()
       : Promise.resolve({ data: null }),

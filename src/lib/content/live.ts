@@ -1,6 +1,7 @@
 import { createAdminClient } from "@/lib/supabase/server"
 import { isPdfUrl, isPptUrl } from "@/lib/content/deck"
 import { storedAudienceOf, audienceMatches } from "@/lib/content/audience"
+import { matchesTargets, type ContentTarget } from "@/lib/content/targeting"
 
 /**
  * Reads published, in-window content straight from Supabase for the signage
@@ -154,12 +155,6 @@ interface Body {
   durationSeconds?: number | null
 }
 
-interface Target {
-  target_all: boolean | null
-  store_id: string | null
-  tag_id: string | null
-}
-
 function stripTags(s: string): string {
   // Dekod entiteter FØRST (og &amp; sist for å unngå dobbel-unescaping), så
   // strippes tagger TIL SLUTT — slik at f.eks. «&lt;script&gt;» som dekodes til
@@ -211,8 +206,10 @@ function withinWindow(from: string | null, to: string | null, now: number): bool
  *
  * @param storeId  Supabase store id, or null for the all-stores base feed.
  * @param types    content_type values to include.
+ * @param screenId Skjermen (screens.id) når widgeten lastes via /skjerm/<token> —
+ *                 kreves for at skjerm-målrettet innhold skal vises (se targeting.ts).
  */
-export async function fetchLiveContent(storeId: string | null, types: string[], audience?: "kunde" | "intern", avdeling?: string): Promise<LiveItem[]> {
+export async function fetchLiveContent(storeId: string | null, types: string[], audience?: "kunde" | "intern", avdeling?: string, screenId?: string | null): Promise<LiveItem[]> {
   const supabase = createAdminClient()
   const now = Date.now()
 
@@ -228,7 +225,7 @@ export async function fetchLiveContent(storeId: string | null, types: string[], 
 
   let query = supabase
     .from("content_items")
-    .select("id, type, title, body, created_by, created_at, published_at, valid_from, valid_to, content_targets(target_all, store_id, tag_id)")
+    .select("id, type, title, body, created_by, created_at, published_at, valid_from, valid_to, content_targets(target_all, store_id, tag_id, screen_id)")
     .eq("status", "live")
     .in("type", types as ("news" | "competition" | "stats" | "weather" | "slide" | "job" | "birthday" | "ticker" | "invitation" | "gallery")[])
 
@@ -258,14 +255,8 @@ export async function fetchLiveContent(storeId: string | null, types: string[], 
   }
 
   function targets(item: NonNullable<typeof items>[number]): boolean {
-    if (!storeId) return true
-    const ts = (item.content_targets ?? []) as Target[]
-    if (ts.some((t) => t.target_all)) return true
-    for (const t of ts) {
-      if (t.store_id === storeId) return true
-      if (t.tag_id && tagToStores.get(t.tag_id)?.has(storeId)) return true
-    }
-    return false
+    const ts = (item.content_targets ?? []) as ContentTarget[]
+    return matchesTargets(ts, { storeId, screenId, tagToStores })
   }
 
   // A department screen shows its own department + "felles" (whole-store) items.
