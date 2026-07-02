@@ -1,0 +1,12 @@
+import { Bricolage_Grotesque } from "next/font/google"
+
+/**
+ * Display-font for offentlige flater (login, glemt passord, velkommen,
+ * påmelding). Scopes per side via `displayFont.variable` + `.font-display`
+ * (globals.css) — lastes IKKE globalt, så /widget/*-sidene forblir uberørt.
+ */
+export const displayFont = Bricolage_Grotesque({
+  subsets: ["latin"],
+  variable: "--font-display",
+  display: "swap",
+})

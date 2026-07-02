@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { signupForEvent } from "./actions"
+import { TurnstileWidget } from "@/components/turnstile-widget"
 import { Loader2, PartyPopper, Minus, Plus } from "lucide-react"
 
 export function SignupForm({
@@ -25,15 +26,24 @@ export function SignupForm({
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [done, setDone] = useState(false)
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null)
+  // Turnstile-tokens er engangs — remount widgeten per forsøk for å få nytt token.
+  const [turnstileAttempt, setTurnstileAttempt] = useState(0)
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (!turnstileToken) return
     setLoading(true)
     setError(null)
-    const res = await signupForEvent(contentItemId, storeId, { name, department, guests, dietary, comment, email, consent })
+    const res = await signupForEvent(contentItemId, storeId, { name, department, guests, dietary, comment, email, consent, turnstileToken })
     setLoading(false)
-    if (res.ok) setDone(true)
-    else setError(res.error)
+    if (res.ok) {
+      setDone(true)
+      return
+    }
+    setError(res.error)
+    setTurnstileToken(null)
+    setTurnstileAttempt((n) => n + 1)
   }
 
   if (done) {
@@ -83,9 +93,11 @@ export function SignupForm({
         <span>Jeg samtykker til at påmeldingsopplysningene lagres for å administrere arrangementet.</span>
       </label>
 
+      <TurnstileWidget key={turnstileAttempt} onToken={setTurnstileToken} theme="light" />
+
       {error && <p className="text-sm font-medium text-red-600">{error}</p>}
 
-      <button type="submit" disabled={loading}
+      <button type="submit" disabled={loading || !turnstileToken}
         className="flex w-full items-center justify-center gap-2 rounded-xl py-3.5 text-base font-bold text-white disabled:opacity-60"
         style={{ backgroundColor: accent }}>
         {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : "Send påmelding 🎉"}
