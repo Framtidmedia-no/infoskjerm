@@ -32,7 +32,7 @@ export interface GalleryFields {
   /** Tekst over QR-koden, f.eks. "Bestill her". */
   qrLabel: string | null
 }
-export type TargetMode = "all" | "stores" | "tags"
+export type TargetMode = "all" | "stores" | "tags" | "screens"
 
 /** Invitasjon (arrangement): dato/sted + påmelding via QR-kode. */
 export interface InvitationFields {
@@ -65,6 +65,8 @@ export interface ContentInput {
   targetMode: TargetMode
   storeIds: string[]
   tagIds: string[]
+  /** targetMode "screens": vis KUN på akkurat disse skjermene (screens.id). */
+  screenIds?: string[]
   validFrom: string | null
   validTo: string | null
   publish: boolean
@@ -212,13 +214,26 @@ export async function saveContent(input: ContentInput, id?: string): Promise<Sav
 
   // Reset and rebuild targets
   await supabase.from("content_targets").delete().eq("content_item_id", contentId!)
-  let targetRows: { content_item_id: string; target_all?: boolean; store_id?: string; tag_id?: string }[] = []
+  let targetRows: { content_item_id: string; target_all?: boolean; store_id?: string; tag_id?: string; screen_id?: string }[] = []
   if (input.targetMode === "all") {
     targetRows = [{ content_item_id: contentId!, target_all: true }]
   } else if (input.targetMode === "stores") {
     targetRows = input.storeIds.map((sid) => ({ content_item_id: contentId!, store_id: sid }))
   } else if (input.targetMode === "tags") {
     targetRows = input.tagIds.map((tid) => ({ content_item_id: contentId!, tag_id: tid }))
+  } else if (input.targetMode === "screens") {
+    // Godta kun tenantens egne skjermer — en fremmed id ville aldri matchet i
+    // leveringen (tenant-scopet), men den skal heller ikke kunne lagres.
+    const wanted = Array.from(new Set(input.screenIds ?? []))
+    if (wanted.length === 0) return { ok: false, error: "Velg minst én skjerm" }
+    const { data: ownScreens } = await supabase
+      .from("screens")
+      .select("id")
+      .eq("tenant_id", tenantId)
+      .in("id", wanted)
+    const ownIds = new Set((ownScreens ?? []).map((s) => s.id))
+    targetRows = wanted.filter((sid) => ownIds.has(sid)).map((sid) => ({ content_item_id: contentId!, screen_id: sid }))
+    if (targetRows.length === 0) return { ok: false, error: "Velg minst én skjerm" }
   }
   if (targetRows.length > 0) {
     const { error } = await supabase.from("content_targets").insert(targetRows)
@@ -384,10 +399,10 @@ export async function duplicateContent(id: string, shiftDays = 0): Promise<SaveR
     .single()
   if (error || !copy) return { ok: false, error: error?.message ?? "Kunne ikke kopiere" }
 
-  const { data: targets } = await supabase.from("content_targets").select("target_all, store_id, tag_id").eq("content_item_id", id)
+  const { data: targets } = await supabase.from("content_targets").select("target_all, store_id, tag_id, screen_id").eq("content_item_id", id)
   if (targets && targets.length > 0) {
     await supabase.from("content_targets").insert(
-      targets.map((t) => ({ content_item_id: copy.id, target_all: t.target_all, store_id: t.store_id, tag_id: t.tag_id }))
+      targets.map((t) => ({ content_item_id: copy.id, target_all: t.target_all, store_id: t.store_id, tag_id: t.tag_id, screen_id: t.screen_id }))
     )
   }
   await logAudit({ userId, action: "content.duplicate", entityType: "content", entityId: copy.id, summary: `Kopierte «${orig.title}»${shiftDays > 0 ? " til neste uke" : ""}`, metadata: { from: id, shiftDays } })

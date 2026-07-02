@@ -151,6 +151,29 @@ export async function addKiosk(
   return { ok: true, token: created.token }
 }
 
+const MAX_SCREEN_NAME = 60
+
+/**
+ * Kallenavn på en skjerm (screens.name) — vises i skjerm-kortene og i
+ * skjermvelgeren ved publisering, så tenantene kan navngi «Kassaskjerm»,
+ * «Vindu mot gata» osv. selv.
+ */
+export async function renameScreen(screenId: string, name: string): Promise<{ ok: boolean; error?: string }> {
+  const { supabase, userId } = await requireRole([...MANAGEMENT_ROLES])
+  const trimmed = name.trim().slice(0, MAX_SCREEN_NAME)
+  if (!trimmed) return { ok: false, error: "Navnet kan ikke være tomt" }
+
+  const { error } = await (supabase.from("screens") as unknown as ScreensTable)
+    .update({ name: trimmed })
+    .eq("id", screenId)
+  if (error) return { ok: false, error: error.message }
+
+  await logAudit({ userId, action: "screen.rename", entityType: "screen", entityId: screenId, summary: `Ga skjermen kallenavnet «${trimmed}»` })
+  revalidatePath("/admin/skjermer", "layout")
+  revalidatePath("/admin/stores", "layout")
+  return { ok: true }
+}
+
 /** Sletter en skjerm-rad (kiosk eller frigjør en Xibo-binding). */
 export async function deleteScreenRow(screenId: string): Promise<{ ok: boolean; error?: string }> {
   const { supabase, userId } = await requireRole([...MANAGEMENT_ROLES])
