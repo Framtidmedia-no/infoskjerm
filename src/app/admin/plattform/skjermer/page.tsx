@@ -17,7 +17,7 @@ export default async function PlattformSkjermerPage() {
         Drift på tvers av alle tenants ({screens.length}).
       </p>
 
-      <div className="overflow-hidden rounded-xl border border-zinc-100 bg-white">
+      <div className="overflow-x-auto contain-inline-size rounded-xl border border-zinc-100 bg-white">
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-zinc-100 text-left text-xs uppercase tracking-wide text-zinc-400">
