@@ -14,6 +14,7 @@ interface StoreCardProps {
   chainColor: string
   tags: BoardTag[]
   allTags: BoardTag[]
+  tagUsage: Record<string, number>
   onToggleTag: (tag: BoardTag, assign: boolean) => void
   onCreateTag: (name: string, color: string) => Promise<{ ok: boolean; error?: string }>
   onUpdateTag: (tag: BoardTag) => Promise<{ ok: boolean; error?: string }>
@@ -26,6 +27,7 @@ export function StoreCard({
   chainColor,
   tags,
   allTags,
+  tagUsage,
   onToggleTag,
   onCreateTag,
   onUpdateTag,
@@ -115,6 +117,7 @@ export function StoreCard({
           <TagPopover
             assigned={tags}
             allTags={allTags}
+            tagUsage={tagUsage}
             open={tagOpen}
             onOpenChange={setTagOpen}
             onToggle={onToggleTag}

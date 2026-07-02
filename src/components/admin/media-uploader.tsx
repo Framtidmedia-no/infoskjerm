@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/client"
 import { SUPABASE_URL, SUPABASE_ANON_KEY } from "@/lib/supabase/config"
 import { Upload, ImageIcon, CheckCircle2, AlertCircle } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { toast } from "sonner"
 
 interface UploadedFile {
   id: string
@@ -141,7 +142,11 @@ export function MediaUploader({ onUpload, maxFiles = 10, accept = ["image/jpeg",
   }
 
   const handleFiles = useCallback((files: FileList | File[]) => {
-    const arr = Array.from(files).slice(0, maxFiles)
+    const all = Array.from(files)
+    const arr = all.slice(0, maxFiles)
+    if (all.length > maxFiles) {
+      toast.warning(`Kun de ${maxFiles} første filene ble tatt med (maks ${maxFiles}) — ${all.length - maxFiles} ble hoppet over.`)
+    }
     arr.forEach(uploadFile)
   }, [])
 

@@ -11,8 +11,18 @@ import { LoggClient, type LogRow } from "./logg-client"
 
 export const dynamic = "force-dynamic"
 
-export default async function LoggPage() {
+const PAGE = 400
+const MAX_LIMIT = 4000
+
+export default async function LoggPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ antall?: string }>
+}) {
   const { tenantId } = await requireRole(["super_admin", "chain_manager"])
+  const { antall } = await searchParams
+  // «Vis eldre» øker grensen via ?antall= — eldre hendelser var før utilgjengelige.
+  const limit = Math.min(Math.max(Number(antall) || PAGE, PAGE), MAX_LIMIT)
   const admin = createAdminClient()
   // audit_log.tenant_id finnes ennå ikke i genererte typer (migrasjon 033) →
   // cast query-builderen minimalt så .eq("tenant_id", …) kompilerer.
@@ -20,14 +30,15 @@ export default async function LoggPage() {
     .from("audit_log")
     .select("id, created_at, user_email, action, entity_type, summary")
     .order("created_at", { ascending: false })
-    .limit(400) as unknown as { eq: (col: string, val: string) => PromiseLike<{ data: LogRow[] | null }> }
+    .limit(limit) as unknown as { eq: (col: string, val: string) => PromiseLike<{ data: LogRow[] | null }> }
   const { data } = await query.eq("tenant_id", tenantId)
+  const rows = (data ?? []) as LogRow[]
 
   return (
     <div className="flex flex-col flex-1">
       <Topbar title="Logg" subtitle="Aktivitetslogg — innlogginger, endringer, publiseringer og slettinger" />
       <div className="flex-1 p-4 sm:p-6 max-w-4xl w-full">
-        <LoggClient rows={(data ?? []) as LogRow[]} />
+        <LoggClient rows={rows} limit={limit} hasMore={rows.length >= limit && limit < MAX_LIMIT} />
       </div>
     </div>
   )

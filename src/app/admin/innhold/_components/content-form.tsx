@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
 import { RichTextEditor } from "@/components/admin/rich-text-editor"
 import { MediaUploader } from "@/components/admin/media-uploader"
@@ -19,8 +19,10 @@ import {
 import {
   Newspaper, Trophy, ImageIcon, Briefcase, PartyPopper, Megaphone, FileText, Ticket, MapPin, LayoutGrid, Plus, Trash2, QrCode,
   Store as StoreIcon, Tag, Globe, X, Calendar, Save, Send, ChevronLeft, Image as ImageLucide, Maximize2, PanelRight, CalendarOff, Search,
+  Loader2,
 } from "lucide-react"
 import Link from "next/link"
+import { ConfirmDialog } from "@/components/admin/confirm-dialog"
 
 export interface StoreOption { id: string; name: string; chain: string | null; city: string | null; tagIds?: string[] }
 export interface TagOption { id: string; name: string; color: string | null }
@@ -356,6 +358,30 @@ export function ContentForm({ stores, tags, initial, audience = "intern", defaul
     return Array.from(new Set([...prev, ...ids]))
   })
 
+  // Dirty-vern ved redigering: autosave-utkastet gjelder kun NYTT innhold, så
+  // eksisterende oppslag trenger eksplisitt vern mot å miste endringer.
+  const formSnapshot = JSON.stringify({
+    title, type, bodyHtml, imageUrls, offer, campaign, klubb, invitation, gallery,
+    offerMode, avdeling, imageMode, validFrom, validTo, targetMode, storeIds, tagIds,
+    bgColor, textColor, contactPerson, applyUrl, durationSeconds, fsPortraitUrl,
+  })
+  const initialSnapshot = useRef<string | null>(null)
+  if (initialSnapshot.current === null) initialSnapshot.current = formSnapshot
+  const dirty = !!initial && formSnapshot !== initialSnapshot.current
+  const [leaveConfirm, setLeaveConfirm] = useState(false)
+
+  useEffect(() => {
+    if (!dirty || saving) return
+    function onBeforeUnload(e: BeforeUnloadEvent) {
+      e.preventDefault()
+      e.returnValue = ""
+    }
+    window.addEventListener("beforeunload", onBeforeUnload)
+    return () => window.removeEventListener("beforeunload", onBeforeUnload)
+  }, [dirty, saving])
+
+  const periodInverted = !!validFrom && !!validTo && validFrom > validTo
+
   function handleSave(publish: boolean) {
     if (isOfferStruktur) {
       if (!offer.varenavn.trim()) { toast.error("Skriv et varenavn"); return }
@@ -371,6 +397,11 @@ export function ContentForm({ stores, tags, initial, audience = "intern", defaul
     // Tilbud/annonser MÅ ha både fra- og til-dato — de skal aldri gå evig.
     if (publish && periodRequired && (!validFrom || !validTo)) {
       toast.error("Tilbud må ha både fra- og til-dato")
+      return
+    }
+    // Snudd periode ville publisert innhold som aldri vises på skjermen.
+    if (periodInverted) {
+      toast.error("Gyldighetsperioden er snudd — «Fra» må være før «Til»")
       return
     }
     // Publisering krever bekreftelse — vis nøyaktig hvilke enheter det treffer.
@@ -415,9 +446,12 @@ export function ContentForm({ stores, tags, initial, audience = "intern", defaul
     setSaving(false)
     if (res.ok) {
       if (draftKey) { try { localStorage.removeItem(draftKey) } catch {} }
+      // Nullstill dirty-vernet så navigeringen bort ikke utløser advarsel.
+      initialSnapshot.current = formSnapshot
       toast.success(publish ? "Publisert" : "Lagret som utkast")
       router.push(listHref)
     } else {
+      setConfirmPublish(false)
       toast.error(res.error ?? "Noe gikk galt")
     }
   }
@@ -454,18 +488,39 @@ export function ContentForm({ stores, tags, initial, audience = "intern", defaul
       {/* Topbar */}
       <div className="flex flex-col gap-2 px-4 py-2.5 bg-white border-b border-zinc-200 sticky top-0 z-10 sm:flex-row sm:items-center sm:gap-3 sm:px-6 sm:h-14 sm:py-0">
         <div className="flex items-center gap-2 min-w-0">
-          <Link href={listHref} className="p-1.5 -ml-1.5 rounded-lg hover:bg-zinc-100 text-zinc-400 hover:text-zinc-700 shrink-0"><ChevronLeft className="w-4 h-4" /></Link>
+          <Link
+            href={listHref}
+            aria-label="Tilbake til listen"
+            onClick={(e) => {
+              if (dirty) {
+                e.preventDefault()
+                setLeaveConfirm(true)
+              }
+            }}
+            className="p-1.5 -ml-1.5 rounded-lg hover:bg-zinc-100 text-zinc-400 hover:text-zinc-700 shrink-0"
+          ><ChevronLeft className="w-4 h-4" /></Link>
           <h1 className="text-sm font-semibold text-zinc-900 truncate">{initial ? "Rediger innhold" : "Nytt innhold"}</h1>
         </div>
         <div className="flex items-center gap-2 sm:ml-auto [&>*]:flex-1 sm:[&>*]:flex-none">
           <Button variant="outline" size="sm" onClick={() => handleSave(false)} disabled={saving}>
-            <Save className="w-3.5 h-3.5 mr-1.5" /> Lagre utkast
+            {saving ? <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" /> : <Save className="w-3.5 h-3.5 mr-1.5" />} Lagre utkast
           </Button>
           <Button size="sm" onClick={() => handleSave(true)} disabled={saving} style={{ backgroundColor: "var(--brand-primary)" }}>
-            <Send className="w-3.5 h-3.5 mr-1.5" /> Publiser
+            {saving ? <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" /> : <Send className="w-3.5 h-3.5 mr-1.5" />} Publiser
           </Button>
         </div>
       </div>
+
+      <ConfirmDialog
+        open={leaveConfirm}
+        onOpenChange={setLeaveConfirm}
+        title="Forkaste endringer?"
+        description="Du har ulagrede endringer som går tapt hvis du forlater siden."
+        confirmLabel="Forkast endringer"
+        cancelLabel="Bli på siden"
+        destructive
+        onConfirm={() => router.push(listHref)}
+      />
 
       {/* Type — first choice, full width on top */}
       {typeOptions.length > 1 && (
@@ -1032,12 +1087,15 @@ export function ContentForm({ stores, tags, initial, audience = "intern", defaul
             <div className="space-y-2">
               <div>
                 <label className="block text-[10px] text-zinc-400 mb-1">Fra{periodRequired && <span className="text-red-500"> *</span>}</label>
-                <input type="date" value={validFrom} onChange={(e) => setValidFrom(e.target.value)} className={`w-full text-xs border rounded-lg px-2.5 py-1.5 focus:outline-none ${periodRequired && !validFrom ? "border-red-300" : "border-zinc-200"}`} />
+                <input type="date" value={validFrom} onChange={(e) => setValidFrom(e.target.value)} className={`w-full text-xs border rounded-lg px-2.5 py-1.5 focus:outline-none ${(periodRequired && !validFrom) || periodInverted ? "border-red-300" : "border-zinc-200"}`} />
               </div>
               <div>
                 <label className="block text-[10px] text-zinc-400 mb-1">Til{periodRequired && <span className="text-red-500"> *</span>}</label>
-                <input type="date" value={validTo} onChange={(e) => setValidTo(e.target.value)} className={`w-full text-xs border rounded-lg px-2.5 py-1.5 focus:outline-none ${periodRequired && !validTo ? "border-red-300" : "border-zinc-200"}`} />
+                <input type="date" value={validTo} onChange={(e) => setValidTo(e.target.value)} className={`w-full text-xs border rounded-lg px-2.5 py-1.5 focus:outline-none ${(periodRequired && !validTo) || periodInverted ? "border-red-300" : "border-zinc-200"}`} />
               </div>
+              {periodInverted && (
+                <p className="text-[11px] text-red-600">«Fra» er etter «Til» — bytt om datoene.</p>
+              )}
             </div>
           </section>
         </div>
@@ -1090,11 +1148,12 @@ export function ContentForm({ stores, tags, initial, audience = "intern", defaul
             </Button>
             <Button
               size="sm"
-              onClick={() => { setConfirmPublish(false); doSave(true) }}
+              onClick={() => doSave(true)}
               disabled={saving || reach === 0}
               style={{ backgroundColor: "var(--brand-primary)" }}
             >
-              <Send className="w-3.5 h-3.5 mr-1.5" /> Bekreft publisering
+              {saving ? <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" /> : <Send className="w-3.5 h-3.5 mr-1.5" />}
+              {saving ? "Publiserer…" : "Bekreft publisering"}
             </Button>
           </DialogFooter>
         </DialogContent>
