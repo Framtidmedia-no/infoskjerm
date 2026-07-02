@@ -14,6 +14,7 @@ import {
 } from "lucide-react"
 import { ReorderDialog } from "./reorder-dialog"
 import { TYPE_META, isVideoUrl } from "./content-thumb"
+import { ConfirmDialog } from "@/components/admin/confirm-dialog"
 
 export interface ContentRow {
   id: string
@@ -102,6 +103,7 @@ export function ContentListClient({ items, stores, tags, newHref = "/admin/innho
   const [page, setPage] = useState(0)
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [bulkBusy, setBulkBusy] = useState(false)
+  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false)
   const [showReorder, setShowReorder] = useState(false)
 
   function closeMenu() { setMenuId(null); setConfirmId(null) }
@@ -255,11 +257,28 @@ export function ContentListClient({ items, stores, tags, newHref = "/admin/innho
             <button disabled={bulkBusy} onClick={() => runBulk(() => bulkSetStatus([...selected], true), "Publisert")} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-white/10 hover:bg-white/20 disabled:opacity-50"><Send className="w-3.5 h-3.5" /> Publiser</button>
             <button disabled={bulkBusy} onClick={() => runBulk(() => bulkSetStatus([...selected], false), "Avpublisert")} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-white/10 hover:bg-white/20 disabled:opacity-50"><EyeOff className="w-3.5 h-3.5" /> Avpubliser</button>
             <button disabled={bulkBusy} onClick={() => runBulk(() => bulkShiftPeriod([...selected], 7), "Forlenget +7 dager")} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-white/10 hover:bg-white/20 disabled:opacity-50"><CalendarPlus className="w-3.5 h-3.5" /> Forleng +7d</button>
-            <button disabled={bulkBusy} onClick={() => runBulk(() => bulkDeleteContent([...selected]), "Slettet")} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-red-600 hover:bg-red-700 disabled:opacity-50"><Trash2 className="w-3.5 h-3.5" /> Slett</button>
+            <button disabled={bulkBusy} onClick={() => setBulkDeleteOpen(true)} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-red-600 hover:bg-red-700 disabled:opacity-50"><Trash2 className="w-3.5 h-3.5" /> Slett</button>
             <button disabled={bulkBusy} onClick={() => setSelected(new Set())} className="p-1.5 rounded-lg hover:bg-white/10" aria-label="Avbryt valg"><X className="w-4 h-4" /></button>
           </div>
         </div>
       )}
+
+      <ConfirmDialog
+        open={bulkDeleteOpen}
+        onOpenChange={setBulkDeleteOpen}
+        title={`Slett ${selected.size} oppslag`}
+        description={(() => {
+          const titles = items
+            .filter((it) => selected.has(it.id))
+            .map((it) => it.title || "Uten tittel")
+          const shown = titles.slice(0, 5).join(", ")
+          const rest = titles.length > 5 ? ` og ${titles.length - 5} til` : ""
+          return `${shown}${rest} slettes permanent. Dette kan ikke angres.`
+        })()}
+        confirmLabel={`Slett ${selected.size} oppslag`}
+        destructive
+        onConfirm={() => runBulk(() => bulkDeleteContent([...selected]), "Slettet")}
+      />
 
       {visible.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-zinc-300 bg-white p-12 text-center">
@@ -292,7 +311,7 @@ export function ContentListClient({ items, stores, tags, newHref = "/admin/innho
                   onClick={() => toggleSelect(item.id)}
                   aria-label={selected.has(item.id) ? "Fjern fra valg" : "Velg"}
                   aria-pressed={selected.has(item.id)}
-                  className={`absolute top-2.5 left-2.5 z-10 w-6 h-6 rounded-md border flex items-center justify-center transition-all ${selected.has(item.id) ? "bg-zinc-900 border-zinc-900 text-white" : "bg-white/85 border-zinc-300 text-transparent pointer-fine:opacity-0 pointer-fine:group-hover:opacity-100 focus:opacity-100"}`}
+                  className={`absolute top-2.5 left-2.5 z-10 w-6 h-6 rounded-md border flex items-center justify-center transition-all ${selected.has(item.id) ? "bg-zinc-900 border-zinc-900 text-white" : "bg-white/85 border-zinc-300 text-transparent opacity-0 group-hover:opacity-100 focus:opacity-100 pointer-coarse:opacity-100"}`}
                 >
                   <Check className="w-4 h-4" />
                 </button>
@@ -357,7 +376,7 @@ export function ContentListClient({ items, stores, tags, newHref = "/admin/innho
                 </div>
 
                 <div className="absolute bottom-2.5 right-2.5">
-                  <button onClick={() => setMenuId(menuId === item.id ? null : item.id)} aria-label="Handlinger" aria-haspopup="menu" className="w-7 h-7 rounded-lg flex items-center justify-center text-zinc-400 bg-white/80 hover:bg-zinc-100 hover:text-zinc-700 pointer-fine:opacity-0 pointer-fine:group-hover:opacity-100 focus:opacity-100 transition-opacity">
+                  <button onClick={() => setMenuId(menuId === item.id ? null : item.id)} aria-label="Handlinger" aria-haspopup="menu" className="w-7 h-7 rounded-lg flex items-center justify-center text-zinc-400 bg-white/80 hover:bg-zinc-100 hover:text-zinc-700 opacity-0 group-hover:opacity-100 focus:opacity-100 pointer-coarse:opacity-100 transition-opacity">
                     <MoreVertical className="w-4 h-4" />
                   </button>
                   {menuId === item.id && (

@@ -1,6 +1,7 @@
 import QRCode from "qrcode"
 import { htmlToBlocks, type LiveItem } from "@/lib/content/live"
 import { isPdfUrl, isPptUrl } from "@/lib/content/deck"
+import { parseSeasonKey } from "@/lib/season"
 import { CampaignCard } from "@/app/widget/kampanje/campaign-card"
 import { getBaseUrl } from "@/lib/base-url"
 import { TilbudRotator } from "@/app/widget/tilbud/tilbud-rotator"
@@ -28,7 +29,10 @@ interface PreviewData {
   imageUrls?: string[]
   /** Pre-rendered deck page images (kundeavis-PDF/PowerPoint) — vist 1:1 som på skjerm. */
   pages?: string[]
-  imageMode?: "plakat" | "bakgrunn" | "liten"
+  /** Fullskjerm: valgfri stående variant + dens forhåndsrendrede sider. */
+  portraitUrl?: string | null
+  portraitPages?: string[]
+  imageMode?: "plakat" | "bakgrunn" | "liten" | "fullskjerm"
   offer?: LiveItem["offer"]
   campaign?: LiveItem["campaign"]
   avdeling?: string | null
@@ -52,8 +56,10 @@ function normalizeUrl(raw: string): string {
   return /^https?:\/\//i.test(v) ? v : `https://${v}`
 }
 
-export default async function PreviewWidgetPage({ searchParams }: { searchParams: Promise<{ d?: string; o?: string }> }) {
-  const { d, o } = await searchParams
+export default async function PreviewWidgetPage({ searchParams }: { searchParams: Promise<{ d?: string; o?: string; season?: string }> }) {
+  const { d, o, season } = await searchParams
+  // Sesong-override kun i preview (?season=jul) — ekte widgets styres av tenant-flagget.
+  const seasonOverride = parseSeasonKey(season)
   let data: PreviewData = {}
   try {
     if (d) data = JSON.parse(Buffer.from(d, "base64url").toString("utf-8"))
@@ -70,12 +76,14 @@ export default async function PreviewWidgetPage({ searchParams }: { searchParams
     blocks: htmlToBlocks(data.bodyHtml ?? ""),
     imageUrl: firstImage,
     imageUrls,
-    imageMode: data.imageMode === "plakat" ? "plakat" : data.imageMode === "liten" ? "liten" : "bakgrunn",
+    imageMode: data.imageMode === "plakat" ? "plakat" : data.imageMode === "liten" ? "liten" : data.imageMode === "fullskjerm" ? "fullskjerm" : "bakgrunn",
     isPdf: isPdfUrl(firstImage),
     isPpt: isPptUrl(firstImage),
     isVideo: /\.(mp4|webm|mov|m4v)$/.test((firstImage ?? "").toLowerCase().split("?")[0]),
     durationSeconds: null,
     pages: Array.isArray(data.pages) ? data.pages.filter(Boolean) : [],
+    portraitUrl: data.portraitUrl ?? null,
+    portraitPages: Array.isArray(data.portraitPages) ? data.portraitPages.filter(Boolean) : [],
     validFrom: data.validFrom || null,
     validTo: data.validTo || null,
     author: "",
@@ -165,7 +173,7 @@ export default async function PreviewWidgetPage({ searchParams }: { searchParams
   }
 
   if (!landscape && tilbudCanRender) {
-    return <TilbudRotator items={[item]} ticker={[]} storeName={null} chain={chain} qr={qr} />
+    return <TilbudRotator items={[item]} ticker={[]} storeName={null} chain={chain} qr={qr} season={seasonOverride} />
   }
-  return <NewsRotator items={[item]} qr={qr} ticker={[]} portrait={!landscape} />
+  return <NewsRotator items={[item]} qr={qr} ticker={[]} portrait={!landscape} chain={chain} season={seasonOverride} />
 }

@@ -12,9 +12,16 @@ import {
   SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy, arrayMove, useSortable,
 } from "@dnd-kit/sortable"
 import { CSS } from "@dnd-kit/utilities"
-import { GripVertical, X, Clock } from "lucide-react"
+import { GripVertical, Clock } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { ContentThumb } from "./content-thumb"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 
 function SortableRow({ item, index, onDuration }: { item: ContentRow; index: number; onDuration: (id: string, secs: number | null) => void }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: item.id })
@@ -103,19 +110,26 @@ export function ReorderDialog({ items, onClose }: { items: ContentRow[]; onClose
     }
   }
 
+  // Endret rekkefølge eller spilletid som ikke er lagret ennå — da skal ikke
+  // et utilsiktet klikk utenfor kaste arbeidet.
+  const dirty = ordered.some(
+    (o, i) => o.id !== items[i]?.id || o.durationSeconds !== items[i]?.durationSeconds
+  )
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/40" onClick={onClose} />
-      <div className="relative z-10 w-full max-w-lg max-h-[85vh] flex flex-col rounded-2xl bg-white shadow-2xl">
-        <div className="flex items-start justify-between px-5 py-4 border-b border-zinc-100">
-          <div>
-            <h2 className="text-base font-bold text-zinc-900">Rekkefølge på skjerm</h2>
-            <p className="text-xs text-zinc-400 mt-0.5">Dra for å endre rekkefølgen, og sett spilletid per element. Øverst vises først.</p>
-          </div>
-          <button onClick={onClose} className="p-1.5 -mr-1 rounded-lg text-zinc-400 hover:bg-zinc-100 flex-shrink-0" aria-label="Lukk">
-            <X className="w-5 h-5" />
-          </button>
-        </div>
+    <Dialog open onOpenChange={(next) => !next && onClose()}>
+      <DialogContent
+        className="max-w-lg gap-0 p-0 max-h-[85vh] flex flex-col"
+        onInteractOutside={(e) => {
+          if (dirty) e.preventDefault()
+        }}
+      >
+        <DialogHeader className="px-5 py-4 border-b border-zinc-100 text-left">
+          <DialogTitle className="text-base font-bold text-zinc-900">Rekkefølge på skjerm</DialogTitle>
+          <DialogDescription className="text-xs text-zinc-400">
+            Dra for å endre rekkefølgen, og sett spilletid per element. Øverst vises først.
+          </DialogDescription>
+        </DialogHeader>
 
         <div className="flex-1 overflow-y-auto p-3">
           {ordered.length === 0 ? (
@@ -144,7 +158,7 @@ export function ReorderDialog({ items, onClose }: { items: ContentRow[]; onClose
             {saving ? "Lagrer…" : "Lagre"}
           </button>
         </div>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   )
 }

@@ -1,9 +1,12 @@
-import type { ContentType } from "./actions"
-
-/** Who the content is for: customer screens (kunde) vs staff/back-room (intern). */
-export type Audience = "kunde" | "intern"
-
-/** Default audience for a type when not explicitly set (offers → customer). */
-export function audienceForType(type: ContentType): Audience {
-  return type === "slide" ? "kunde" : "intern"
-}
+/**
+ * Re-eksport av flate-logikken som nå bor i @/lib/content/audience, så både
+ * widgets (lib) og admin (app) deler samme «kunde/intern/begge»-regler uten at
+ * lib trenger å importere fra app-laget.
+ */
+export {
+  audienceForType,
+  storedAudienceOf,
+  audienceMatches,
+  type Audience,
+  type StoredAudience,
+} from "@/lib/content/audience"

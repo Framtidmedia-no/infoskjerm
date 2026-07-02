@@ -1,7 +1,8 @@
 "use client"
 
-import { useMemo, useState, useTransition } from "react"
-import { useRouter } from "next/navigation"
+import { useEffect, useMemo, useState, useTransition } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
+import { toast } from "sonner"
 import { Search, Store as StoreIcon, X, SlidersHorizontal } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { StoreCard } from "./store-card"
@@ -12,6 +13,8 @@ import { withAlpha } from "./types"
 interface StoresBoardProps {
   chains: BoardChain[]
   allTags: BoardTag[]
+  /** Streames fra serveren — boardet rendres uten å vente på Xibo. null = feilet. */
+  screenCountsPromise: Promise<Record<string, number> | null>
 }
 
 function buildTagMap(chains: BoardChain[]): Record<string, BoardTag[]> {
@@ -24,13 +27,48 @@ function buildTagMap(chains: BoardChain[]): Record<string, BoardTag[]> {
   return map
 }
 
-export function StoresBoard({ chains, allTags }: StoresBoardProps) {
+export function StoresBoard({ chains, allTags, screenCountsPromise }: StoresBoardProps) {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [, startTransition] = useTransition()
 
-  const [search, setSearch] = useState("")
-  const [activeTagIds, setActiveTagIds] = useState<Set<string>>(new Set())
-  const [activeChain, setActiveChain] = useState<string>("all")
+  // undefined = laster fortsatt, null = Xibo-kallet feilet, ellers id → antall.
+  const [screenCounts, setScreenCounts] = useState<Record<string, number> | null | undefined>(undefined)
+  useEffect(() => {
+    let active = true
+    screenCountsPromise.then((counts) => {
+      if (active) setScreenCounts(counts)
+    })
+    return () => {
+      active = false
+    }
+  }, [screenCountsPromise])
+
+  // Per kort: undefined = laster, null = ukjent (Xibo nede), tall = fasit.
+  const countFor = (storeId: string): number | null | undefined =>
+    screenCounts === undefined ? undefined : screenCounts === null ? null : (screenCounts[storeId] ?? 0)
+
+  // Filtrene bor i URL-en så de overlever «Åpne» → tilbake og kan deles.
+  const [search, setSearch] = useState(searchParams.get("q") ?? "")
+  const [activeTagIds, setActiveTagIds] = useState<Set<string>>(
+    () => new Set((searchParams.get("tags") ?? "").split(",").filter(Boolean))
+  )
+  const [activeChain, setActiveChain] = useState<string>(searchParams.get("kjede") ?? "all")
+
+  // Shallow URL-sync (History API) — router.replace ville re-rendret hele
+  // server-siden på hvert tastetrykk.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const q = search.trim()
+    if (q) params.set("q", q)
+    else params.delete("q")
+    if (activeChain !== "all") params.set("kjede", activeChain)
+    else params.delete("kjede")
+    if (activeTagIds.size > 0) params.set("tags", Array.from(activeTagIds).join(","))
+    else params.delete("tags")
+    const qs = params.toString()
+    window.history.replaceState(null, "", qs ? `?${qs}` : window.location.pathname)
+  }, [search, activeTagIds, activeChain])
 
   // Optimistic, local-first tag state so assigning feels instant.
   const [tagsByStore, setTagsByStore] = useState<Record<string, BoardTag[]>>(() => buildTagMap(chains))
@@ -55,8 +93,10 @@ export function StoresBoard({ chains, allTags }: StoresBoardProps) {
     })
     startTransition(async () => {
       const res = await toggleStoreTag(storeId, tag.id, assign)
+      // router.refresh() resynker den optimistiske staten mot serversannheten —
+      // ved feil «spretter» taggen tilbake, og toasten forklarer hvorfor.
       router.refresh()
-      if (!res.ok) console.error("Kunne ikke oppdatere tag:", res.error)
+      if (!res.ok) toast.error(`Kunne ikke oppdatere tag: ${res.error ?? "ukjent feil"}`)
     })
   }
 
@@ -127,6 +167,15 @@ export function StoresBoard({ chains, allTags }: StoresBoardProps) {
     () => chains.map((c) => ({ id: c.id, name: c.name, color: c.color })),
     [chains]
   )
+
+  // Antall enheter per tag — vises i slette-bekreftelsen i tag-popoveren.
+  const tagUsage = useMemo(() => {
+    const usage: Record<string, number> = {}
+    for (const list of Object.values(tagsByStore)) {
+      for (const tag of list) usage[tag.id] = (usage[tag.id] ?? 0) + 1
+    }
+    return usage
+  }, [tagsByStore])
 
   const filteredChains = useMemo(() => {
     const q = search.trim().toLowerCase()
@@ -297,10 +346,12 @@ export function StoresBoard({ chains, allTags }: StoresBoardProps) {
                   <StoreCard
                     key={store.id}
                     store={store}
+                    screenCount={countFor(store.id)}
                     chainName={chain.name}
                     chainColor={chain.color}
                     tags={tagsByStore[store.id] ?? store.tags}
                     allTags={tags}
+                    tagUsage={tagUsage}
                     onToggleTag={(tag, assign) => handleToggleTag(store.id, tag, assign)}
                     onCreateTag={(name, color) => handleCreateTag(store.id, name, color)}
                     onUpdateTag={handleUpdateTag}

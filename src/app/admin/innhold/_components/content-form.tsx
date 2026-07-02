@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
 import { RichTextEditor } from "@/components/admin/rich-text-editor"
 import { MediaUploader } from "@/components/admin/media-uploader"
@@ -10,6 +10,7 @@ import { saveContent, type ContentType, type TargetMode, type ImageMode, type Au
 import { lookupSparProduct } from "../spar-actions"
 import type { OfferFields, CampaignFields } from "@/lib/content/live"
 import { LivePreview } from "./live-preview"
+import { FullscreenMediaFields } from "./fullscreen-media-fields"
 import { useTenantConfig, useTenantFeature } from "@/components/admin/tenant-config-provider"
 import { toast } from "sonner"
 import {
@@ -18,8 +19,10 @@ import {
 import {
   Newspaper, Trophy, ImageIcon, Briefcase, PartyPopper, Megaphone, FileText, Ticket, MapPin, LayoutGrid, Plus, Trash2, QrCode,
   Store as StoreIcon, Tag, Globe, X, Calendar, Save, Send, ChevronLeft, Image as ImageLucide, Maximize2, PanelRight, CalendarOff, Search,
+  Loader2,
 } from "lucide-react"
 import Link from "next/link"
+import { ConfirmDialog } from "@/components/admin/confirm-dialog"
 
 export interface StoreOption { id: string; name: string; chain: string | null; city: string | null; tagIds?: string[] }
 export interface TagOption { id: string; name: string; color: string | null }
@@ -60,6 +63,10 @@ export interface ContentInitial {
   /** Pre-rendered deck page images (kundeavis-PDF/PowerPoint) — for a true preview. */
   pages?: string[]
   imageMode?: ImageMode
+  /** Fullskjerm: stående variant + dens rendrede sider + «vis på begge flater». */
+  portraitUrl?: string | null
+  portraitPages?: string[]
+  audienceBoth?: boolean
   targetMode: TargetMode
   storeIds: string[]
   tagIds: string[]
@@ -170,7 +177,10 @@ export function ContentForm({ stores, tags, initial, audience = "intern", defaul
   const [contactPerson, setContactPerson] = useState(initial?.contactPerson ?? "")
   const [applyUrl, setApplyUrl] = useState(initial?.applyUrl ?? "")
   const [imageMode, setImageMode] = useState<ImageMode>(initial?.imageMode ?? "bakgrunn")
-  const [offerMode, setOfferMode] = useState<"struktur" | "kampanje" | "plakat" | "klubb">(initial?.offer ? "struktur" : initial?.campaign ? "kampanje" : initial?.klubb ? "klubb" : "plakat")
+  const [offerMode, setOfferMode] = useState<"struktur" | "kampanje" | "plakat" | "klubb" | "fullskjerm">(initial?.imageMode === "fullskjerm" ? "fullskjerm" : initial?.offer ? "struktur" : initial?.campaign ? "kampanje" : initial?.klubb ? "klubb" : "plakat")
+  // Fullskjerm-modus: stående variant + «vis på begge flater» (audience «begge»).
+  const [fsPortraitUrl, setFsPortraitUrl] = useState<string | null>(initial?.portraitUrl ?? null)
+  const [showBoth, setShowBoth] = useState(initial?.audienceBoth ?? false)
   const [offer, setOffer] = useState<OfferFields>(initial?.offer ?? EMPTY_OFFER)
   const [campaign, setCampaign] = useState<CampaignFields>(initial?.campaign ?? EMPTY_CAMPAIGN)
   const [klubb, setKlubb] = useState(initial?.klubb ?? { headline: "Bli medlem – det er gratis", subtext: "Medlemspriser, bonus og ukens beste tilbud." })
@@ -193,15 +203,17 @@ export function ContentForm({ stores, tags, initial, audience = "intern", defaul
   const isOfferStruktur = type === "slide" && offerMode === "struktur"
   const isKlubb = type === "slide" && offerMode === "klubb"
   const isCampaign = type === "slide" && offerMode === "kampanje"
+  const isFullscreen = type === "slide" && offerMode === "fullskjerm"
   // Utseende (bakgrunn/skrift) på alt innhold unntatt ticker, strukturert
-  // tilbudskort, kampanjekort og kundeklubb (de har egne, faste design).
-  const usesColors = type !== "ticker" && !isOfferStruktur && !isKlubb && !isCampaign
+  // tilbudskort, kampanjekort, kundeklubb og fullskjerm (egne/faste design).
+  const usesColors = type !== "ticker" && !isOfferStruktur && !isKlubb && !isCampaign && !isFullscreen
   // Kundeklubb styres per butikk (Butikker → butikk → Kundeklubb), ikke som
   // innholdselement — så ingen «klubb»-modus her.
-  const OFFER_MODES: { k: "struktur" | "kampanje" | "plakat" | "klubb"; label: string }[] = [
+  const OFFER_MODES: { k: "struktur" | "kampanje" | "plakat" | "klubb" | "fullskjerm"; label: string }[] = [
     ...(canOfferCards ? [{ k: "struktur" as const, label: "Bygg tilbudskort" }] : []),
     ...(canCampaignCards ? [{ k: "kampanje" as const, label: "Bygg kampanjekort" }] : []),
     { k: "plakat", label: "Last opp plakat / PDF" },
+    { k: "fullskjerm", label: "Fullskjerm (kun media)" },
   ]
   const setCa = (k: "category" | "subtext" | "price" | "accent", v: string) => setCampaign((p) => ({ ...p, [k]: v.trim() || null }))
 
@@ -307,14 +319,18 @@ export function ContentForm({ stores, tags, initial, audience = "intern", defaul
   }
 
   const usesImage = IMAGE_TYPES.includes(type) && !isKlubb
-  const usesBody = type !== "ticker" && type !== "gallery" && !isOfferStruktur && !isKlubb
+  const usesBody = type !== "ticker" && type !== "gallery" && !isOfferStruktur && !isKlubb && !isFullscreen
   // Standard visningstid per type/flate (matcher rotatorene). Vises til brukeren
   // så de vet hva «tom = standard» faktisk betyr.
-  const defaultDuration = audience === "kunde"
-    ? 18
-    : ({ stats: 12, job: 20, competition: 16, invitation: 18, gallery: 30 } as Record<string, number>)[type] ?? 16
-  // Tilbud/annonser må alltid ha en gyldig periode (fra + til).
-  const periodRequired = type === "slide" && !isKlubb
+  const fsDeck = isFullscreen && (isDeckUrl(imageUrls[0]) || isDeckUrl(fsPortraitUrl))
+  const defaultDuration = fsDeck
+    ? 8
+    : audience === "kunde"
+      ? 18
+      : ({ stats: 12, job: 20, competition: 16, invitation: 18, gallery: 30 } as Record<string, number>)[type] ?? 16
+  // Tilbud/annonser må alltid ha en gyldig periode (fra + til). Fullskjerm-media
+  // kan være evigvarende (f.eks. merkevarefilm) — periode er valgfri der.
+  const periodRequired = type === "slide" && !isKlubb && !isFullscreen
   const isDeck = isDeckUrl(imageUrls[0])
   const MAX_IMAGES = 4
   const isMulti = imageUrls.length >= 2
@@ -342,6 +358,30 @@ export function ContentForm({ stores, tags, initial, audience = "intern", defaul
     return Array.from(new Set([...prev, ...ids]))
   })
 
+  // Dirty-vern ved redigering: autosave-utkastet gjelder kun NYTT innhold, så
+  // eksisterende oppslag trenger eksplisitt vern mot å miste endringer.
+  const formSnapshot = JSON.stringify({
+    title, type, bodyHtml, imageUrls, offer, campaign, klubb, invitation, gallery,
+    offerMode, avdeling, imageMode, validFrom, validTo, targetMode, storeIds, tagIds,
+    bgColor, textColor, contactPerson, applyUrl, durationSeconds, fsPortraitUrl,
+  })
+  const initialSnapshot = useRef<string | null>(null)
+  if (initialSnapshot.current === null) initialSnapshot.current = formSnapshot
+  const dirty = !!initial && formSnapshot !== initialSnapshot.current
+  const [leaveConfirm, setLeaveConfirm] = useState(false)
+
+  useEffect(() => {
+    if (!dirty || saving) return
+    function onBeforeUnload(e: BeforeUnloadEvent) {
+      e.preventDefault()
+      e.returnValue = ""
+    }
+    window.addEventListener("beforeunload", onBeforeUnload)
+    return () => window.removeEventListener("beforeunload", onBeforeUnload)
+  }, [dirty, saving])
+
+  const periodInverted = !!validFrom && !!validTo && validFrom > validTo
+
   function handleSave(publish: boolean) {
     if (isOfferStruktur) {
       if (!offer.varenavn.trim()) { toast.error("Skriv et varenavn"); return }
@@ -350,12 +390,18 @@ export function ContentForm({ stores, tags, initial, audience = "intern", defaul
     } else if (isKlubb) {
       if (!klubb.headline.trim()) { toast.error("Skriv en overskrift"); return }
     } else if (!title.trim()) { toast.error("Skriv en tittel først"); return }
+    if (isFullscreen && !imageUrls[0] && !fsPortraitUrl) { toast.error("Last opp minst én fil (liggende eller stående)"); return }
     if (!targetChosen) { toast.error("Velg hvor innholdet skal vises (Vis på)"); return }
     if (targetMode === "stores" && storeIds.length === 0) { toast.error(`Velg minst én ${unitLabel.toLowerCase()}`); return }
     if (targetMode === "tags" && tagIds.length === 0) { toast.error("Velg minst én tagg"); return }
     // Tilbud/annonser MÅ ha både fra- og til-dato — de skal aldri gå evig.
     if (publish && periodRequired && (!validFrom || !validTo)) {
       toast.error("Tilbud må ha både fra- og til-dato")
+      return
+    }
+    // Snudd periode ville publisert innhold som aldri vises på skjermen.
+    if (periodInverted) {
+      toast.error("Gyldighetsperioden er snudd — «Fra» må være før «Til»")
       return
     }
     // Publisering krever bekreftelse — vis nøyaktig hvilke enheter det treffer.
@@ -368,8 +414,12 @@ export function ContentForm({ stores, tags, initial, audience = "intern", defaul
     const res = await saveContent(
       {
         title: isKlubb ? klubb.headline.trim() : isOfferStruktur ? offer.varenavn.trim() : isCampaign ? campaign.headline.trim() : title,
-        type, audience, bodyHtml: usesBody ? bodyHtml : "", imageUrl: usesImage ? imageUrls[0] ?? null : null,
+        type,
+        // Fullskjerm kan vises på begge flater med ett element (audience «begge»).
+        audience: isFullscreen && showBoth ? "begge" : audience,
+        bodyHtml: usesBody ? bodyHtml : "", imageUrl: usesImage ? imageUrls[0] ?? null : null,
         imageUrls: usesImage ? imageUrls : [],
+        portraitUrl: isFullscreen ? fsPortraitUrl : null,
         offer: isOfferStruktur ? offer : null,
         campaign: isCampaign ? campaign : null,
         klubb: isKlubb ? klubb : null,
@@ -382,7 +432,7 @@ export function ContentForm({ stores, tags, initial, audience = "intern", defaul
         } : null,
         avdeling,
         // 2+ images always render full-page (side by side), so force plakat-style.
-        imageMode: usesImage ? (type === "slide" || isMulti ? "plakat" : imageMode) : "bakgrunn",
+        imageMode: usesImage ? (isFullscreen ? "fullskjerm" : type === "slide" || isMulti ? "plakat" : imageMode) : "bakgrunn",
         targetMode, storeIds, tagIds,
         validFrom: validFrom || null, validTo: validTo || null, publish,
         contactPerson: type === "job" ? contactPerson || null : null,
@@ -396,9 +446,12 @@ export function ContentForm({ stores, tags, initial, audience = "intern", defaul
     setSaving(false)
     if (res.ok) {
       if (draftKey) { try { localStorage.removeItem(draftKey) } catch {} }
+      // Nullstill dirty-vernet så navigeringen bort ikke utløser advarsel.
+      initialSnapshot.current = formSnapshot
       toast.success(publish ? "Publisert" : "Lagret som utkast")
       router.push(listHref)
     } else {
+      setConfirmPublish(false)
       toast.error(res.error ?? "Noe gikk galt")
     }
   }
@@ -414,7 +467,9 @@ export function ContentForm({ stores, tags, initial, audience = "intern", defaul
     // Vis ferdig-renderte deck-sider i previewen så lenge kildefila er den samme
     // (bytter redaktøren fil, forkastes de gamle sidene — de rendres på nytt).
     pages: isDeck && initial?.pages && initial.pages.length > 0 && imageUrls[0] === (initial.imageUrls?.[0] ?? initial.imageUrl) ? initial.pages : [],
-    imageMode: (type === "slide" || isMulti ? "plakat" : imageMode) as ImageMode,
+    portraitUrl: isFullscreen ? fsPortraitUrl : null,
+    portraitPages: isFullscreen && initial?.portraitPages?.length && fsPortraitUrl === initial?.portraitUrl ? initial.portraitPages : [],
+    imageMode: (isFullscreen ? "fullskjerm" : type === "slide" || isMulti ? "plakat" : imageMode) as ImageMode,
     offer: isOfferStruktur ? offer : null,
     campaign: isCampaign ? campaign : null,
     invitation: type === "invitation" ? invitation : null,
@@ -433,18 +488,39 @@ export function ContentForm({ stores, tags, initial, audience = "intern", defaul
       {/* Topbar */}
       <div className="flex flex-col gap-2 px-4 py-2.5 bg-white border-b border-zinc-200 sticky top-0 z-10 sm:flex-row sm:items-center sm:gap-3 sm:px-6 sm:h-14 sm:py-0">
         <div className="flex items-center gap-2 min-w-0">
-          <Link href={listHref} className="p-1.5 -ml-1.5 rounded-lg hover:bg-zinc-100 text-zinc-400 hover:text-zinc-700 shrink-0"><ChevronLeft className="w-4 h-4" /></Link>
+          <Link
+            href={listHref}
+            aria-label="Tilbake til listen"
+            onClick={(e) => {
+              if (dirty) {
+                e.preventDefault()
+                setLeaveConfirm(true)
+              }
+            }}
+            className="p-1.5 -ml-1.5 rounded-lg hover:bg-zinc-100 text-zinc-400 hover:text-zinc-700 shrink-0"
+          ><ChevronLeft className="w-4 h-4" /></Link>
           <h1 className="text-sm font-semibold text-zinc-900 truncate">{initial ? "Rediger innhold" : "Nytt innhold"}</h1>
         </div>
         <div className="flex items-center gap-2 sm:ml-auto [&>*]:flex-1 sm:[&>*]:flex-none">
           <Button variant="outline" size="sm" onClick={() => handleSave(false)} disabled={saving}>
-            <Save className="w-3.5 h-3.5 mr-1.5" /> Lagre utkast
+            {saving ? <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" /> : <Save className="w-3.5 h-3.5 mr-1.5" />} Lagre utkast
           </Button>
           <Button size="sm" onClick={() => handleSave(true)} disabled={saving} style={{ backgroundColor: "var(--brand-primary)" }}>
-            <Send className="w-3.5 h-3.5 mr-1.5" /> Publiser
+            {saving ? <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" /> : <Send className="w-3.5 h-3.5 mr-1.5" />} Publiser
           </Button>
         </div>
       </div>
+
+      <ConfirmDialog
+        open={leaveConfirm}
+        onOpenChange={setLeaveConfirm}
+        title="Forkaste endringer?"
+        description="Du har ulagrede endringer som går tapt hvis du forlater siden."
+        confirmLabel="Forkast endringer"
+        cancelLabel="Bli på siden"
+        destructive
+        onConfirm={() => router.push(listHref)}
+      />
 
       {/* Type — first choice, full width on top */}
       {typeOptions.length > 1 && (
@@ -477,9 +553,10 @@ export function ContentForm({ stores, tags, initial, audience = "intern", defaul
                 type="text"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                placeholder={type === "slide" ? "Tittel på plakaten..." : type === "gallery" ? "Overskrift på galleriet..." : "Tittel på saken..."}
+                placeholder={isFullscreen ? "Internt navn (vises ikke på skjermen)..." : type === "slide" ? "Tittel på plakaten..." : type === "gallery" ? "Overskrift på galleriet..." : "Tittel på saken..."}
                 className="w-full text-2xl font-bold text-zinc-900 bg-transparent border-none focus:outline-none placeholder:text-zinc-300"
               />
+              {isFullscreen && <p className="text-[10px] text-zinc-400 mt-1">Tittelen er kun til admin-lista — den vises aldri på skjermen.</p>}
             </div>
           )}
 
@@ -617,7 +694,19 @@ export function ContentForm({ stores, tags, initial, audience = "intern", defaul
             </div>
           )}
 
-          {usesImage && (
+          {isFullscreen && (
+            <FullscreenMediaFields
+              landscapeUrl={imageUrls[0] ?? null}
+              portraitUrl={fsPortraitUrl}
+              onLandscape={(u) => setImageUrls(u ? [u] : [])}
+              onPortrait={setFsPortraitUrl}
+              showBoth={showBoth}
+              onShowBoth={setShowBoth}
+              surface={audience}
+            />
+          )}
+
+          {usesImage && !isFullscreen && (
             <div>
               <label className="block text-xs font-semibold text-zinc-600 mb-1.5">Bilde / PDF / PowerPoint</label>
               {imageUrls.length > 0 ? (
@@ -641,7 +730,7 @@ export function ContentForm({ stores, tags, initial, audience = "intern", defaul
                             // eslint-disable-next-line @next/next/no-img-element
                             <img src={url} alt="" className={`w-full h-36 ${isMulti || imageMode === "plakat" || imageMode === "liten" ? "object-contain bg-zinc-900" : "object-cover"}`} />
                           )}
-                          <button onClick={() => removeImage(url)} aria-label="Fjern bilde" className="absolute top-2 right-2 w-7 h-7 rounded-full bg-black/60 text-white flex items-center justify-center pointer-fine:opacity-0 pointer-fine:group-hover:opacity-100 focus:opacity-100 transition-opacity">
+                          <button onClick={() => removeImage(url)} aria-label="Fjern bilde" className="absolute top-2 right-2 w-7 h-7 rounded-full bg-black/60 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 focus:opacity-100 pointer-coarse:opacity-100 transition-opacity">
                             <X className="w-4 h-4" />
                           </button>
                         </div>
@@ -980,7 +1069,7 @@ export function ContentForm({ stores, tags, initial, audience = "intern", defaul
                   className="w-24 text-sm border border-zinc-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-zinc-300" />
                 <span className="text-xs text-zinc-500">sekunder</span>
               </div>
-              <p className="text-[10px] text-zinc-400 mt-1.5">Hvor lenge dette vises før skjermen bytter. Tom = standard for denne typen (<strong>{defaultDuration} sek</strong>).</p>
+              <p className="text-[10px] text-zinc-400 mt-1.5">{fsDeck ? <>Sekunder <strong>per side</strong> i dokumentet. Tom = standard (<strong>{defaultDuration} sek per side</strong>).</> : <>Hvor lenge dette vises før skjermen bytter. Tom = standard for denne typen (<strong>{defaultDuration} sek</strong>).</>}</p>
             </section>
           )}
 
@@ -998,12 +1087,15 @@ export function ContentForm({ stores, tags, initial, audience = "intern", defaul
             <div className="space-y-2">
               <div>
                 <label className="block text-[10px] text-zinc-400 mb-1">Fra{periodRequired && <span className="text-red-500"> *</span>}</label>
-                <input type="date" value={validFrom} onChange={(e) => setValidFrom(e.target.value)} className={`w-full text-xs border rounded-lg px-2.5 py-1.5 focus:outline-none ${periodRequired && !validFrom ? "border-red-300" : "border-zinc-200"}`} />
+                <input type="date" value={validFrom} onChange={(e) => setValidFrom(e.target.value)} className={`w-full text-xs border rounded-lg px-2.5 py-1.5 focus:outline-none ${(periodRequired && !validFrom) || periodInverted ? "border-red-300" : "border-zinc-200"}`} />
               </div>
               <div>
                 <label className="block text-[10px] text-zinc-400 mb-1">Til{periodRequired && <span className="text-red-500"> *</span>}</label>
-                <input type="date" value={validTo} onChange={(e) => setValidTo(e.target.value)} className={`w-full text-xs border rounded-lg px-2.5 py-1.5 focus:outline-none ${periodRequired && !validTo ? "border-red-300" : "border-zinc-200"}`} />
+                <input type="date" value={validTo} onChange={(e) => setValidTo(e.target.value)} className={`w-full text-xs border rounded-lg px-2.5 py-1.5 focus:outline-none ${(periodRequired && !validTo) || periodInverted ? "border-red-300" : "border-zinc-200"}`} />
               </div>
+              {periodInverted && (
+                <p className="text-[11px] text-red-600">«Fra» er etter «Til» — bytt om datoene.</p>
+              )}
             </div>
           </section>
         </div>
@@ -1056,11 +1148,12 @@ export function ContentForm({ stores, tags, initial, audience = "intern", defaul
             </Button>
             <Button
               size="sm"
-              onClick={() => { setConfirmPublish(false); doSave(true) }}
+              onClick={() => doSave(true)}
               disabled={saving || reach === 0}
               style={{ backgroundColor: "var(--brand-primary)" }}
             >
-              <Send className="w-3.5 h-3.5 mr-1.5" /> Bekreft publisering
+              {saving ? <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" /> : <Send className="w-3.5 h-3.5 mr-1.5" />}
+              {saving ? "Publiserer…" : "Bekreft publisering"}
             </Button>
           </DialogFooter>
         </DialogContent>
