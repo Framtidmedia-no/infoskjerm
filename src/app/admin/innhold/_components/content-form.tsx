@@ -23,6 +23,7 @@ import {
 } from "lucide-react"
 import Link from "next/link"
 import { ConfirmDialog } from "@/components/admin/confirm-dialog"
+import { PublishMoment } from "@/components/admin/publish-moment"
 
 export interface StoreOption { id: string; name: string; chain: string | null; city: string | null; tagIds?: string[] }
 export interface TagOption { id: string; name: string; color: string | null }
@@ -200,6 +201,7 @@ export function ContentForm({ stores, tags, initial, audience = "intern", defaul
   const [chainF, setChainF] = useState("")
   const [durationSeconds, setDurationSeconds] = useState<string>(initial?.durationSeconds ? String(initial.durationSeconds) : "")
   const [saving, setSaving] = useState(false)
+  const [publishedMoment, setPublishedMoment] = useState(false)
   const [confirmPublish, setConfirmPublish] = useState(false)
 
   const isOfferStruktur = type === "slide" && offerMode === "struktur"
@@ -450,8 +452,14 @@ export function ContentForm({ stores, tags, initial, audience = "intern", defaul
       if (draftKey) { try { localStorage.removeItem(draftKey) } catch {} }
       // Nullstill dirty-vernet så navigeringen bort ikke utløser advarsel.
       initialSnapshot.current = formSnapshot
-      toast.success(publish ? "Publisert" : "Lagret som utkast")
-      router.push(listHref)
+      if (publish) {
+        // Belønningsøyeblikket viser suksessen; navigerer videre når det er ferdig.
+        setConfirmPublish(false)
+        setPublishedMoment(true)
+      } else {
+        toast.success("Lagret som utkast")
+        router.push(listHref)
+      }
     } else {
       setConfirmPublish(false)
       toast.error(res.error ?? "Noe gikk galt")
@@ -512,6 +520,8 @@ export function ContentForm({ stores, tags, initial, audience = "intern", defaul
           </Button>
         </div>
       </div>
+
+      <PublishMoment show={publishedMoment} onDone={() => router.push(listHref)} />
 
       <ConfirmDialog
         open={leaveConfirm}

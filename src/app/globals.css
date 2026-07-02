@@ -123,6 +123,18 @@ body {
   animation: fx-rise 0.65s cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
 
+/* Skeleton-shimmer: lys sveip over plassholder-flater mens data hentes */
+@keyframes fx-shimmer {
+  from { background-position: 200% 0; }
+  to { background-position: -200% 0; }
+}
+.skeleton {
+  border-radius: 0.75rem;
+  background: linear-gradient(100deg, #f0f0f2 40%, #fafafa 50%, #f0f0f2 60%);
+  background-size: 200% 100%;
+  animation: fx-shimmer 1.6s linear infinite;
+}
+
 /* Ren fade for tabellrader — transform på <tr> er upålitelig på tvers av nettlesere */
 @keyframes fx-fade {
   from { opacity: 0; }
@@ -208,6 +220,7 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .fx-rise,
   .fx-fade { animation: none; opacity: 1; }
+  .skeleton { animation: none; }
   .fx-drift,
   .fx-drift-slow,
   .fx-twinkle,

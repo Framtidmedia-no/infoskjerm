@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react"
 import { LogIn, FilePlus, FileEdit, Send, EyeOff, Trash2, Copy, CalendarPlus, UserPlus, Shield, Store, Tag, Palette, Monitor, Search, Activity, Zap, Type, Building2 } from "lucide-react"
 import { CountUp } from "@/components/ui/count-up"
+import { EmptyState } from "@/components/ui/empty-state"
 import { Sparkline } from "@/components/ui/sparkline"
 
 export interface LogRow {
@@ -223,21 +224,20 @@ export function LoggClient({ rows, limit, hasMore, initialSearch = "", initialEn
       </div>
 
       {filtered.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-zinc-300 bg-white p-12 text-center">
-          <Activity className="w-10 h-10 text-zinc-300 mx-auto mb-3" />
-          <p className="text-sm font-medium text-zinc-700">
-            {rows.length > 0 ? "Ingen treff med dette filteret" : "Ingen loggføringer ennå"}
-          </p>
-          {rows.length > 0 && (
+        <EmptyState
+          variant={rows.length > 0 ? "kikkert" : "spire"}
+          title={rows.length > 0 ? "Ingen treff med dette filteret" : "Ingen loggføringer ennå"}
+          hint={rows.length > 0 ? "Prøv et annet søkeord eller filter." : "Aktivitet dukker opp her etter hvert som teamet bruker systemet."}
+          action={rows.length > 0 ? (
             <button
               type="button"
               onClick={() => { setSearch(""); setEntity("") }}
-              className="mt-1 text-xs font-medium text-zinc-600 underline-offset-2 hover:underline"
+              className="rounded-full bg-white px-3.5 py-1.5 text-xs font-semibold text-zinc-600 shadow-[0_1px_2px_rgba(16,24,40,0.06)] ring-1 ring-zinc-200 transition-all hover:text-zinc-900 hover:ring-zinc-300"
             >
               Nullstill filtre
             </button>
-          )}
-        </div>
+          ) : undefined}
+        />
       ) : (
         <div className="space-y-5">
           {groups.map((group) => (
