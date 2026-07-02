@@ -47,23 +47,23 @@ function klubbLiveItem(headline: string, subtext: string, cta: string | null): L
   }
 }
 
-export default async function TilbudWidgetPage({ searchParams }: { searchParams: Promise<{ store?: string; avdeling?: string }> }) {
-  const { store, avdeling } = await searchParams
+export default async function TilbudWidgetPage({ searchParams }: { searchParams: Promise<{ store?: string; avdeling?: string; screen?: string }> }) {
+  const { store, avdeling, screen } = await searchParams
   const supabase = createAdminClient()
 
   const [slides, comps, articles, galleries, storeRow, tickerItems, season] = await Promise.all([
-    fetchLiveContent(store ?? null, ["slide"], "kunde", avdeling),
+    fetchLiveContent(store ?? null, ["slide"], "kunde", avdeling, screen),
     // Customer competitions — same flashy module as internal, shown on the screen.
-    fetchLiveContent(store ?? null, ["competition"], "kunde", avdeling),
+    fetchLiveContent(store ?? null, ["competition"], "kunde", avdeling, screen),
     // Customer articles / egenreklame (text + image/video, text-top layout).
-    fetchLiveContent(store ?? null, ["news"], "kunde", avdeling),
+    fetchLiveContent(store ?? null, ["news"], "kunde", avdeling, screen),
     // Galleries (catering/meny) — råflott rotating gallery card with QR.
-    fetchLiveContent(store ?? null, ["gallery"], "kunde", avdeling),
+    fetchLiveContent(store ?? null, ["gallery"], "kunde", avdeling, screen),
     store
       ? supabase.from("stores").select("name, kundeklubb_enabled, kundeklubb_url, kundeklubb_headline, kundeklubb_subtext, kundeklubb_cta, chains(name, logo_url, color, brand_fg)").eq("id", store).maybeSingle()
       : Promise.resolve({ data: null }),
     // Opt-in customer ticker: only kunde-audience tickers targeted to this store.
-    fetchLiveContent(store ?? null, ["ticker"], "kunde"),
+    fetchLiveContent(store ?? null, ["ticker"], "kunde", undefined, screen),
     seasonForStore(store ?? null),
   ])
   // Competitions first (attention-grabbing), then galleries, articles, offers.

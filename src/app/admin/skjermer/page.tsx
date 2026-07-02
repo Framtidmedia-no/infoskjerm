@@ -52,7 +52,7 @@ export default async function SkjermerPage() {
   // Våre screens-rader (enhets-styring: token + flate/avdeling/orientering + xibo-binding).
   const { data: assignRows } = await supabase
     .from("screens")
-    .select("id, token, flate, avdeling, orientation, store_id, xibo_display_id")
+    .select("id, name, token, flate, avdeling, orientation, store_id, xibo_display_id")
     .order("name")
   const rows = (assignRows ?? []) as unknown as (ScreenRowLite & { store_id: string })[]
   const rowsByStore = new Map<string, ScreenRowLite[]>()

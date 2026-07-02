@@ -1,7 +1,7 @@
 import { requireRole } from "@/lib/admin/require-role"
 import { canTargetAllStores } from "@/lib/roles"
 import { ContentForm, type TagOption } from "../../innhold/_components/content-form"
-import { loadStoreOptions } from "../../innhold/store-options"
+import { loadStoreOptions, loadScreenOptions } from "../../innhold/store-options"
 
 export const dynamic = "force-dynamic"
 
@@ -10,8 +10,9 @@ const AUTHOR_ROLES = ["super_admin", "chain_manager", "area_manager", "store_man
 export default async function NewInvitationPage() {
   const { supabase, role, tenantId } = await requireRole([...AUTHOR_ROLES])
 
-  const [storeOptions, { data: tags }] = await Promise.all([
+  const [storeOptions, screenOptions, { data: tags }] = await Promise.all([
     loadStoreOptions(supabase, tenantId),
+    loadScreenOptions(supabase, tenantId),
     supabase.from("tags").select("id, name, color").eq("tenant_id", tenantId).order("name"),
   ])
 
@@ -19,6 +20,7 @@ export default async function NewInvitationPage() {
     <ContentForm
       stores={storeOptions}
       tags={(tags ?? []) as TagOption[]}
+      screens={screenOptions}
       audience="intern"
       defaultType="invitation"
       listHref="/admin/invitasjoner"
