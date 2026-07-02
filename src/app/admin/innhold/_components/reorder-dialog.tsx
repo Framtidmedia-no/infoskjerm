@@ -59,7 +59,7 @@ function SortableRow({ item, index, onDuration }: { item: ContentRow; index: num
           onPointerDown={(e) => e.stopPropagation()}
           placeholder="std"
           aria-label={`Spilletid for ${item.title || "element"}`}
-          className="w-12 rounded-md border border-zinc-200 bg-white px-1.5 py-1 text-center text-zinc-700 tabular-nums focus:outline-none focus:ring-1 focus:ring-zinc-300"
+          className="w-12 rounded-md border border-zinc-200 bg-white px-1.5 py-1 text-center text-zinc-700 tabular-nums transition-colors focus:border-[var(--brand-primary)] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)]/15"
         />
         <span>s</span>
       </label>

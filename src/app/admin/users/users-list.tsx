@@ -164,10 +164,10 @@ export function UsersList({ rows, allStores, canAdminister, unitLabelPlural }: U
                     const cfg = roleConfig[row.role] ?? roleConfig.store_employee
                     const Icon = cfg.icon
                     return (
-                      <tr key={row.id} className="border-b border-zinc-50 hover:bg-zinc-50/50">
+                      <tr key={row.id} className="border-b border-zinc-50 transition-colors hover:bg-zinc-50/70">
                         <td className="px-5 py-3.5">
                           <div className="flex items-center gap-3">
-                            <div className={`w-8 h-8 rounded-full ${cfg.bg} flex items-center justify-center`}>
+                            <div className={`w-8 h-8 rounded-full ${cfg.bg} flex items-center justify-center ring-1 ring-inset ring-black/5`}>
                               <span className={`text-xs font-bold ${cfg.color}`}>{row.displayName.charAt(0).toUpperCase()}</span>
                             </div>
                             <div>
@@ -210,7 +210,7 @@ export function UsersList({ rows, allStores, canAdminister, unitLabelPlural }: U
                 <Card key={row.id}>
                   <CardContent className="p-4 space-y-3">
                     <div className="flex items-start gap-3">
-                      <div className={`w-10 h-10 rounded-full ${cfg.bg} flex items-center justify-center flex-shrink-0`}>
+                      <div className={`w-10 h-10 rounded-full ${cfg.bg} flex items-center justify-center flex-shrink-0 ring-1 ring-inset ring-black/5`}>
                         <span className={`text-sm font-bold ${cfg.color}`}>{row.displayName.charAt(0).toUpperCase()}</span>
                       </div>
                       <div className="min-w-0 flex-1">

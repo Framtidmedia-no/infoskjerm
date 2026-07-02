@@ -92,7 +92,7 @@ export function AvdelingerCard() {
                 value={a.label}
                 onChange={(e) => setLabel(i, e.target.value)}
                 placeholder="Ny avdeling…"
-                className="flex-1 rounded-lg border border-zinc-200 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-zinc-300"
+                className="flex-1 rounded-lg border border-zinc-200 px-3 py-2 text-sm transition-colors focus:border-[var(--brand-primary)] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)]/15"
               />
               <button type="button" onClick={() => remove(i)} title="Fjern" className="p-2 rounded-lg text-zinc-400 hover:bg-red-50 hover:text-red-600">
                 <Trash2 className="w-4 h-4" />
