@@ -37,9 +37,10 @@ export function SoftTh({ className, children }: { className?: string; children?:
   )
 }
 
-export function SoftTr({ className, children, index }: { className?: string; children: React.ReactNode; index?: number }) {
+export function SoftTr({ className, children, index, onClick }: { className?: string; children: React.ReactNode; index?: number; onClick?: React.MouseEventHandler<HTMLTableRowElement> }) {
   return (
     <tr
+      onClick={onClick}
       className={cn(
         "group",
         "[&>td]:border-y [&>td]:border-zinc-200/70 [&>td]:bg-white [&>td]:transition-colors",
