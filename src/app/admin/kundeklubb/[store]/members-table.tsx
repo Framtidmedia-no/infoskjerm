@@ -44,8 +44,8 @@ export function MembersTable({ rows, storeName }: { rows: MemberRow[]; storeName
       ) : (
         <div className="max-h-[480px] overflow-y-auto">
           <table className="w-full text-left text-sm">
-            <thead className="sticky top-0 bg-white">
-              <tr className="border-b border-zinc-100 bg-zinc-50/60 text-[11px] uppercase tracking-wide text-zinc-400">
+            <thead className="sticky top-0">
+              <tr className="bg-zinc-900 text-left text-[11px] font-semibold uppercase tracking-widest text-zinc-400">
                 <th className="px-4 py-2.5 font-semibold">Navn</th>
                 <th className="px-4 py-2.5 font-semibold">Kontakt</th>
                 <th className="px-4 py-2.5 font-semibold">Påmeldt</th>

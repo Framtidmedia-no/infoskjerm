@@ -305,7 +305,7 @@ export function BulkImport({ stores, tags, initialLinks = "", canTargetAll = tru
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
             <div className="lg:col-span-2 rounded-2xl border border-zinc-200/80 bg-white shadow-[0_1px_2px_rgba(16,24,40,0.04)] overflow-hidden overflow-x-auto">
               <table className="w-full min-w-[540px] text-sm">
-                <thead className="bg-zinc-50/60 text-zinc-400 text-[11px] uppercase tracking-wide">
+                <thead className="bg-zinc-900 text-zinc-400 text-[11px] font-semibold uppercase tracking-widest">
                   <tr>
                     <th className="text-left font-semibold px-3 py-2 w-8"></th>
                     <th className="text-left font-semibold px-3 py-2">Varenavn</th>
