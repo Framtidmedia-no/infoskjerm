@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import { Monitor, Wrench, Copy, Check, Plus, Trash2, Loader2, Smartphone, Wifi, WifiOff } from "lucide-react"
@@ -96,6 +96,66 @@ function AssignmentControls({
   )
 }
 
+/**
+ * Levende tvilling: nedskalert iframe av selve spillersiden (/skjerm/<token>)
+ * i en mørk bezel med brand-glød — kortet viser hva skjermen faktisk spiller
+ * akkurat nå. Lazy (IntersectionObserver) så lister med mange skjermer ikke
+ * laster alle spillerne samtidig.
+ */
+function ScreenTwin({ token, orientation, online }: { token: string; orientation: Orientation; online: boolean | null }) {
+  const wrapRef = useRef<HTMLDivElement>(null)
+  const [scale, setScale] = useState(0)
+  const [visible, setVisible] = useState(false)
+  const portrait = orientation === "portrait"
+  const W = portrait ? 1080 : 1920
+  const H = portrait ? 1920 : 1080
+
+  useEffect(() => {
+    const el = wrapRef.current
+    if (!el) return
+    const ro = new ResizeObserver(() => setScale(el.clientWidth / W))
+    ro.observe(el)
+    const io = new IntersectionObserver((entries) => {
+      if (entries[0].isIntersecting) setVisible(true)
+    }, { rootMargin: "150px" })
+    io.observe(el)
+    return () => { ro.disconnect(); io.disconnect() }
+  }, [W])
+
+  return (
+    <div className="relative overflow-hidden rounded-xl bg-[#0b101c] p-2.5">
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-x-0 top-0 h-16"
+        style={{ background: "radial-gradient(70% 100% at 50% 0%, color-mix(in oklab, var(--brand-primary) 20%, transparent), transparent 75%)" }}
+      />
+      <div
+        ref={wrapRef}
+        className={`relative mx-auto overflow-hidden rounded-lg bg-black ring-1 ring-white/10 ${portrait ? "w-[118px]" : "w-full"}`}
+        style={{ aspectRatio: portrait ? "9 / 16" : "16 / 9", boxShadow: "0 0 44px -12px color-mix(in oklab, var(--brand-primary) 55%, transparent)" }}
+      >
+        {visible && scale > 0 && (
+          <iframe
+            title="Direkte forhåndsvisning av skjermen"
+            src={`/skjerm/${token}`}
+            scrolling="no"
+            tabIndex={-1}
+            aria-hidden
+            className="pointer-events-none absolute left-0 top-0 border-0"
+            style={{ width: W, height: H, transform: `scale(${scale})`, transformOrigin: "top left" }}
+          />
+        )}
+      </div>
+      {online != null && (
+        <span className={`absolute right-2 top-2 inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${online ? "bg-emerald-500/15 text-emerald-300 ring-1 ring-inset ring-emerald-400/30" : "bg-white/10 text-zinc-400 ring-1 ring-inset ring-white/15"}`}>
+          <span className={`h-1.5 w-1.5 rounded-full ${online ? "animate-pulse bg-emerald-400" : "bg-zinc-500"}`} />
+          {online ? "Direkte" : "Frakoblet"}
+        </span>
+      )}
+    </div>
+  )
+}
+
 function PiUrl({ origin, token }: { origin: string; token: string }) {
   const [copied, setCopied] = useState(false)
   const url = `${origin}/skjerm/${token}`
@@ -164,6 +224,7 @@ function DisplayCard({
         onChange={apply}
       />
 
+      {token && <ScreenTwin token={token} orientation={value.orientation} online={display.online} />}
       {token
         ? <PiUrl origin={origin} token={token} />
         : <p className="text-[11px] text-zinc-400">Velg flate/avdeling for å ta denne skjermen i bruk — da får den sin URL.</p>}
@@ -232,6 +293,7 @@ function KioskCard({
         onChange={apply}
       />
 
+      <ScreenTwin token={row.token} orientation={value.orientation} online={null} />
       <PiUrl origin={origin} token={row.token} />
     </div>
   )
