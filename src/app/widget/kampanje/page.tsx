@@ -1,6 +1,7 @@
 import QRCode from "qrcode"
 import { fetchLiveContent, type LiveItem } from "@/lib/content/live"
 import { createAdminClient } from "@/lib/supabase/server"
+import { seasonForStore } from "@/lib/tenant/store-features"
 import { KampanjeRotator } from "./kampanje-rotator"
 import type { ChainBrand } from "@/app/widget/tilbud/offer-card"
 
@@ -30,7 +31,7 @@ export default async function KampanjeWidgetPage({ searchParams }: { searchParam
   const { store, avdeling } = await searchParams
   const supabase = createAdminClient()
 
-  const [slides, comps, galleries, articles, storeRow] = await Promise.all([
+  const [slides, comps, galleries, articles, storeRow, season] = await Promise.all([
     fetchLiveContent(store ?? null, ["slide"], "kunde", avdeling),
     fetchLiveContent(store ?? null, ["competition"], "kunde", avdeling),
     fetchLiveContent(store ?? null, ["gallery"], "kunde", avdeling),
@@ -38,6 +39,7 @@ export default async function KampanjeWidgetPage({ searchParams }: { searchParam
     store
       ? supabase.from("stores").select("chains(name, logo_url, color, brand_fg)").eq("id", store).maybeSingle()
       : Promise.resolve({ data: null }),
+    seasonForStore(store ?? null),
   ])
 
   // Kampanjekort/plakater først, så konkurranse, galleri og artikler.
@@ -71,5 +73,5 @@ export default async function KampanjeWidgetPage({ searchParams }: { searchParam
     ? { name: chainRow.name, logoUrl: chainRow.logo_url, color: chainRow.color, brandFg: chainRow.brand_fg }
     : null
 
-  return <KampanjeRotator items={items} chain={chain} qr={qr} />
+  return <KampanjeRotator items={items} chain={chain} qr={qr} season={season} />
 }

@@ -23,6 +23,8 @@ export const TENANT_FEATURES = {
   campaignCards: "Kampanjekort (liggende)",
   /** KPI-dashboard + drift-synk («Oppdater KPI nå») — kun kjeder med Drift-integrasjon (Gange-Rolv). */
   kpi: "KPI-dashboard (drift-synk)",
+  /** Sesongatmosfære på skjermflatene (jul-snø, 17. mai-konfetti, sommertone) — «Levende skjerm». */
+  seasonThemes: "Sesongtemaer på skjerm",
 } as const
 
 export type TenantFeature = keyof typeof TENANT_FEATURES

@@ -2,6 +2,7 @@ import QRCode from "qrcode"
 import { fetchLiveContent, type LiveItem } from "@/lib/content/live"
 import { createAdminClient } from "@/lib/supabase/server"
 import { getBaseUrl } from "@/lib/base-url"
+import { seasonForStore } from "@/lib/tenant/store-features"
 import { TilbudRotator } from "./tilbud-rotator"
 import type { ChainBrand } from "./offer-card"
 
@@ -50,7 +51,7 @@ export default async function TilbudWidgetPage({ searchParams }: { searchParams:
   const { store, avdeling } = await searchParams
   const supabase = createAdminClient()
 
-  const [slides, comps, articles, galleries, storeRow, tickerItems] = await Promise.all([
+  const [slides, comps, articles, galleries, storeRow, tickerItems, season] = await Promise.all([
     fetchLiveContent(store ?? null, ["slide"], "kunde", avdeling),
     // Customer competitions — same flashy module as internal, shown on the screen.
     fetchLiveContent(store ?? null, ["competition"], "kunde", avdeling),
@@ -63,6 +64,7 @@ export default async function TilbudWidgetPage({ searchParams }: { searchParams:
       : Promise.resolve({ data: null }),
     // Opt-in customer ticker: only kunde-audience tickers targeted to this store.
     fetchLiveContent(store ?? null, ["ticker"], "kunde"),
+    seasonForStore(store ?? null),
   ])
   // Competitions first (attention-grabbing), then galleries, articles, offers.
   const items = [...(comps as LiveItem[]), ...(galleries as LiveItem[]), ...(articles as LiveItem[]), ...(slides as LiveItem[])]
@@ -107,5 +109,5 @@ export default async function TilbudWidgetPage({ searchParams }: { searchParams:
     : null
 
   // Customer ticker only when explicitly created for these screens (opt-in).
-  return <TilbudRotator items={items} ticker={ticker} storeName={storeName} chain={chain} qr={qr} />
+  return <TilbudRotator items={items} ticker={ticker} storeName={storeName} chain={chain} qr={qr} season={season} />
 }

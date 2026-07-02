@@ -47,6 +47,17 @@ export const KEYFRAMES = `@keyframes wFloat{0%,100%{transform:translateY(0)}50%{
 /** Standard «reveal»-animasjon for et korts hovedinnhold. */
 export const RISE = "wRise .7s cubic-bezier(.16,1,.3,1) both"
 
+/** Hex (#rgb/#rrggbb) → rgba() med gitt alpha. Ugyldig farge → grønn fallback,
+ *  aldri undefined-styling (kjedefarger kommer fra DB og kan være hva som helst). */
+export function hexAlpha(hex: string, alpha: number): string {
+  const m = hex.trim().match(/^#?([0-9a-f]{3}|[0-9a-f]{6})$/i)
+  if (!m) return `rgba(22,163,74,${alpha})`
+  let h = m[1]
+  if (h.length === 3) h = h.split("").map((c) => c + c).join("")
+  const n = parseInt(h, 16)
+  return `rgba(${(n >> 16) & 255},${(n >> 8) & 255},${n & 255},${alpha})`
+}
+
 /** Diskré lys-sveip-lag (legg som absolutt posisjonert div i et kort). */
 export const shineLayer = {
   position: "absolute" as const,
