@@ -107,7 +107,16 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       <PwaManager />
       <QuickCapture />
       <BiometricLock />
-      <Toaster richColors position="bottom-right" />
+      <Toaster
+        richColors
+        position="bottom-right"
+        toastOptions={{
+          classNames: {
+            toast: "!rounded-2xl !border-zinc-200/70 !shadow-[0_16px_44px_-16px_rgba(16,24,40,0.28)]",
+            title: "!font-semibold",
+          },
+        }}
+      />
       </TenantConfigProvider>
     </ChainThemeProvider>
   )

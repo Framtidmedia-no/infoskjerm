@@ -4,6 +4,7 @@ import { Fragment, useMemo, useState } from "react"
 import { Search, Shield, Building2, LayoutGrid, UserCircle, Network, X, ChevronDown } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Card, CardContent } from "@/components/ui/card"
+import { EmptyState } from "@/components/ui/empty-state"
 import { SoftTable, SoftTd, SoftTh, SoftThead, SoftTr } from "@/components/ui/soft-table"
 import { UserDeleteButton } from "./user-delete-button"
 import { UserRoleSelect } from "./user-role-select"
@@ -130,26 +131,23 @@ export function UsersList({ rows, allStores, canAdminister, unitLabelPlural }: U
       </div>
 
       {filtered.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-zinc-300 bg-white p-12 text-center">
-          <UserCircle className="mx-auto mb-3 h-10 w-10 text-zinc-300" />
-          <p className="text-sm font-medium text-zinc-700">
-            {hasFilters ? "Ingen brukere matcher filtrene." : "Ingen brukere ennå"}
-          </p>
-          {hasFilters ? (
+        <EmptyState
+          variant={hasFilters ? "kikkert" : "spire"}
+          title={hasFilters ? "Ingen brukere matcher filtrene" : "Ingen brukere ennå"}
+          hint={hasFilters ? "Prøv et annet søkeord eller rollefilter." : "Inviter en bruker for å komme i gang."}
+          action={hasFilters ? (
             <button
               type="button"
               onClick={() => {
                 setSearch("")
                 setActiveRole("all")
               }}
-              className="mt-1 text-xs font-medium text-zinc-600 underline-offset-2 hover:underline"
+              className="rounded-full bg-white px-3.5 py-1.5 text-xs font-semibold text-zinc-600 shadow-[0_1px_2px_rgba(16,24,40,0.06)] ring-1 ring-zinc-200 transition-all hover:text-zinc-900 hover:ring-zinc-300"
             >
               Nullstill filtre
             </button>
-          ) : (
-            <p className="mt-1 text-xs text-zinc-400">Inviter en bruker for å komme i gang.</p>
-          )}
-        </div>
+          ) : undefined}
+        />
       ) : (
         <>
           {/* Desktop: pillekort-tabell */}

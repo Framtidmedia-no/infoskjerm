@@ -1,6 +1,7 @@
 "use client"
 
 import { Download, Users } from "lucide-react"
+import { EmptyState } from "@/components/ui/empty-state"
 import { SoftTable, SoftTd, SoftTh, SoftThead, SoftTr } from "@/components/ui/soft-table"
 
 export interface MemberRow {
@@ -41,7 +42,7 @@ export function MembersTable({ rows, storeName }: { rows: MemberRow[]; storeName
         )}
       </div>
       {rows.length === 0 ? (
-        <p className="rounded-2xl border border-dashed border-zinc-300 bg-white px-4 py-10 text-center text-sm text-zinc-400">Ingen medlemmer ennå. Når kunder skanner QR-koden på skjermen, dukker de opp her.</p>
+        <EmptyState variant="spire" title="Ingen medlemmer ennå" hint="Når kunder skanner QR-koden på skjermen og melder seg inn, dukker de opp her." />
       ) : (
         <div className="max-h-[520px] overflow-y-auto">
           <SoftTable>

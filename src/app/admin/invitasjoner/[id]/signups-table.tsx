@@ -1,6 +1,7 @@
 "use client"
 
 import { Download, Inbox } from "lucide-react"
+import { EmptyState } from "@/components/ui/empty-state"
 import { SoftTable, SoftTd, SoftTh, SoftThead, SoftTr } from "@/components/ui/soft-table"
 
 export interface SignupRow {
@@ -50,13 +51,7 @@ export function SignupsTable({ rows, eventTitle }: { rows: SignupRow[]; eventTit
   }
 
   if (rows.length === 0) {
-    return (
-      <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-zinc-200 bg-white py-16 text-center">
-        <Inbox className="mb-3 h-8 w-8 text-zinc-300" />
-        <h2 className="text-sm font-bold text-zinc-900">Ingen påmeldinger ennå</h2>
-        <p className="mt-1 max-w-xs text-xs text-zinc-500">Når noen skanner QR-koden på skjermen og melder seg på, dukker de opp her.</p>
-      </div>
-    )
+    return <EmptyState variant="spire" title="Ingen påmeldinger ennå" hint="Når noen skanner QR-koden på skjermen og melder seg på, dukker de opp her." />
   }
 
   return (
