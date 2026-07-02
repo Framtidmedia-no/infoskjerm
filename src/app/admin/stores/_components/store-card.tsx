@@ -2,11 +2,104 @@
 
 import { useState } from "react"
 import Link from "next/link"
-import { Monitor, Mail, Building2, MapPin, Hash, ArrowUpRight, X } from "lucide-react"
+import { Monitor, Mail, Building2, MapPin, Hash, ArrowUpRight, X, Clock, ChevronDown, PenLine } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { TagPopover } from "./tag-popover"
 import type { BoardStore, BoardTag } from "./types"
 import { withAlpha } from "./types"
+import {
+  DAY_KEYS,
+  hasConfiguredHours,
+  osloClock,
+  resolveDesiredPower,
+  type DayKey,
+  type OpeningHours,
+} from "@/lib/power/schedule"
+
+const DAY_SHORT: Record<DayKey, string> = {
+  mon: "Man", tue: "Tir", wed: "Ons", thu: "Tor", fri: "Fre", sat: "Lør", sun: "Søn",
+}
+
+function transitionLabel(date: Date): string {
+  const time = new Intl.DateTimeFormat("nb-NO", { timeZone: "Europe/Oslo", hour: "2-digit", minute: "2-digit" }).format(date)
+  const dayFmt = new Intl.DateTimeFormat("nb-NO", { timeZone: "Europe/Oslo", weekday: "short" })
+  const sameDay = dayFmt.format(date) === dayFmt.format(new Date()) && date.getTime() - Date.now() < 24 * 60 * 60 * 1000
+  return sameDay ? time : `${dayFmt.format(date)} ${time}`
+}
+
+/**
+ * Kompakt åpningstid-status på butikk-kortet med collapse: satt → «Åpent
+ * nå / Stengt» + hele uka når man åpner; ikke satt → tydelig varsel om at
+ * skjermene står alltid på, med snarvei til å sette tider på butikksiden.
+ */
+function OpeningHoursRow({ storeId, hours }: { storeId: string; hours: OpeningHours | null }) {
+  const [open, setOpen] = useState(false)
+  const configured = hasConfiguredHours(hours)
+  const status = configured
+    ? resolveDesiredPower({ hours, mode: "auto", leadMin: 0, lagMin: 0 })
+    : null
+  const todayKey = DAY_KEYS[osloClock(new Date()).day]
+
+  return (
+    <div className="rounded-xl border border-zinc-100 bg-zinc-50/60">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+        aria-label="Vis åpningstider"
+        className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left transition-colors hover:bg-zinc-100/70"
+      >
+        <Clock className="h-3.5 w-3.5 flex-shrink-0 text-zinc-400" />
+        {status ? (
+          <span className="flex min-w-0 items-center gap-1.5 text-xs font-medium text-zinc-600">
+            <span className={`h-1.5 w-1.5 flex-shrink-0 rounded-full ${status.desired === "on" ? "bg-emerald-500" : "bg-zinc-400"}`} />
+            <span className="truncate">
+              {status.desired === "on"
+                ? `Åpent nå${status.nextTransition ? ` · stenger ${transitionLabel(status.nextTransition)}` : ""}`
+                : `Stengt${status.nextTransition ? ` · åpner ${transitionLabel(status.nextTransition)}` : ""}`}
+            </span>
+          </span>
+        ) : (
+          <span className="flex min-w-0 items-center gap-1.5 text-xs font-medium text-amber-700">
+            <span className="h-1.5 w-1.5 flex-shrink-0 rounded-full bg-amber-500" />
+            <span className="truncate">Åpningstider ikke satt</span>
+          </span>
+        )}
+        <ChevronDown className={`ml-auto h-3.5 w-3.5 flex-shrink-0 text-zinc-400 transition-transform ${open ? "rotate-180" : ""}`} />
+      </button>
+
+      {open && (
+        <div className="border-t border-zinc-100 px-3 py-2">
+          {configured ? (
+            <dl className="space-y-0.5">
+              {DAY_KEYS.map((key) => {
+                const day = hours?.[key]
+                const today = key === todayKey
+                return (
+                  <div key={key} className={`flex items-baseline justify-between rounded px-1 py-0.5 text-[11px] ${today ? "bg-white font-semibold text-zinc-900 ring-1 ring-zinc-200" : "text-zinc-500"}`}>
+                    <dt>{DAY_SHORT[key]}{today ? " · i dag" : ""}</dt>
+                    <dd className="tabular-nums">{day ? `${day.opens}–${day.closes}` : "Stengt"}</dd>
+                  </div>
+                )
+              })}
+            </dl>
+          ) : (
+            <p className="text-[11px] leading-relaxed text-zinc-500">
+              Skjermene står alltid på til åpningstider er satt.
+            </p>
+          )}
+          <Link
+            href={`/admin/stores/${storeId}`}
+            className="mt-2 inline-flex items-center gap-1 text-[11px] font-semibold text-zinc-500 transition-colors hover:text-zinc-900"
+          >
+            <PenLine className="h-3 w-3" />
+            {configured ? "Rediger åpningstider" : "Sett åpningstider"}
+          </Link>
+        </div>
+      )}
+    </div>
+  )
+}
 
 interface StoreCardProps {
   store: BoardStore
@@ -97,6 +190,9 @@ export function StoreCard({
             <Meta icon={<Mail className="h-3 w-3" />} label="E-post" value={store.email} truncate />
           </div>
         </div>
+
+        {/* Åpningstider — status + collapse (driver automatisk TV-av/på) */}
+        <OpeningHoursRow storeId={store.id} hours={store.apningstider} />
 
         {/* Tags */}
         <div className="flex flex-wrap items-center gap-1.5">

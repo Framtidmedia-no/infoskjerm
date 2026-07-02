@@ -201,6 +201,31 @@ export async function setScreenPowerMode(
 }
 
 /**
+ * Justerer kun slingringen (min på før åpning / etter stenging) — rører ikke
+ * modus eller en ev. aktiv manuell overstyring.
+ */
+export async function setScreenPowerMargins(
+  screenId: string,
+  leadMin: number,
+  lagMin: number,
+): Promise<{ ok: boolean; error?: string }> {
+  const { supabase, userId } = await requireRole([...MANAGEMENT_ROLES])
+  const clamp = (v: number) => Math.min(180, Math.max(0, Math.round(Number.isFinite(v) ? v : 15)))
+  const lead = clamp(leadMin)
+  const lag = clamp(lagMin)
+
+  const { error } = await (supabase.from("screens") as unknown as ScreensPowerTable)
+    .update({ power_on_lead_min: lead, power_off_lag_min: lag })
+    .eq("id", screenId)
+  if (error) return { ok: false, error: error.message }
+
+  await logAudit({ userId, action: "screen.power_margins", entityType: "screen", entityId: screenId, summary: `Slingring: på ${lead} min før åpning, av ${lag} min etter stenging`, metadata: { leadMin: lead, lagMin: lag } })
+  revalidatePath("/admin/skjermer", "layout")
+  revalidatePath("/admin/stores", "layout")
+  return { ok: true }
+}
+
+/**
  * Manuell «slå på/av nå». Overstyringen varer til neste planlagte overgang i
  * åpningstidene (beregnet her, med skjermens lead/lag) — uten plan: 12 timer.
  * Pi-agenten plukker den opp på neste poll (≤ 60 s).

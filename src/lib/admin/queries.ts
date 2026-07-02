@@ -215,7 +215,7 @@ export async function getStoresBoard(supabase: AdminSupabase, tenantId: string) 
   const { data: stores } = await supabase
     .from('stores')
     .select(
-      'id, name, company_name, city, email, org_number, gln, chains(id, name, color), screens(id), store_tags(tags(id, name, color))'
+      'id, name, company_name, city, email, org_number, gln, apningstider, chains(id, name, color), screens(id), store_tags(tags(id, name, color))'
     )
     .eq('tenant_id', tenantId)
     .order('name')
@@ -228,6 +228,7 @@ export async function getStoresBoard(supabase: AdminSupabase, tenantId: string) 
     email: string | null
     org_number: string | null
     gln: string | null
+    apningstider: unknown
     chains: EmbeddedChain | EmbeddedChain[] | null
     screens: Array<{ id: string }> | null
     store_tags: Array<{ tags: { id: string; name: string; color: string } | null }> | null
