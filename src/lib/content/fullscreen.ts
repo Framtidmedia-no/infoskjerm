@@ -46,3 +46,15 @@ export function fullscreenItemSeconds(
   }
   return item.durationSeconds ?? fallbackSeconds
 }
+
+/**
+ * Bilde-URLene et plakat-kort skal vise. Forhåndsrendrede dokumentsider (pages)
+ * MÅ foretrekkes foran imageUrls: for kundeavis o.l. inneholder imageUrls selve
+ * PDF-URL-en, som aldri kan lastes i en <img> — resultatet ble fallback-gradient
+ * i stedet for avisen.
+ */
+export function posterImageUrls(item: { imageUrl: string | null; imageUrls: string[]; pages: string[] }): string[] {
+  if (item.pages.length > 0) return item.pages
+  if (item.imageUrls.length > 0) return item.imageUrls
+  return item.imageUrl ? [item.imageUrl] : []
+}
