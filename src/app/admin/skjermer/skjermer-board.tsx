@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import Link from "next/link"
-import { MonitorOff } from "lucide-react"
+import { Monitor, MonitorOff, Store, Wifi, WifiOff } from "lucide-react"
 import { useTenantConfig } from "@/components/admin/tenant-config-provider"
 import { StoreKioskInline } from "./store-kiosk-inline"
 import type { StoreScreen, ScreenRole } from "@/lib/xibo/screens"
@@ -35,12 +35,22 @@ const FILTERS: { key: Filter; label: string }[] = [
   { key: "avdeling", label: "Avdeling" },
 ]
 
-function Stat({ label, value, tone }: { label: string; value: number; tone?: "ok" | "warn" }) {
-  const color = tone === "ok" ? "text-emerald-600" : tone === "warn" && value > 0 ? "text-amber-600" : "text-zinc-900"
+function Stat({ label, value, icon: Icon, iconCls, glow, delay }: { label: string; value: number; icon: React.ElementType; iconCls: string; glow: string | null; delay: number }) {
   return (
-    <div className="rounded-2xl border border-zinc-100 bg-white px-5 py-4">
-      <p className="text-[10px] uppercase tracking-wide text-zinc-400 mb-1">{label}</p>
-      <p className={`text-3xl font-bold tabular-nums ${color}`}>{value}</p>
+    <div
+      className="fx-rise relative flex items-center gap-3.5 overflow-hidden rounded-2xl border border-zinc-200/80 bg-white px-4 py-3.5 shadow-[0_1px_2px_rgba(16,24,40,0.04)]"
+      style={{ animationDelay: `${delay}ms` }}
+    >
+      {glow && (
+        <span aria-hidden className="pointer-events-none absolute -right-6 -top-8 h-20 w-24 rounded-full" style={{ background: `radial-gradient(closest-side, ${glow}, transparent)` }} />
+      )}
+      <span className={`flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl ${iconCls}`}>
+        <Icon className="h-[18px] w-[18px]" />
+      </span>
+      <span className="min-w-0">
+        <span className="font-display block text-2xl font-bold leading-none tracking-tight text-zinc-900 tabular-nums">{value}</span>
+        <span className="mt-1 block truncate text-[11px] text-zinc-500">{label}</span>
+      </span>
     </div>
   )
 }
@@ -73,18 +83,18 @@ export function SkjermerBoard({ stores }: { stores: BoardStore[] }) {
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <Stat label="Skjermer totalt" value={all.length} />
-        <Stat label="Pålogget" value={online} tone="ok" />
-        <Stat label="Frakoblet" value={all.length - online} tone="warn" />
-        <Stat label="Butikker m/ skjerm" value={stores.filter((s) => s.screens.length > 0).length} />
+        <Stat label="Skjermer totalt" value={all.length} icon={Monitor} iconCls="bg-sky-50 text-sky-600" glow="rgba(14,165,233,0.10)" delay={0} />
+        <Stat label="Pålogget" value={online} icon={Wifi} iconCls={online > 0 ? "bg-emerald-50 text-emerald-600" : "bg-zinc-100 text-zinc-400"} glow={online > 0 ? "rgba(16,185,129,0.12)" : null} delay={60} />
+        <Stat label="Frakoblet" value={all.length - online} icon={WifiOff} iconCls={all.length - online > 0 ? "bg-red-50 text-red-500" : "bg-zinc-100 text-zinc-400"} glow={all.length - online > 0 ? "rgba(239,68,68,0.12)" : null} delay={120} />
+        <Stat label="Butikker m/ skjerm" value={stores.filter((s) => s.screens.length > 0).length} icon={Store} iconCls="bg-indigo-50 text-indigo-600" glow={null} delay={180} />
       </div>
 
-      <div className="inline-flex rounded-xl border border-zinc-200 p-1 bg-zinc-50">
+      <div className="fx-rise inline-flex rounded-xl border border-zinc-200 bg-white p-0.5 shadow-[0_1px_2px_rgba(16,24,40,0.05)]" style={{ animationDelay: "220ms" }}>
         {FILTERS.map((f) => (
           <button
             key={f.key}
             onClick={() => setFilter(f.key)}
-            className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all ${filter === f.key ? "bg-zinc-900 text-white" : "text-zinc-600 hover:text-zinc-900"}`}
+            className={`rounded-[10px] px-3.5 py-1.5 text-xs font-semibold transition-all ${filter === f.key ? "bg-zinc-900 text-white shadow-sm" : "text-zinc-500 hover:text-zinc-900"}`}
           >
             {f.label} <span className={filter === f.key ? "text-white/60" : "text-zinc-400"}>{count(f.key)}</span>
           </button>
@@ -100,14 +110,15 @@ export function SkjermerBoard({ stores }: { stores: BoardStore[] }) {
       ) : (
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
         {ordered.map((store) => (
-          <div key={store.id} className="rounded-2xl border border-zinc-100 bg-white overflow-hidden flex flex-col">
+          <div key={store.id} className="group flex flex-col overflow-hidden rounded-2xl border border-zinc-200/80 bg-white shadow-[0_1px_2px_rgba(16,24,40,0.04)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_12px_28px_-14px_rgba(16,24,40,0.22)]">
+            <span aria-hidden className="h-1 w-full flex-shrink-0" style={{ backgroundColor: store.chainColor }} />
             <Link
               href={`/admin/stores/${store.id}`}
               className="flex items-center gap-2.5 px-5 py-4 border-b border-zinc-50 hover:bg-zinc-50/70 transition-colors"
             >
               <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: store.chainColor }} />
               <div className="min-w-0">
-                <h3 className="font-semibold text-zinc-900 truncate leading-tight">{store.name}</h3>
+                <h3 className="font-display truncate font-semibold leading-tight tracking-tight text-zinc-900">{store.name}</h3>
                 <p className="text-[11px] text-zinc-400 truncate">{store.chainName}</p>
               </div>
               <span className="ml-auto text-xs text-zinc-400 flex-shrink-0">
@@ -117,12 +128,15 @@ export function SkjermerBoard({ stores }: { stores: BoardStore[] }) {
 
             <div className="p-3 space-y-2 flex-1">
               {store.shown.length === 0 ? (
-                <p className="text-sm text-zinc-400 italic px-2 py-4 text-center">Ingen skjerm tilkoblet ennå</p>
+                <div className="flex flex-col items-center gap-1.5 rounded-xl border border-dashed border-zinc-200 px-2 py-5 text-center">
+                  <MonitorOff className="h-5 w-5 text-zinc-300" />
+                  <p className="text-xs text-zinc-400">Ingen skjerm tilkoblet ennå</p>
+                </div>
               ) : (
                 store.shown.map((sc) => (
                   <div key={sc.displayId} className="flex items-start gap-3 rounded-xl bg-zinc-50/70 px-3 py-2.5">
                     <span
-                      className={`mt-1.5 h-2.5 w-2.5 rounded-full flex-shrink-0 ${sc.online ? "bg-emerald-500 ring-2 ring-emerald-100" : "bg-zinc-300"}`}
+                      className={`mt-1.5 h-2.5 w-2.5 rounded-full flex-shrink-0 ${sc.online ? "animate-pulse bg-emerald-500 ring-2 ring-emerald-100" : "bg-red-400 ring-2 ring-red-100"}`}
                       title={sc.online ? "Pålogget" : "Frakoblet"}
                     />
                     <div className="min-w-0 flex-1">
