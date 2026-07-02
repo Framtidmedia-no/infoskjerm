@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache"
 import { logAudit } from "@/lib/admin/audit"
 import { requireRole } from "@/lib/admin/require-role"
 import { hashKioskPassword } from "@/lib/kiosk/auth"
+import { DAY_KEYS, parseHm, type OpeningHours } from "@/lib/power/schedule"
 import { GLN_PLACEHOLDER } from "./_components/types"
 
 const STORE_ROLES = ["super_admin", "chain_manager", "area_manager"] as const
@@ -42,6 +43,56 @@ export async function setKioskPassword(
     summary: trimmed ? "Satte kiosk-passord" : "Fjernet kiosk-passord",
   })
   revalidatePath(`/admin/stores/${storeId}`)
+  return { ok: true }
+}
+
+/**
+ * Lagrer butikkens åpningstider ({mon..sun: {opens,closes} | null}). Driver
+ * automatisk TV-av/på for skjermene (power_mode='auto') og kiosk-hvilevisning.
+ * Bred rollegruppe med tenant-verifisering — enhets-admins styrer egen butikk.
+ */
+export async function updateStoreApningstider(
+  storeId: string,
+  hours: OpeningHours,
+): Promise<{ ok: boolean; error?: string }> {
+  const { supabase, userId, tenantId } = await requireRole([...KIOSK_ROLES])
+
+  // Valider og normaliser: kun kjente dager, gyldige HH:MM — alt annet avvises.
+  const clean: OpeningHours = {}
+  for (const key of DAY_KEYS) {
+    const day = hours?.[key]
+    if (day == null) {
+      clean[key] = null
+      continue
+    }
+    if (parseHm(day.opens) == null || parseHm(day.closes) == null) {
+      return { ok: false, error: `Ugyldig klokkeslett for ${key}` }
+    }
+    clean[key] = { opens: day.opens.trim(), closes: day.closes.trim() }
+  }
+
+  const { data: owned } = await supabase.from("stores").select("id").eq("id", storeId).eq("tenant_id", tenantId).maybeSingle()
+  if (!owned) return { ok: false, error: "Ikke funnet" }
+
+  // Ny kolonne (20260702, apningstider) er ikke i den genererte Database-typen → cast.
+  const { error } = await (supabase.from("stores") as unknown as {
+    update: (v: Record<string, unknown>) => { eq: (c: string, v: string) => Promise<{ error: { message: string } | null }> }
+  })
+    .update({ apningstider: clean })
+    .eq("id", storeId)
+  if (error) return { ok: false, error: error.message }
+
+  const openDays = DAY_KEYS.filter((k) => clean[k]).length
+  await logAudit({
+    userId,
+    action: "store.apningstider",
+    entityType: "store",
+    entityId: storeId,
+    summary: `Oppdaterte åpningstider (${openDays} åpne dager)`,
+    metadata: { apningstider: clean },
+  })
+  revalidatePath(`/admin/stores/${storeId}`)
+  revalidatePath("/admin/skjermer", "layout")
   return { ok: true }
 }
 

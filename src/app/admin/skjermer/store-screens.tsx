@@ -6,6 +6,8 @@ import { toast } from "sonner"
 import { Monitor, Wrench, Copy, Check, Plus, Trash2, Loader2, Smartphone, Wifi, WifiOff, PenLine } from "lucide-react"
 import { useTenantConfig } from "@/components/admin/tenant-config-provider"
 import { ConfirmDialog } from "@/components/admin/confirm-dialog"
+import { ScreenPowerControls, type ScreenPowerInfo } from "./power-controls"
+import type { OpeningHours } from "@/lib/power/schedule"
 import {
   assignDisplay, setScreenAssignment, addKiosk, deleteScreenRow, renameScreen,
   type Flate, type Orientation, type Assignment,
@@ -31,7 +33,7 @@ export interface DisplayLite {
   currentLayout: string | null
 }
 
-export interface ScreenRowLite {
+export interface ScreenRowLite extends ScreenPowerInfo {
   id: string
   /** Kallenavn (screens.name) — tenant-redigerbart, vises også i skjermvelgeren ved publisering. */
   name: string
@@ -253,7 +255,7 @@ function PiUrl({ origin, token }: { origin: string; token: string }) {
 }
 
 function DisplayCard({
-  display, row, storeId, origin, avdelingerKunde, avdelingerIntern,
+  display, row, storeId, origin, avdelingerKunde, avdelingerIntern, apningstider,
 }: {
   display: DisplayLite
   row: ScreenRowLite | null
@@ -261,6 +263,7 @@ function DisplayCard({
   origin: string
   avdelingerKunde: AvdList
   avdelingerIntern: AvdList
+  apningstider: OpeningHours | null
 }) {
   const router = useRouter()
   const [saving, setSaving] = useState(false)
@@ -321,6 +324,10 @@ function DisplayCard({
         onChange={apply}
       />
 
+      {row && (
+        <ScreenPowerControls screenId={row.id} power={row} hours={apningstider} isPi />
+      )}
+
       {token && <ScreenTwin token={token} orientation={value.orientation} online={display.online} />}
       {token
         ? <PiUrl origin={origin} token={token} />
@@ -331,12 +338,13 @@ function DisplayCard({
 }
 
 function KioskCard({
-  row, origin, avdelingerKunde, avdelingerIntern,
+  row, origin, avdelingerKunde, avdelingerIntern, apningstider,
 }: {
   row: ScreenRowLite
   origin: string
   avdelingerKunde: AvdList
   avdelingerIntern: AvdList
+  apningstider: OpeningHours | null
 }) {
   const router = useRouter()
   const [saving, setSaving] = useState(false)
@@ -395,6 +403,8 @@ function KioskCard({
         onChange={apply}
       />
 
+      <ScreenPowerControls screenId={row.id} power={row} hours={apningstider} isPi={false} />
+
       <ScreenTwin token={row.token} orientation={value.orientation} online={null} />
       <PiUrl origin={origin} token={row.token} />
     </div>
@@ -402,12 +412,13 @@ function KioskCard({
 }
 
 export function StoreScreens({
-  storeId, displays, rows, origin,
+  storeId, displays, rows, origin, apningstider = null,
 }: {
   storeId: string
   displays: DisplayLite[]
   rows: ScreenRowLite[]
   origin: string
+  apningstider?: OpeningHours | null
 }) {
   const config = useTenantConfig()
   const router = useRouter()
@@ -445,6 +456,7 @@ export function StoreScreens({
           origin={origin}
           avdelingerKunde={config.avdelinger}
           avdelingerIntern={config.avdelingerIntern}
+          apningstider={apningstider}
         />
       ))}
 
@@ -455,6 +467,7 @@ export function StoreScreens({
           origin={origin}
           avdelingerKunde={config.avdelinger}
           avdelingerIntern={config.avdelingerIntern}
+          apningstider={apningstider}
         />
       ))}
 

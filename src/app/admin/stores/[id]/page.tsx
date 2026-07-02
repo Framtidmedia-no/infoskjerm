@@ -9,6 +9,8 @@ import { fetchScreensByStore } from "@/lib/xibo/screens"
 import { KundeklubbSettings } from "../_components/kundeklubb-settings"
 import { KioskSettings } from "./kiosk-settings"
 import { StoreInfoCard } from "./store-info-card"
+import { OpeningHoursCard } from "./opening-hours-card"
+import type { OpeningHours } from "@/lib/power/schedule"
 import { StoreScreens, type DisplayLite, type ScreenRowLite } from "../../skjermer/store-screens"
 import { getTenantConfig } from "@/lib/tenant/config-server"
 import { hasFeature } from "@/lib/tenant/features"
@@ -54,7 +56,7 @@ export default async function StoreDetailPage({ params }: PageProps) {
   // Våre screens-rader (enhets-styring: token + flate/avdeling/orientering + xibo-binding).
   const { data: assignRows } = await supabase
     .from("screens")
-    .select("id, token, flate, avdeling, orientation, xibo_display_id")
+    .select("id, name, token, flate, avdeling, orientation, xibo_display_id, power_mode, power_on_lead_min, power_off_lag_min, power_override, power_override_until, power_state, power_state_at")
     .eq("store_id", store.id)
     .order("name")
   const assignRowsLite = (assignRows ?? []) as unknown as ScreenRowLite[]
@@ -97,6 +99,12 @@ export default async function StoreDetailPage({ params }: PageProps) {
           </p>
         )}
 
+        {/* Åpningstider — driver automatisk TV-av/på + kiosk-hvilevisning */}
+        <OpeningHoursCard
+          storeId={store.id}
+          initial={((store as unknown as { apningstider: OpeningHours | null }).apningstider) ?? null}
+        />
+
         {/* Skjerm-styring: hver tilkoblet Xibo-skjerm + kiosk-skjermer, inline tildeling */}
         <Card>
           <CardContent className="p-5 space-y-4">
@@ -104,7 +112,7 @@ export default async function StoreDetailPage({ params }: PageProps) {
               <Monitor className="w-4 h-4 text-zinc-500" />
               <h2 className="font-semibold text-zinc-900">Skjermer</h2>
             </div>
-            <StoreScreens storeId={store.id} displays={displays} rows={assignRowsLite} origin={origin} />
+            <StoreScreens storeId={store.id} displays={displays} rows={assignRowsLite} origin={origin} apningstider={((store as unknown as { apningstider: OpeningHours | null }).apningstider) ?? null} />
           </CardContent>
         </Card>
 

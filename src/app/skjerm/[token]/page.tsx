@@ -3,7 +3,9 @@ import type { Viewport } from "next"
 import { createAdminClient } from "@/lib/supabase/server"
 import { getTenantConfig } from "@/lib/tenant/config-server"
 import { hasFeature } from "@/lib/tenant/features"
+import { decideForScreenToken } from "@/lib/power/decide"
 import { ScaledScreen } from "./scaled-screen"
+import { SleepGate } from "./sleep-gate"
 
 /**
  * ENHETS-STYRT skjerm-URL. Hver fysiske Raspberry Pi laster ÉN stabil URL
@@ -69,10 +71,21 @@ export default async function SkjermPage({ params }: { params: Promise<{ token: 
   const config = await getTenantConfig(supabase, row.tenant_id)
   const grocery = hasFeature(config.features, "offerCards")
 
+  // Åpningstids-styrt hvile: utenfor åpningstid sover kiosk-skjermer med en
+  // svart visning (SleepGate poller og våkner selv). Beregnes server-side her
+  // så første render aldri blinker innhold på en sovende skjerm.
+  const power = await decideForScreenToken(supabase, token)
+  const initialDesired = power?.decision.desired ?? "on"
+  const initialNext = power?.decision.nextTransition?.toISOString() ?? null
+
   // Widgeten rendres i sin faste design-oppløsning og skaleres uniformt til vinduet
   // (se ScaledScreen). Slik ser laptop-testen identisk ut med Pi-en, og faste
   // pikselstørrelser i malene sprenger aldri i et lite vindu.
   const landscape = row.orientation === "landscape" || row.orientation === "liggende"
 
-  return <ScaledScreen src={widgetFor(row, grocery)} landscape={landscape} />
+  return (
+    <SleepGate token={token} initialDesired={initialDesired} initialNext={initialNext}>
+      <ScaledScreen src={widgetFor(row, grocery)} landscape={landscape} />
+    </SleepGate>
+  )
 }
