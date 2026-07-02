@@ -143,6 +143,10 @@ export async function saveContent(input: ContentInput, id?: string): Promise<Sav
   if (!input.title.trim()) return { ok: false, error: "Tittel er påkrevd" }
   if (input.imageMode === "fullskjerm" && !input.imageUrl && !input.portraitUrl)
     return { ok: false, error: "Last opp minst én fil (liggende eller stående)" }
+  // Snudd gyldighetsperiode ville lagret innhold som aldri vises på skjermen.
+  if (input.validFrom && input.validTo && input.validFrom > input.validTo) {
+    return { ok: false, error: "Gyldighetsperioden er snudd — «Fra» må være før «Til»" }
+  }
 
   const body = buildBody(input)
   const status = input.publish ? "live" : "draft"

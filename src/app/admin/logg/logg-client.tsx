@@ -60,7 +60,7 @@ const ENTITY_FILTERS = [
   { key: "screen", label: "Skjermer" },
 ]
 
-export function LoggClient({ rows }: { rows: LogRow[] }) {
+export function LoggClient({ rows, limit, hasMore }: { rows: LogRow[]; limit: number; hasMore: boolean }) {
   const [search, setSearch] = useState("")
   const [entity, setEntity] = useState("")
 
@@ -94,7 +94,18 @@ export function LoggClient({ rows }: { rows: LogRow[] }) {
       {filtered.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-zinc-300 bg-white p-12 text-center">
           <Activity className="w-10 h-10 text-zinc-300 mx-auto mb-3" />
-          <p className="text-sm font-medium text-zinc-700">Ingen loggføringer ennå</p>
+          <p className="text-sm font-medium text-zinc-700">
+            {rows.length > 0 ? "Ingen treff med dette filteret" : "Ingen loggføringer ennå"}
+          </p>
+          {rows.length > 0 && (
+            <button
+              type="button"
+              onClick={() => { setSearch(""); setEntity("") }}
+              className="mt-1 text-xs font-medium text-zinc-600 underline-offset-2 hover:underline"
+            >
+              Nullstill filtre
+            </button>
+          )}
         </div>
       ) : (
         <ul className="rounded-2xl border border-zinc-200 bg-white divide-y divide-zinc-100 overflow-hidden">
@@ -117,6 +128,14 @@ export function LoggClient({ rows }: { rows: LogRow[] }) {
         </ul>
       )}
       <p className="text-[11px] text-zinc-400">Viser de siste {rows.length} hendelsene.</p>
+      {hasMore && (
+        <a
+          href={`/admin/logg?antall=${limit + 400}`}
+          className="inline-block rounded-lg border border-zinc-200 bg-white px-3 py-1.5 text-xs font-medium text-zinc-600 hover:border-zinc-300 hover:bg-zinc-50"
+        >
+          Vis eldre hendelser
+        </a>
+      )}
     </div>
   )
 }
