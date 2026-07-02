@@ -28,7 +28,7 @@ if (!SB || !KEY) {
 const H = { apikey: KEY, Authorization: `Bearer ${KEY}` }
 
 const items = await (
-  await fetch(`${SB}/rest/v1/content_items?select=id,body&type=eq.slide&status=eq.live&limit=500`, { headers: H })
+  await fetch(`${SB}/rest/v1/content_items?select=id,type,body&type=in.(slide,news)&status=eq.live&limit=500`, { headers: H })
 ).json()
 
 // PDF forhåndsrendres KUN i fullskjerm-modus (ellers vises PDF som iframe i
@@ -40,6 +40,8 @@ const deckKind = (u) => {
 
 const pending = (items || []).reduce((n, x) => {
   const b = x.body || {}
+  // Nyheter prerendres kun i fullskjerm-modus (standard nyhet bruker aldri pages).
+  if (x.type === "news" && b.imageMode !== "fullskjerm") return n
   const variants = [
     { url: b.imageUrl, pages: b.pages, renderedFor: b.pagesFor },
     { url: b.portraitUrl, pages: b.portraitPages, renderedFor: b.portraitPagesFor },

@@ -134,13 +134,15 @@ const deckKind = (u) => {
 // stående portraitUrl for fullskjerm-media). PDF prerendres kun i fullskjerm-
 // modus (plakat-PDF vises fortsatt som iframe, og kundeavis har egen flyt).
 const items = await (
-  await fetch(`${SB}/rest/v1/content_items?select=id,title,body,status&type=eq.slide&status=eq.live&limit=200`, { headers: H })
+  await fetch(`${SB}/rest/v1/content_items?select=id,title,type,body,status&type=in.(slide,news)&status=eq.live&limit=200`, { headers: H })
 ).json()
-console.log(`Sjekker ${(items || []).length} live slide-item(er)`)
+console.log(`Sjekker ${(items || []).length} live slide/nyhet-item(er)`)
 
 let rendered = 0
 for (const item of items || []) {
   const b = item.body || {}
+  // Nyheter prerendres kun i fullskjerm-modus (standard nyhet bruker aldri pages).
+  if (item.type === "news" && b.imageMode !== "fullskjerm") continue
   const variants = [
     { url: b.imageUrl, pages: b.pages, renderedFor: b.pagesFor, pagesKey: "pages", forKey: "pagesFor", suffix: "" },
     { url: b.portraitUrl, pages: b.portraitPages, renderedFor: b.portraitPagesFor, pagesKey: "portraitPages", forKey: "portraitPagesFor", suffix: "-portrait" },
