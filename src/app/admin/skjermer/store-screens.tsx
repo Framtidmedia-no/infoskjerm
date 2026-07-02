@@ -42,7 +42,8 @@ export interface ScreenRowLite {
 
 type AvdList = { key: string; label: string }[]
 
-const SEL = "rounded-lg border border-zinc-200 px-2.5 py-2 text-sm bg-white focus:outline-none focus:ring-1 focus:ring-zinc-300"
+const SEL =
+  "rounded-xl border border-zinc-200 bg-zinc-50 px-2.5 py-2 text-sm font-medium text-zinc-800 shadow-[0_1px_2px_rgba(16,24,40,0.04)] transition-colors focus:border-[var(--brand-primary)] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)]/15 hover:border-zinc-300"
 
 function AssignmentControls({
   value, disabled, avdelingerKunde, avdelingerIntern, onChange,
@@ -141,11 +142,14 @@ function DisplayCard({
   }
 
   return (
-    <div className="rounded-xl border border-zinc-200 p-3 space-y-3">
+    <div className="space-y-3 rounded-2xl border border-zinc-200/80 p-4 shadow-[0_1px_2px_rgba(16,24,40,0.04)] transition-shadow hover:shadow-[0_6px_20px_-8px_rgba(16,24,40,0.14)]">
       <div className="flex items-center gap-2">
-        <Monitor className="w-4 h-4 text-zinc-400 flex-shrink-0" />
-        <span className="text-sm font-medium text-zinc-800 truncate flex-1">{display.name}</span>
-        <span className={`inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full flex-shrink-0 ${display.online ? "bg-emerald-50 text-emerald-700" : "bg-zinc-100 text-zinc-500"}`}>
+        <span className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-zinc-100">
+          <Monitor className="w-4 h-4 text-zinc-500" />
+        </span>
+        <span className="font-display text-sm font-semibold tracking-tight text-zinc-900 truncate flex-1">{display.name}</span>
+        <span className={`inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1 rounded-full flex-shrink-0 ${display.online ? "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200" : "bg-red-50 text-red-500 ring-1 ring-red-100"}`}>
+          <span className={`h-1.5 w-1.5 rounded-full ${display.online ? "animate-pulse bg-emerald-500" : "bg-red-400"}`} />
           {display.online ? <Wifi className="w-3 h-3" /> : <WifiOff className="w-3 h-3" />}
           {display.online ? "Pålogget" : "Frakoblet"}
         </span>
@@ -199,10 +203,12 @@ function KioskCard({
   }
 
   return (
-    <div className="rounded-xl border border-zinc-200 p-3 space-y-3">
+    <div className="space-y-3 rounded-2xl border border-zinc-200/80 p-4 shadow-[0_1px_2px_rgba(16,24,40,0.04)] transition-shadow hover:shadow-[0_6px_20px_-8px_rgba(16,24,40,0.14)]">
       <div className="flex items-center gap-2">
-        {value.flate === "intern" ? <Wrench className="w-4 h-4 text-zinc-400 flex-shrink-0" /> : <Smartphone className="w-4 h-4 text-zinc-400 flex-shrink-0" />}
-        <span className="text-sm font-medium text-zinc-800 truncate flex-1">Kiosk-skjerm {value.flate === "intern" ? "(intern)" : "(kunde)"}</span>
+        <span className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-zinc-100">
+          {value.flate === "intern" ? <Wrench className="w-4 h-4 text-zinc-500" /> : <Smartphone className="w-4 h-4 text-zinc-500" />}
+        </span>
+        <span className="font-display text-sm font-semibold tracking-tight text-zinc-900 truncate flex-1">Kiosk-skjerm {value.flate === "intern" ? "(intern)" : "(kunde)"}</span>
         {saving && <Loader2 className="w-3.5 h-3.5 text-zinc-400 animate-spin" />}
         <button onClick={() => setConfirmOpen(true)} disabled={saving} title="Slett" aria-label="Slett kiosk-skjerm" className="p-1 rounded text-zinc-400 hover:text-red-600 disabled:opacity-50">
           <Trash2 className="w-3.5 h-3.5" />

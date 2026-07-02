@@ -4,6 +4,7 @@ import { PwaManager } from "@/components/pwa/pwa-manager"
 import { QuickCapture } from "@/components/pwa/quick-capture"
 import { BiometricLock } from "@/components/pwa/biometric-lock"
 import { ChainThemeProvider } from "@/components/admin/chain-theme-provider"
+import { PageTransition } from "@/components/admin/page-transition"
 import { TenantConfigProvider } from "@/components/admin/tenant-config-provider"
 import { getTenantConfig } from "@/lib/tenant/config-server"
 import { displayFont } from "@/lib/fonts"
@@ -91,7 +92,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
               </div>
               <MobileNav user={navUser} />
               <main className="md:ml-64 min-h-screen flex flex-col">
-                {children}
+                <PageTransition>{children}</PageTransition>
               </main>
             </>
           )
