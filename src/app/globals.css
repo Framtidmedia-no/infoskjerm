@@ -218,6 +218,7 @@ body {
     radial-gradient(70rem 22rem at 8% -12rem, color-mix(in oklab, var(--brand-primary) 9%, transparent), transparent 70%),
     linear-gradient(180deg, #f4f4f2 0%, #f8f8f6 22rem);
   background-attachment: fixed;
+}
 
 /* ============================================================
    Admin: hypermoderne kontroll-språk. Basislag scopet til
