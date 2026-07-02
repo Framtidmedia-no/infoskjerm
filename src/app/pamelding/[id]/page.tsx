@@ -213,7 +213,16 @@ export default async function PameldingPage({
 
         <div className="fx-rise mt-6" style={{ animationDelay: "220ms" }}>
           {signupOpen ? (
-            <SignupForm contentItemId={item.id} storeId={store ?? null} accent={accent} accentFg={accentFg} deadlineText={deadlineText} />
+            <SignupForm
+              contentItemId={item.id}
+              storeId={store ?? null}
+              accent={accent}
+              accentFg={accentFg}
+              deadlineText={deadlineText}
+              eventTitle={item.title}
+              eventDateIso={inv.eventDate ?? null}
+              eventPlace={inv.eventPlace ?? null}
+            />
           ) : (
             <div className="rounded-3xl bg-white p-8 text-center shadow-xl">
               <h2 className="font-display text-xl font-extrabold text-zinc-900">Påmelding stengt</h2>

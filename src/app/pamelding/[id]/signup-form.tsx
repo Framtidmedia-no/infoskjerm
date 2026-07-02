@@ -3,9 +3,22 @@
 import { useState } from "react"
 import { signupForEvent } from "./actions"
 import { TurnstileWidget } from "@/components/turnstile-widget"
-import { Loader2, Minus, Plus } from "lucide-react"
+import { buildIcs, icsFilename } from "@/lib/ics"
+import { CalendarPlus, Loader2, Minus, Plus } from "lucide-react"
 
 const CONFETTI = ["#f5c451", "#7a2e62", "#38bdf8", "#34d399", "#f472b6", "#f5c451", "#818cf8", "#fb923c"]
+
+function downloadIcs(ics: string, title: string): void {
+  const blob = new Blob([ics], { type: "text/calendar;charset=utf-8" })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement("a")
+  a.href = url
+  a.download = icsFilename(title)
+  document.body.appendChild(a)
+  a.click()
+  a.remove()
+  URL.revokeObjectURL(url)
+}
 
 export function SignupForm({
   contentItemId,
@@ -13,6 +26,9 @@ export function SignupForm({
   accent,
   accentFg,
   deadlineText,
+  eventTitle,
+  eventDateIso,
+  eventPlace,
 }: {
   contentItemId: string
   storeId: string | null
@@ -20,6 +36,10 @@ export function SignupForm({
   /** Lesbar tekstfarge oppå accent (beregnet av siden ut fra luminans). */
   accentFg: string
   deadlineText: string | null
+  /** Arrangement-info til «Legg i kalenderen» (.ics) på suksesskortet. */
+  eventTitle: string
+  eventDateIso: string | null
+  eventPlace: string | null
 }) {
   const [name, setName] = useState("")
   const [department, setDepartment] = useState("")
@@ -79,6 +99,20 @@ export function SignupForm({
         <p className="mt-2 text-zinc-500">
           Vi har registrert påmeldingen din{guests > 0 ? ` med ${guests} i følge` : ""}. Gleder oss til å se deg!
         </p>
+        {eventDateIso && (
+          <button
+            type="button"
+            onClick={() => {
+              const ics = buildIcs({ uid: contentItemId, title: eventTitle, dateIso: eventDateIso, place: eventPlace })
+              if (ics) downloadIcs(ics, eventTitle)
+            }}
+            className="mt-5 inline-flex items-center justify-center gap-2 rounded-xl border-2 bg-white px-5 py-2.5 text-sm font-bold text-zinc-800 transition-all hover:bg-zinc-50 active:scale-[0.985]"
+            style={{ borderColor: accent }}
+          >
+            <CalendarPlus className="h-4 w-4" style={{ color: accent }} />
+            Legg i kalenderen
+          </button>
+        )}
       </div>
     )
   }
