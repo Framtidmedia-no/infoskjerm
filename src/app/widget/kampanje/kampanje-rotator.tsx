@@ -13,7 +13,7 @@ import { formatPeriod, expiryLabel } from "@/app/widget/_shared/period"
 import { KEYFRAMES as TOKEN_KEYFRAMES, hexAlpha } from "@/app/widget/_shared/tokens"
 import type { Season } from "@/lib/season"
 import { FullscreenMedia } from "@/app/widget/_shared/fullscreen-media"
-import { fullscreenItemSeconds } from "@/lib/content/fullscreen"
+import { fullscreenItemSeconds, posterImageUrls } from "@/lib/content/fullscreen"
 
 /**
  * Liggende kunde-kampanjeskjerm (1920×1080). Roterer butikkens kunde-slides:
@@ -22,6 +22,8 @@ import { fullscreenItemSeconds } from "@/lib/content/fullscreen"
  */
 
 const DEFAULT_SECONDS = 9
+// Sekunder per side når et plakat-kort blar gjennom flere bilder (kundeavis).
+const POSTER_PAGE_SECONDS = 7
 
 const frame: CSSProperties = {
   margin: 0,
@@ -41,6 +43,7 @@ const frame: CSSProperties = {
  */
 function LandscapePoster({ item, chain, qrUrl }: { item: LiveItem; chain?: ChainBrand | null; qrUrl?: string }) {
   const [imgOk, setImgOk] = useState(true)
+  const [pageI, setPageI] = useState(0)
   const brand = chain?.color || "#0a5c2b"
   const urgent = expiryLabel(item.validTo)
   const period = urgent ?? formatPeriod(item.validFrom, item.validTo)
@@ -51,9 +54,19 @@ function LandscapePoster({ item, chain, qrUrl }: { item: LiveItem; chain?: Chain
   // et brutt bilde-ikon. Fallback = branded gradient, aldri svart brutt slide.
   const isVideo = item.isVideo && !!item.imageUrl
   const isDoc = (item.isPdf || item.isPpt) && !!item.imageUrl && item.pages.length === 0
-  const imgUrls = item.imageUrls.length ? item.imageUrls : item.pages.length ? item.pages : item.imageUrl ? [item.imageUrl] : []
-  const firstImg = imgUrls[0] ?? null
-  const hasMedia = isVideo || isDoc || (!!firstImg && imgOk)
+  const imgUrls = posterImageUrls(item)
+  // Flersidige items (kundeavis-sider, gallerier) blar gjennom bildene i
+  // mediafeltet — før viste vi kun første URL, og for kundeavis var det PDF-en.
+  useEffect(() => {
+    if (imgUrls.length <= 1) return
+    const id = setTimeout(() => {
+      setPageI((v) => (v + 1) % imgUrls.length)
+      setImgOk(true)
+    }, POSTER_PAGE_SECONDS * 1000)
+    return () => clearTimeout(id)
+  }, [pageI, imgUrls.length])
+  const img = imgUrls.length ? imgUrls[pageI % imgUrls.length] : null
+  const hasMedia = isVideo || isDoc || (!!img && imgOk)
   return (
     <div style={{ position: "absolute", inset: 0, containerType: "size", overflow: "hidden", display: "flex", background: "#0a0a0c" }}>
       {/* Venstre: tekstpanel */}
@@ -84,11 +97,11 @@ function LandscapePoster({ item, chain, qrUrl }: { item: LiveItem; chain?: Chain
           <video src={item.imageUrl!} autoPlay muted loop playsInline style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "contain", background: item.bgColor ?? "#0a0a0c" }} />
         ) : isDoc ? (
           <iframe title={item.title} src={`${item.imageUrl}#toolbar=0&navpanes=0&scrollbar=0&view=Fit`} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", border: "none", background: "#fff" }} />
-        ) : firstImg ? (
+        ) : img ? (
           <>
-            <div style={{ position: "absolute", inset: 0, backgroundImage: `url('${firstImg}')`, backgroundSize: "cover", backgroundPosition: "center", filter: "blur(40px) brightness(.5)", transform: "scale(1.2)", opacity: imgOk ? 1 : 0 }} />
+            <div style={{ position: "absolute", inset: 0, backgroundImage: `url('${img}')`, backgroundSize: "cover", backgroundPosition: "center", filter: "blur(40px) brightness(.5)", transform: "scale(1.2)", opacity: imgOk ? 1 : 0 }} />
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={firstImg} alt="" onError={() => setImgOk(false)} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "contain", opacity: imgOk ? 1 : 0, animation: "grKb 18s ease-in-out infinite alternate" }} />
+            <img key={img} src={img} alt="" onError={() => setImgOk(false)} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "contain", opacity: imgOk ? 1 : 0, animation: "grKb 18s ease-in-out infinite alternate" }} />
           </>
         ) : null}
       </div>
@@ -111,7 +124,10 @@ export function KampanjeRotator({ items, chain = null, qr = {}, season = null }:
   useEffect(() => {
     if (items.length <= 1) return
     const it = items[i % items.length]
-    const secs = (it ? fullscreenItemSeconds(it, false, DEFAULT_SECONDS) : null) ?? it?.durationSeconds ?? DEFAULT_SECONDS
+    // Dokumenter med forhåndsrendrede sider (kundeavis) trenger tid til å bla
+    // gjennom alle sidene — ellers rekker bare første side å vises.
+    const docPages = it && (it.isPdf || it.isPpt) ? it.pages.length : 0
+    const secs = (it ? fullscreenItemSeconds(it, false, DEFAULT_SECONDS) : null) ?? it?.durationSeconds ?? (docPages > 1 ? docPages * POSTER_PAGE_SECONDS : DEFAULT_SECONDS)
     const id = setTimeout(() => setI((v) => (v + 1) % items.length), secs * 1000)
     return () => clearTimeout(id)
   }, [i, items])
