@@ -1,5 +1,6 @@
 import { createAdminClient } from "@/lib/supabase/server"
 import { isPdfUrl, isPptUrl } from "@/lib/content/deck"
+import { storedAudienceOf, audienceMatches } from "@/lib/content/audience"
 
 /**
  * Reads published, in-window content straight from Supabase for the signage
@@ -8,7 +9,7 @@ import { isPdfUrl, isPptUrl } from "@/lib/content/deck"
  * `content_items`, and the screens read it live here.
  */
 
-export type ImageMode = "plakat" | "bakgrunn" | "liten"
+export type ImageMode = "plakat" | "bakgrunn" | "liten" | "fullskjerm"
 
 /** A text block parsed from the authored rich text — rendered as React (no raw HTML). */
 export interface Block {
@@ -74,6 +75,10 @@ export interface LiveItem {
   durationSeconds: number | null
   /** Pre-rendered flyer page images (kundeavis) — shown instead of client PDF. */
   pages: string[]
+  /** Fullskjerm: valgfri stående media-variant (imageUrl = liggende/primær). */
+  portraitUrl: string | null
+  /** Fullskjerm: forhåndsrendrede sider for stående dokument-variant. */
+  portraitPages: string[]
   validFrom: string | null
   validTo: string | null
   author: string
@@ -141,6 +146,8 @@ interface Body {
   bgColor?: string | null
   textColor?: string | null
   pages?: string[]
+  portraitUrl?: string | null
+  portraitPages?: string[]
   klubb?: { headline: string; subtext: string; url?: string; cta?: string } | null
   invitation?: { eventDate?: string | null; eventPlace?: string | null; signupEnabled?: boolean; signupDeadline?: string | null; signupUrl?: string | null } | null
   gallery?: { theme?: string; items?: { name?: string; price?: string | null; priceInfo?: string | null; imageUrl?: string | null }[]; qrUrl?: string | null; qrLabel?: string | null } | null
@@ -209,11 +216,6 @@ export async function fetchLiveContent(storeId: string | null, types: string[], 
   const supabase = createAdminClient()
   const now = Date.now()
 
-  const audienceOf = (type: string, body: { audience?: string } | null): "kunde" | "intern" => {
-    const a = body?.audience
-    return a === "kunde" || a === "intern" ? a : type === "slide" ? "kunde" : "intern"
-  }
-
   // Resolve the store's tenant so ALL content — including "Alle butikker"
   // (target_all) items — is scoped to that store's tenant. Without this a
   // target_all item from tenant A would render on tenant B's screens.
@@ -278,7 +280,7 @@ export async function fetchLiveContent(storeId: string | null, types: string[], 
     (it) =>
       withinWindow(it.valid_from, it.valid_to, now) &&
       targets(it) &&
-      (!audience || audienceOf(it.type, it.body as { audience?: string } | null) === audience) &&
+      (!audience || audienceMatches(storedAudienceOf(it.type, (it.body as { audience?: unknown } | null)?.audience), audience)) &&
       matchAvdeling(it.body as { avdeling?: string } | null)
   )
 
@@ -301,7 +303,9 @@ export async function fetchLiveContent(storeId: string | null, types: string[], 
       blocks: htmlToBlocks(body.html ?? ""),
       imageUrl: firstImage,
       imageUrls,
-      imageMode: body.imageMode === "plakat" ? "plakat" : body.imageMode === "liten" ? "liten" : "bakgrunn",
+      imageMode: body.imageMode === "plakat" ? "plakat" : body.imageMode === "liten" ? "liten" : body.imageMode === "fullskjerm" ? "fullskjerm" : "bakgrunn",
+      portraitUrl: body.portraitUrl ?? null,
+      portraitPages: Array.isArray(body.portraitPages) ? body.portraitPages.filter(Boolean) : [],
       isPdf: isPdfUrl(firstImage),
       isPpt: isPptUrl(firstImage),
       isVideo: /\.(mp4|webm|mov|m4v)$/.test((firstImage ?? "").toLowerCase().split("?")[0]),
