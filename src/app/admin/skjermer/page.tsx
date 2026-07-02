@@ -98,7 +98,7 @@ export default async function SkjermerPage() {
 
   const styringPanel = (
     <div className="space-y-3">
-      <p className="text-sm text-zinc-500">Bind hver tilkoblede skjerm til flate, avdeling og orientering — eller legg til en kiosk-skjerm (telefon/nettbrett). Endringen slår gjennom av seg selv; du rører aldri enheten.</p>
+      <p className="text-sm text-zinc-500">Bind hver tilkoblede skjerm til flate, avdeling og orientering — eller legg til en kiosk-skjerm (telefon/nettbrett). Klikk på skjermnavnet for å gi den et kallenavn (f.eks. «Kassaskjerm») — det brukes når du publiserer til enkeltskjermer. Endringen slår gjennom av seg selv; du rører aldri enheten.</p>
       {managed.length === 0 ? (
         <p className="text-sm text-zinc-400 italic">Ingen tilkoblede skjermer ennå. Koble til en Raspberry Pi i skjermsystemet (den dukker opp her automatisk), eller åpne en butikk for å legge til en kiosk-skjerm.</p>
       ) : (

@@ -99,16 +99,19 @@ function AssignmentControls({
 }
 
 /**
- * Kallenavn med inline-redigering (blyant → input, Enter/blur lagrer, Escape
- * avbryter). Navnet vises også i skjermvelgeren ved publisering, så tenantene
- * kan navngi «Kassaskjerm», «Vindu mot gata» osv. selv. screenId null =
- * skjermen har ingen rad ennå (utildelt Xibo-display) → kun visning.
+ * Kallenavn med inline-redigering. HELE navnet er klikkflaten (ikke bare
+ * blyanten): hover gir bakgrunn + stiplet understrek, og skjermer uten eget
+ * kallenavn viser en tydelig «Gi kallenavn»-pille — så det er selvforklarende
+ * at navnet kan endres, også på touch. Enter/blur lagrer, Escape avbryter.
+ * Navnet brukes i skjermvelgeren ved publisering («Kassaskjerm», «Vindu mot
+ * gata»). screenId null = ingen rad ennå (utildelt Xibo-display) → kun visning.
  */
 function ScreenName({ screenId, name, fallback }: { screenId: string | null; name: string | null; fallback: string }) {
   const router = useRouter()
   const [editing, setEditing] = useState(false)
   const [saving, setSaving] = useState(false)
   const [localName, setLocalName] = useState<string | null>(null)
+  const unnamed = !localName && !name?.trim()
   const shown = localName ?? (name?.trim() || fallback)
   const [draft, setDraft] = useState(shown)
 
@@ -129,33 +132,46 @@ function ScreenName({ screenId, name, fallback }: { screenId: string | null; nam
         autoFocus
         value={draft}
         maxLength={60}
+        placeholder="F.eks. Kassaskjerm"
         onChange={(e) => setDraft(e.target.value)}
         onBlur={save}
         onKeyDown={(e) => {
           if (e.key === "Enter") (e.target as HTMLInputElement).blur()
           if (e.key === "Escape") { setDraft(shown); setEditing(false) }
         }}
-        aria-label="Kallenavn på skjermen"
-        className="flex-1 min-w-0 rounded-lg border border-zinc-300 bg-white px-2 py-1 font-display text-sm font-semibold tracking-tight text-zinc-900 focus:border-[var(--brand-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)]/15"
+        aria-label="Kallenavn på skjermen (Enter lagrer, Escape avbryter)"
+        className="flex-1 min-w-0 rounded-lg border border-zinc-300 bg-white px-2 py-1 font-display text-sm font-semibold tracking-tight text-zinc-900 placeholder:font-sans placeholder:font-normal placeholder:text-zinc-300 focus:border-[var(--brand-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)]/15"
       />
     )
   }
 
+  // Uten rad (utildelt display) er navnet ren visning — ingen klikkflate.
+  if (!screenId) {
+    return <span className="font-display text-sm font-semibold tracking-tight text-zinc-900 truncate flex-1 min-w-0">{shown}</span>
+  }
+
   return (
-    <span className="flex items-center gap-1 flex-1 min-w-0">
-      <span className="font-display text-sm font-semibold tracking-tight text-zinc-900 truncate">{shown}</span>
-      {screenId && (
-        <button
-          onClick={() => { setDraft(shown); setEditing(true) }}
-          disabled={saving}
-          title="Gi skjermen kallenavn"
-          aria-label="Gi skjermen kallenavn"
-          className="p-1 rounded text-zinc-300 hover:text-zinc-600 transition-colors disabled:opacity-50 flex-shrink-0"
-        >
-          {saving ? <Loader2 className="w-3 h-3 animate-spin" /> : <PenLine className="w-3 h-3" />}
-        </button>
+    <button
+      type="button"
+      onClick={() => { setDraft(unnamed ? "" : shown); setEditing(true) }}
+      disabled={saving}
+      title="Klikk for å gi skjermen kallenavn"
+      aria-label={`Gi skjermen «${shown}» kallenavn`}
+      className="group flex items-center gap-1.5 flex-1 min-w-0 text-left rounded-lg -mx-1.5 px-1.5 py-1 transition-colors hover:bg-zinc-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)]/30 disabled:opacity-60"
+    >
+      <span className="font-display text-sm font-semibold tracking-tight text-zinc-900 truncate underline-offset-4 decoration-dashed decoration-zinc-300 group-hover:underline">
+        {shown}
+      </span>
+      {saving ? (
+        <Loader2 className="w-3 h-3 text-zinc-400 animate-spin flex-shrink-0" />
+      ) : unnamed ? (
+        <span className="inline-flex items-center gap-1 rounded-full border border-dashed border-zinc-300 px-2 py-0.5 text-[10px] font-medium text-zinc-400 transition-colors group-hover:border-zinc-400 group-hover:text-zinc-600 flex-shrink-0">
+          <PenLine className="w-2.5 h-2.5" /> Gi kallenavn
+        </span>
+      ) : (
+        <PenLine className="w-3 h-3 text-zinc-400 transition-colors group-hover:text-zinc-700 flex-shrink-0" />
       )}
-    </span>
+    </button>
   )
 }
 
@@ -337,7 +353,12 @@ function KioskCard({
         <span className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-zinc-100">
           {value.flate === "intern" ? <Wrench className="w-4 h-4 text-zinc-500" /> : <Smartphone className="w-4 h-4 text-zinc-500" />}
         </span>
-        <ScreenName screenId={row.id} name={row.name} fallback={`Kiosk-skjerm ${value.flate === "intern" ? "(intern)" : "(kunde)"}`} />
+        {/* Kiosk-defaults («Kiosk kundeskjerm»/«Kiosk internskjerm») regnes som usatt → «Gi kallenavn»-pille. */}
+        <ScreenName
+          screenId={row.id}
+          name={row.name === "Kiosk kundeskjerm" || row.name === "Kiosk internskjerm" ? null : row.name}
+          fallback={`Kiosk-skjerm ${value.flate === "intern" ? "(intern)" : "(kunde)"}`}
+        />
         {saving && <Loader2 className="w-3.5 h-3.5 text-zinc-400 animate-spin" />}
         <button onClick={() => setConfirmOpen(true)} disabled={saving} title="Slett" aria-label="Slett kiosk-skjerm" className="p-1 rounded text-zinc-400 hover:text-red-600 disabled:opacity-50">
           <Trash2 className="w-3.5 h-3.5" />
