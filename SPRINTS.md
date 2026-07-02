@@ -21,6 +21,15 @@ Gjeldende arkitektur (kort): **Xibo = motoren** (displays, display-grupper 1:1 m
 
 ---
 
+## Levende skjerm — motion & atmosfære (2026-07-02) ✅
+Crossfade mellom kort (SceneTransition + preload), kjedefarget levende bakgrunn
+(AmbientBackdrop), kjedefarge-chrome i nyheter/tilbud (erstattet hardkodet grønn — fikser
+grønn ticker på Mobile-skjermer), «Slutter i dag/i morgen»-puls (<48 t), sesongtema bak
+`seasonThemes`-flagget (på for Gange-Rolv). Kun transform/opacity (Pi-gulv).
+Spec: docs/superpowers/specs/2026-07-02-levende-skjerm-design.md
+
+---
+
 ## Sprint 1 — `/admin/cms` fra forhåndsvisning til driftsverktøy ✅ aktiv
 Mål: en butikkleder ser om skjermen lever, hva den viser, og kan tvinge oppdatering — uten å logge inn i Xibo.
 
