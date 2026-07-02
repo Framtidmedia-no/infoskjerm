@@ -59,7 +59,7 @@ function CreateTenantForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="mb-8 rounded-xl border border-zinc-200 bg-white p-4">
+    <form onSubmit={handleSubmit} className="mb-8 rounded-2xl border border-zinc-200/80 bg-white shadow-[0_1px_2px_rgba(16,24,40,0.04)] p-4">
       <h2 className="text-sm font-semibold text-zinc-900 mb-3">Ny tenant</h2>
       <div className="grid gap-3 sm:grid-cols-3">
         <label className="block">
@@ -137,7 +137,7 @@ function TenantCard({ tenant }: { tenant: TenantRow }) {
   }
 
   return (
-    <li className="rounded-xl border border-zinc-100 bg-white px-4 py-3">
+    <li className="rounded-2xl border border-zinc-200/80 bg-white shadow-[0_1px_2px_rgba(16,24,40,0.04)] px-4 py-3">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="min-w-0">
           <div className="flex items-center gap-2">

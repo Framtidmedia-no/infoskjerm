@@ -69,7 +69,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       brandFg={chain?.brand_fg ?? undefined}
     >
       <TenantConfigProvider config={tenantConfig}>
-      <div className={`${displayFont.variable} min-h-screen bg-[var(--background)]`}>
+      <div className={`${displayFont.variable} admin-scope min-h-screen bg-[var(--background)]`}>
         {(() => {
           const navUser = {
             email: user.email ?? "",

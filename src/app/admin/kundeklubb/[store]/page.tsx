@@ -46,7 +46,7 @@ export default async function StoreKundeklubbPage({ params }: { params: Promise<
       <Topbar title={s.name} subtitle="Kundeklubb-innstillinger og medlemmer" backHref="/admin/kundeklubb" />
 
       <div className="flex-1 grid grid-cols-1 gap-6 p-6 max-w-5xl lg:grid-cols-2">
-        <section className="rounded-2xl border border-zinc-200 bg-white p-5">
+        <section className="rounded-2xl border border-zinc-200/80 bg-white shadow-[0_1px_2px_rgba(16,24,40,0.04)] p-5">
           <KundeklubbSettings
             storeId={s.id}
             initial={{
