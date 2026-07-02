@@ -1,5 +1,11 @@
 # Raspberry Pi — oppsett av infoskjerm
 
+> ⚠️ **UTDATERT — gjelder den gamle Chromium-kiosk-arkitekturen** (`/screen/<token>`,
+> slettet). Flåten kjører nå **Arexibo/Xibo**: oppskrift i
+> [docs/oppsett-raspberrypi.md](../docs/oppsett-raspberrypi.md), enhetsregister i
+> [docs/raspberry-enheter.md](../docs/raspberry-enheter.md). Automatisk TV-av/på
+> etter åpningstider = **`scripts/pi/tvpower/`** (HDMI-CEC-agent, steg 9 i oppskriften).
+
 Komplett guide for å sette opp en fysisk skjerm (Raspberry Pi + TV) som henter
 innhold fra dette prosjektet og kan fjernstyres (av/på, reload, omstart) fra admin.
 

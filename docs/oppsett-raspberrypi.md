@@ -53,7 +53,8 @@ Gå gjennom ALLE for hver skjerm — også de det er lett å glemme (markert ⚠
 - [ ] **6.** Autorisert + tilordnet riktig Xibo-gruppe (Claude via API)
 - [ ] **7.** ⚠️ **Auto-start (getty-autologin kiosk + fbdev fjernet)** — booter rett inn, riktige farger, riktig rotasjon
 - [ ] **8.** ⚠️ **Raspberry Pi Connect innmeldt** (`rpi-connect signin` + linger) — *lett å glemme!*
-- [ ] **9.** Verifisert på fysisk skjerm (riktig layout, orientering, emojis i farger)
+- [ ] **9.** **TV-strømagent (HDMI-CEC)** installert — TV følger butikkens åpningstider (se steg 9)
+- [ ] **10.** Verifisert på fysisk skjerm (riktig layout, orientering, emojis i farger)
 
 > 🔁 **Claude:** påminn ALLTID om steg 7 + 8 før en Pi regnes som ferdig — de er
 > de vi har glemt før.
@@ -280,7 +281,33 @@ rpi-connect status                     # skal vise: Signed in + screen sharing/r
 Etterpå: i Connect-konsollen **tagg enheten** med butikk + `gangerolv`.
 Connect for Organisations: ~$0,50/enhet/mnd (~$8/mnd for 16), bulk provisioning + Management API.
 
-## 9. Status — Pi-er satt opp (EUROSPAR MOA)
+## 9. TV-strømagent — automatisk av/på etter åpningstider (HDMI-CEC)
+
+TV-en slår seg på litt før butikken åpner og av litt etter stenging. Åpningstidene
+settes i **admin → Butikker → (butikk) → Åpningstider**; per skjerm styres modus og
+manuell av/på under **Skjermer** (strømseksjonen på skjermkortet). Pi-en poller appen
+hvert minutt (`/api/screen/power`) og utfører avvik med kernel-CEC (`cec-ctl`) —
+helt uavhengig av X/Arexibo, og fungerer bak butikk-NAT.
+
+```bash
+# Fra repo-rot (Mac): kopier agent-mappen til Pi-en og installer.
+# SCREEN_TOKEN = tokenet fra skjermkortet i admin (delen etter /skjerm/).
+scp -r scripts/pi/tvpower frlund3@<pi-ip>:/tmp/tvpower
+ssh frlund3@<pi-ip> "sudo SCREEN_TOKEN=sk_xxx bash /tmp/tvpower/install.sh"
+```
+
+**Verifiser:**
+```bash
+ssh frlund3@<pi-ip> 'journalctl -u infoskjerm-tvpower -n 5 --no-pager'
+# «tvpower: ok (tv=on, ønsket=on)» = alt virker. TV-status dukker opp som
+# badge på skjermkortet i admin («TV på/av»).
+```
+
+> ⚠️ **CEC må være PÅ i TV-menyen** — heter Anynet+ (Samsung), SimpLink (LG),
+> Bravia Sync (Sony). Ser du `tvState=unknown` i loggen svarer ikke TV-en på CEC.
+> Butikker uten åpningstider i admin: skjermene står alltid på (trygg default).
+
+## 10. Status — Pi-er satt opp (EUROSPAR MOA)
 
 | Hostnavn | Rolle | Display-id | Gruppe | Rotasjon | Auto-start | Emoji | Connect |
 |----------|-------|-----------|--------|----------|-----------|-------|---------|
@@ -312,9 +339,10 @@ Connect for Organisations: ~$0,50/enhet/mnd (~$8/mnd for 16), bulk provisioning 
 - **Hostnavn:** `gr-<butikk><nr>` (kunde = `1`, bakrom = `2`).
 - **Rotasjon:** kunde = `right` (portrett 1080×1920); bakrom = `normal` (liggende). Justeres i `~/.kiosk-rotate`.
 - **Skjerm/X:** fbdev FJERNET (modeset/vc4 primær), getty-autologin (B2), kiosk via `~/.bash_profile`-loop.
-- **Golden image:** når en Pi er komplett (Arexibo + skjerm-deps + getty-kiosk + fbdev fjernet + Connect) og
+- **Golden image:** når en Pi er komplett (Arexibo + skjerm-deps + getty-kiosk + fbdev fjernet + Connect + TV-strømagent) og
   verifisert, klon SD-kortet. Per klon endres bare: hostnavn, `~/.kiosk-rotate`, WiFi (`kundenett`),
-  ny Xibo-registrering (`rm ~/xibo/cms.json` → re-registrer) + autoriser/tilordne, ny Connect-signin (+ SSH-nøkkel).
+  ny Xibo-registrering (`rm ~/xibo/cms.json` → re-registrer) + autoriser/tilordne, ny Connect-signin (+ SSH-nøkkel),
+  nytt skjerm-token i `/etc/infoskjerm/tvpower.env` (fra skjermkortet i admin).
 
 ---
 

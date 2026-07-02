@@ -6,6 +6,8 @@ import { toast } from "sonner"
 import { Monitor, Wrench, Copy, Check, Plus, Trash2, Loader2, Smartphone, Wifi, WifiOff, PenLine } from "lucide-react"
 import { useTenantConfig } from "@/components/admin/tenant-config-provider"
 import { ConfirmDialog } from "@/components/admin/confirm-dialog"
+import { ScreenPowerControls, type ScreenPowerInfo } from "./power-controls"
+import type { OpeningHours } from "@/lib/power/schedule"
 import {
   assignDisplay, setScreenAssignment, addKiosk, deleteScreenRow, renameScreen,
   type Flate, type Orientation, type Assignment,
@@ -31,7 +33,7 @@ export interface DisplayLite {
   currentLayout: string | null
 }
 
-export interface ScreenRowLite {
+export interface ScreenRowLite extends ScreenPowerInfo {
   id: string
   /** Kallenavn (screens.name) — tenant-redigerbart, vises også i skjermvelgeren ved publisering. */
   name: string
@@ -253,7 +255,7 @@ function PiUrl({ origin, token }: { origin: string; token: string }) {
 }
 
 function DisplayCard({
-  display, row, storeId, origin, avdelingerKunde, avdelingerIntern,
+  display, row, storeId, origin, avdelingerKunde, avdelingerIntern, apningstider,
 }: {
   display: DisplayLite
   row: ScreenRowLite | null
@@ -261,6 +263,7 @@ function DisplayCard({
   origin: string
   avdelingerKunde: AvdList
   avdelingerIntern: AvdList
+  apningstider: OpeningHours | null
 }) {
   const router = useRouter()
   const [saving, setSaving] = useState(false)
@@ -280,18 +283,31 @@ function DisplayCard({
     else toast.error(res.error ?? "Kunne ikke lagre")
   }
 
+  // Kallenavn = radens navn, med default «Skjerm <id>» regnet som usatt.
+  const customName = row && row.name !== `Skjerm ${display.displayId}` ? row.name : null
+
   return (
     <div className="space-y-3 rounded-2xl border border-zinc-200/80 p-4 shadow-[0_1px_2px_rgba(16,24,40,0.04)] transition-shadow hover:shadow-[0_6px_20px_-8px_rgba(16,24,40,0.14)]">
       <div className="flex items-center gap-2">
         <span className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-zinc-100">
           <Monitor className="w-4 h-4 text-zinc-500" />
         </span>
-        {/* Kallenavn når raden finnes; default-navnet «Skjerm <id>» regnes som usatt → vis Xibo-navnet. */}
-        <ScreenName
-          screenId={row?.id ?? null}
-          name={row && row.name !== `Skjerm ${display.displayId}` ? row.name : null}
-          fallback={display.name}
-        />
+        <div className="flex-1 min-w-0">
+          {/* Kallenavn når raden finnes; default-navnet «Skjerm <id>» regnes som usatt → vis Xibo-navnet. */}
+          <ScreenName
+            screenId={row?.id ?? null}
+            name={customName}
+            fallback={display.name}
+          />
+          {/* Med kallenavn satt må enhetens eget navn fortsatt være synlig, ellers
+              mister man koblingen kort ↔ fysisk skjerm. Merkes «Originalt navn» —
+              kunden skal ikke ha et forhold til motoren bak (Xibo/RPI). */}
+          {customName && customName !== display.name && (
+            <p className="mt-0.5 text-[11px] text-zinc-400 truncate" title={`Skjermens originale enhetsnavn: ${display.name}`}>
+              Originalt navn: <span className="font-medium text-zinc-500">{display.name}</span>
+            </p>
+          )}
+        </div>
         <span className={`inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1 rounded-full flex-shrink-0 ${display.online ? "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200" : "bg-red-50 text-red-500 ring-1 ring-red-100"}`}>
           <span className={`h-1.5 w-1.5 rounded-full ${display.online ? "animate-pulse bg-emerald-500" : "bg-red-400"}`} />
           {display.online ? <Wifi className="w-3 h-3" /> : <WifiOff className="w-3 h-3" />}
@@ -308,6 +324,10 @@ function DisplayCard({
         onChange={apply}
       />
 
+      {row && (
+        <ScreenPowerControls screenId={row.id} power={row} hours={apningstider} isPi />
+      )}
+
       {token && <ScreenTwin token={token} orientation={value.orientation} online={display.online} />}
       {token
         ? <PiUrl origin={origin} token={token} />
@@ -318,12 +338,13 @@ function DisplayCard({
 }
 
 function KioskCard({
-  row, origin, avdelingerKunde, avdelingerIntern,
+  row, origin, avdelingerKunde, avdelingerIntern, apningstider,
 }: {
   row: ScreenRowLite
   origin: string
   avdelingerKunde: AvdList
   avdelingerIntern: AvdList
+  apningstider: OpeningHours | null
 }) {
   const router = useRouter()
   const [saving, setSaving] = useState(false)
@@ -382,6 +403,8 @@ function KioskCard({
         onChange={apply}
       />
 
+      <ScreenPowerControls screenId={row.id} power={row} hours={apningstider} isPi={false} />
+
       <ScreenTwin token={row.token} orientation={value.orientation} online={null} />
       <PiUrl origin={origin} token={row.token} />
     </div>
@@ -389,12 +412,13 @@ function KioskCard({
 }
 
 export function StoreScreens({
-  storeId, displays, rows, origin,
+  storeId, displays, rows, origin, apningstider = null,
 }: {
   storeId: string
   displays: DisplayLite[]
   rows: ScreenRowLite[]
   origin: string
+  apningstider?: OpeningHours | null
 }) {
   const config = useTenantConfig()
   const router = useRouter()
@@ -432,6 +456,7 @@ export function StoreScreens({
           origin={origin}
           avdelingerKunde={config.avdelinger}
           avdelingerIntern={config.avdelingerIntern}
+          apningstider={apningstider}
         />
       ))}
 
@@ -442,6 +467,7 @@ export function StoreScreens({
           origin={origin}
           avdelingerKunde={config.avdelinger}
           avdelingerIntern={config.avdelingerIntern}
+          apningstider={apningstider}
         />
       ))}
 
