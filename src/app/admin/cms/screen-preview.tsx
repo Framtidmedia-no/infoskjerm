@@ -212,8 +212,15 @@ export function ScreenPreview({
       {/* Ops panel — live player status, push-now, real screenshot (rolle-filtrert) */}
       <ScreenStatus key={`${store.id}-${flate}`} storeName={store.name} screens={visibleScreens} />
 
-      {/* Scaled stage — portrait for customer, landscape for internal */}
-      <div ref={wrapRef} className="relative rounded-2xl overflow-hidden border border-zinc-200 bg-black shadow-sm mx-auto" style={{ aspectRatio: portrait ? "9 / 16" : "16 / 9", width: "100%", maxWidth: portrait ? 400 : undefined }}>
+      {/* Kommandosenter-scenen: skjermen står i et mørkt rom med brand-glød */}
+      <div className="relative overflow-hidden rounded-3xl bg-[#0b101c] p-5 shadow-[0_28px_80px_-32px_rgba(0,0,0,0.75)] sm:p-8">
+        <div aria-hidden className="fx-stars pointer-events-none absolute inset-0 opacity-[0.12]" />
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-x-0 top-0 h-48"
+          style={{ background: "radial-gradient(70% 100% at 50% 0%, color-mix(in oklab, var(--brand-primary) 22%, transparent), transparent 75%)" }}
+        />
+      <div ref={wrapRef} className="relative mx-auto overflow-hidden rounded-xl bg-black ring-1 ring-white/10" style={{ aspectRatio: portrait ? "9 / 16" : "16 / 9", width: "100%", maxWidth: portrait ? 400 : undefined, boxShadow: "0 0 90px -24px color-mix(in oklab, var(--brand-primary) 60%, transparent), 0 22px 50px -20px rgba(0,0,0,0.85)" }}>
         <div style={{ position: "absolute", top: 0, left: 0, width: STAGE_W, height: STAGE_H, transform: `scale(${scale})`, transformOrigin: "top left" }}>
           {flate === "intern" && showStrip && (
             <iframe
@@ -233,11 +240,12 @@ export function ScreenPreview({
         </div>
       </div>
 
-      <p className="text-xs text-zinc-400">
+        <p className="relative mt-5 text-center text-xs text-zinc-400">
         {flate === "kunde"
           ? `Kundeskjerm — det kundene ser i ${unitLabel.toLowerCase()}en (tilbud, plakater). Veksler automatisk mellom innhold og tilbud.`
           : "Internskjerm (bakrom) — KPI og driftstall for de ansatte. Aldri synlig for kunder."}
-      </p>
+        </p>
+      </div>
     </div>
   )
 }
