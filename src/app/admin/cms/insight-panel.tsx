@@ -21,7 +21,7 @@ export function InsightPanel({ insight }: { insight: ScreenInsight }) {
   return (
     <div className="grid gap-4 sm:grid-cols-2">
       {/* Faults */}
-      <section className="rounded-xl border border-zinc-200 bg-white">
+      <section className="rounded-2xl border border-zinc-200/80 bg-white shadow-[0_1px_2px_rgba(16,24,40,0.04)]">
         <header className="flex items-center gap-2 px-4 py-2.5 border-b border-zinc-100">
           <AlertTriangle className="w-4 h-4 text-amber-500" />
           <h2 className="text-xs font-semibold text-zinc-700">Skjermfeil</h2>
@@ -43,7 +43,7 @@ export function InsightPanel({ insight }: { insight: ScreenInsight }) {
       </section>
 
       {/* Proof of play */}
-      <section className="rounded-xl border border-zinc-200 bg-white">
+      <section className="rounded-2xl border border-zinc-200/80 bg-white shadow-[0_1px_2px_rgba(16,24,40,0.04)]">
         <header className="flex items-center justify-between gap-2 px-4 py-2.5 border-b border-zinc-100">
           <div className="flex items-center gap-2">
             <BarChart3 className="w-4 h-4 text-zinc-500" />
@@ -62,8 +62,8 @@ export function InsightPanel({ insight }: { insight: ScreenInsight }) {
                 <span className="text-xs text-zinc-600 truncate w-40 shrink-0" title={row.layout}>{row.layout}</span>
                 <span className="relative flex-1 h-2 rounded-full bg-zinc-100 overflow-hidden">
                   <span
-                    className="absolute inset-y-0 left-0 rounded-full bg-zinc-800"
-                    style={{ width: `${maxPlays > 0 ? Math.max(4, (row.plays / maxPlays) * 100) : 0}%` }}
+                    className="absolute inset-y-0 left-0 rounded-full"
+                    style={{ width: `${maxPlays > 0 ? Math.max(4, (row.plays / maxPlays) * 100) : 0}%`, backgroundColor: "var(--brand-primary)" }}
                   />
                 </span>
                 <span className="text-[11px] text-zinc-500 tabular-nums w-24 text-right shrink-0">
