@@ -105,7 +105,7 @@ export function LoggClient({ rows, limit, hasMore }: { rows: LogRow[]; limit: nu
         <div className="flex flex-wrap gap-1.5">
           {ENTITY_FILTERS.map((f) => (
             <button key={f.key} onClick={() => setEntity(f.key)}
-              className={`px-2.5 py-1.5 rounded-lg text-xs font-medium border transition-all ${entity === f.key ? "border-zinc-900 bg-zinc-900 text-white" : "border-zinc-200 text-zinc-600 hover:border-zinc-300"}`}>
+              className={`rounded-full px-3 py-1.5 text-xs font-semibold transition-all ${entity === f.key ? "bg-zinc-900 text-white shadow-sm" : "bg-white text-zinc-600 shadow-[0_1px_2px_rgba(16,24,40,0.06)] ring-1 ring-zinc-200 hover:ring-zinc-300 hover:text-zinc-900"}`}>
               {f.label}
             </button>
           ))}
@@ -148,7 +148,7 @@ export function LoggClient({ rows, limit, hasMore }: { rows: LogRow[]; limit: nu
                         <Icon className="h-4 w-4" />
                       </span>
                       <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm text-zinc-800">{r.summary}</p>
+                        <p className="truncate text-sm font-medium text-zinc-900">{r.summary}</p>
                         <p className="truncate text-[11px] text-zinc-400">{r.user_email ?? "System"} · {m.label}</p>
                       </div>
                       <span className="flex-shrink-0 whitespace-nowrap text-[11px] tabular-nums text-zinc-400">{timeLabel(r.created_at)}</span>
