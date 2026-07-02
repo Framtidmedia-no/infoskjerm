@@ -206,3 +206,16 @@ body {
   .fx-confetti-piece { animation: none !important; }
   .fx-btn::after { display: none; }
 }
+
+/* ============================================================
+   Admin-atmosfære: arbeidsflaten er ikke lenger flat hvit —
+   en svak brand-tintet himmel øverst (ekko av railens aurora)
+   gir dybde på hver side. Kortene flyter på den.
+   ============================================================ */
+.admin-scope {
+  background-image:
+    radial-gradient(90rem 26rem at 85% -10rem, color-mix(in oklab, var(--brand-primary) 14%, transparent), transparent 70%),
+    radial-gradient(70rem 22rem at 8% -12rem, color-mix(in oklab, var(--brand-primary) 9%, transparent), transparent 70%),
+    linear-gradient(180deg, #f4f4f2 0%, #f8f8f6 22rem);
+  background-attachment: fixed;
+}
