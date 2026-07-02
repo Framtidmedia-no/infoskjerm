@@ -30,7 +30,7 @@ export function MembersTable({ rows, storeName }: { rows: MemberRow[]; storeName
   }
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-zinc-200 bg-white">
+    <div className="overflow-hidden rounded-2xl border border-zinc-200/80 bg-white shadow-[0_1px_2px_rgba(16,24,40,0.04)]">
       <div className="flex items-center justify-between border-b border-zinc-100 px-4 py-3">
         <h2 className="flex items-center gap-1.5 text-sm font-semibold text-zinc-900"><Users className="h-4 w-4 text-zinc-400" /> Medlemmer <span className="text-zinc-400">({rows.length})</span></h2>
         {rows.length > 0 && (
@@ -45,7 +45,7 @@ export function MembersTable({ rows, storeName }: { rows: MemberRow[]; storeName
         <div className="max-h-[480px] overflow-y-auto">
           <table className="w-full text-left text-sm">
             <thead className="sticky top-0 bg-white">
-              <tr className="border-b border-zinc-100 text-[11px] uppercase tracking-wide text-zinc-400">
+              <tr className="border-b border-zinc-100 bg-zinc-50/60 text-[11px] uppercase tracking-wide text-zinc-400">
                 <th className="px-4 py-2.5 font-semibold">Navn</th>
                 <th className="px-4 py-2.5 font-semibold">Kontakt</th>
                 <th className="px-4 py-2.5 font-semibold">Påmeldt</th>

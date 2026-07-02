@@ -218,4 +218,58 @@ body {
     radial-gradient(70rem 22rem at 8% -12rem, color-mix(in oklab, var(--brand-primary) 9%, transparent), transparent 70%),
     linear-gradient(180deg, #f4f4f2 0%, #f8f8f6 22rem);
   background-attachment: fixed;
-}
+
+/* ============================================================
+   Admin: hypermoderne kontroll-språk. Basislag scopet til
+   .admin-scope (settes på admin-layoutens rot) — løfter ALLE
+   native selects, dato-/tallfelter og checkboxer på én gang.
+   Ligger i @layer base så Tailwind-utilities fortsatt vinner
+   der komponenter styler eksplisitt.
+   ============================================================ */
+
+@layer base {
+  .admin-scope :where(select:not([multiple])) {
+    appearance: none;
+    -webkit-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='none'%3E%3Cpath d='M4 6l4 4 4-4' stroke='%2371717a' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.625rem center;
+    border: 1px solid #e4e4e7;
+    border-radius: 0.75rem;
+    background-color: #fafafa;
+    padding: 0.5rem 2rem 0.5rem 0.75rem;
+    font-weight: 500;
+    color: #27272a;
+    box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04);
+    transition: border-color 0.15s, background-color 0.15s, box-shadow 0.15s;
+  }
+  .admin-scope :where(select:not([multiple])):hover {
+    border-color: #d4d4d8;
+  }
+  .admin-scope :where(select:not([multiple])):focus {
+    outline: none;
+    border-color: var(--brand-primary);
+    background-color: #fff;
+    box-shadow: 0 0 0 3px color-mix(in oklab, var(--brand-primary) 15%, transparent);
+  }
+
+  .admin-scope :where(input[type="checkbox"], input[type="radio"]) {
+    accent-color: var(--brand-primary);
+    width: 1rem;
+    height: 1rem;
+  }
+
+  .admin-scope :where(input[type="date"], input[type="time"], input[type="datetime-local"], input[type="month"], input[type="number"]) {
+    border: 1px solid #e4e4e7;
+    border-radius: 0.75rem;
+    background-color: #fafafa;
+    padding: 0.5rem 0.75rem;
+    box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04);
+    transition: border-color 0.15s, background-color 0.15s, box-shadow 0.15s;
+  }
+  .admin-scope :where(input[type="date"], input[type="time"], input[type="datetime-local"], input[type="month"], input[type="number"]):focus {
+    outline: none;
+    border-color: var(--brand-primary);
+    background-color: #fff;
+    box-shadow: 0 0 0 3px color-mix(in oklab, var(--brand-primary) 15%, transparent);
+  }}

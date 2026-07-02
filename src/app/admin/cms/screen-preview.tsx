@@ -271,7 +271,7 @@ function ScreenStatus({ storeName, screens }: { storeName: string; screens: Stor
   }
 
   return (
-    <div className="rounded-xl border border-zinc-200 bg-white">
+    <div className="rounded-2xl border border-zinc-200/80 bg-white shadow-[0_1px_2px_rgba(16,24,40,0.04)]">
       <div className="flex items-center justify-between gap-3 px-4 py-2.5 border-b border-zinc-100">
         <span className="text-xs font-semibold text-zinc-700">
           {screens.length === 1 ? "1 skjerm" : `${screens.length} skjermer`} i {unitLabel.toLowerCase()}en

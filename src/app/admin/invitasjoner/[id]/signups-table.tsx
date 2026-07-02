@@ -59,7 +59,7 @@ export function SignupsTable({ rows, eventTitle }: { rows: SignupRow[]; eventTit
   }
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-zinc-200 bg-white">
+    <div className="overflow-hidden rounded-2xl border border-zinc-200/80 bg-white shadow-[0_1px_2px_rgba(16,24,40,0.04)]">
       <div className="flex items-center justify-between border-b border-zinc-100 px-4 py-3">
         <h2 className="text-sm font-semibold text-zinc-900">Påmeldingsliste</h2>
         <button onClick={exportCsv} className="flex items-center gap-1.5 rounded-lg border border-zinc-200 px-3 py-1.5 text-xs font-medium text-zinc-600 hover:border-zinc-300 hover:text-zinc-900">
@@ -69,7 +69,7 @@ export function SignupsTable({ rows, eventTitle }: { rows: SignupRow[]; eventTit
       <div className="overflow-x-auto">
         <table className="w-full text-left text-sm">
           <thead>
-            <tr className="border-b border-zinc-100 text-[11px] uppercase tracking-wide text-zinc-400">
+            <tr className="border-b border-zinc-100 bg-zinc-50/60 text-[11px] uppercase tracking-wide text-zinc-400">
               <th className="px-4 py-2.5 font-semibold">Navn</th>
               <th className="px-4 py-2.5 font-semibold">Avdeling</th>
               <th className="px-4 py-2.5 font-semibold">Følge</th>

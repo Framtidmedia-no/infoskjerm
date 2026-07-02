@@ -254,7 +254,7 @@ export function BulkImport({ stores, tags, initialLinks = "", canTargetAll = tru
 
       <div className="flex-1 p-4 sm:p-6 space-y-5 max-w-6xl w-full">
         {/* Paste box */}
-        <section className="rounded-xl border border-zinc-200 bg-white p-4">
+        <section className="rounded-2xl border border-zinc-200/80 bg-white shadow-[0_1px_2px_rgba(16,24,40,0.04)] p-4">
           <h3 className="text-xs font-semibold text-zinc-600 mb-2">Lim inn spar.no-lenker eller GTIN — én per linje</h3>
           <textarea value={raw} onChange={(e) => setRaw(e.target.value)} rows={4} placeholder={"https://spar.no/varer/...\n7039610001234\nhttps://spar.no/varer/..."} className="w-full text-sm rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 font-mono transition-colors focus:border-[var(--brand-primary)] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)]/15" />
           <button onClick={handleLookup} disabled={loading} className="mt-2 flex items-center gap-1.5 text-xs font-semibold text-white rounded-lg px-3.5 py-2 disabled:opacity-50" style={{ backgroundColor: "var(--brand-primary)" }}>
@@ -263,7 +263,7 @@ export function BulkImport({ stores, tags, initialLinks = "", canTargetAll = tru
         </section>
 
         {/* Shared defaults */}
-        <section className="rounded-xl border border-zinc-200 bg-white p-4 grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <section className="rounded-2xl border border-zinc-200/80 bg-white shadow-[0_1px_2px_rgba(16,24,40,0.04)] p-4 grid grid-cols-1 lg:grid-cols-3 gap-4">
           <div>
             <h3 className="text-xs font-semibold text-zinc-600 mb-2">Periode (alle)</h3>
             <div className="flex gap-1.5 mb-2">
@@ -303,9 +303,9 @@ export function BulkImport({ stores, tags, initialLinks = "", canTargetAll = tru
         {/* Review: table (left) + big preview (right) */}
         {rows.length > 0 && (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-            <div className="lg:col-span-2 rounded-xl border border-zinc-200 bg-white overflow-hidden overflow-x-auto">
+            <div className="lg:col-span-2 rounded-2xl border border-zinc-200/80 bg-white shadow-[0_1px_2px_rgba(16,24,40,0.04)] overflow-hidden overflow-x-auto">
               <table className="w-full min-w-[540px] text-sm">
-                <thead className="bg-zinc-50 text-zinc-500 text-[11px] uppercase tracking-wide">
+                <thead className="bg-zinc-50/60 text-zinc-400 text-[11px] uppercase tracking-wide">
                   <tr>
                     <th className="text-left font-semibold px-3 py-2 w-8"></th>
                     <th className="text-left font-semibold px-3 py-2">Varenavn</th>
@@ -336,7 +336,7 @@ export function BulkImport({ stores, tags, initialLinks = "", canTargetAll = tru
 
             {/* Focused preview + full fields */}
             <div className="space-y-3">
-              <div className="rounded-xl border border-zinc-200 bg-white p-4 sticky top-20">
+              <div className="rounded-2xl border border-zinc-200/80 bg-white shadow-[0_1px_2px_rgba(16,24,40,0.04)] p-4 sticky top-20">
                 <h3 className="text-xs font-semibold text-zinc-600 mb-3">Forhåndsvisning</h3>
                 {focused ? (
                   <>

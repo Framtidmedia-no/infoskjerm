@@ -59,7 +59,7 @@ export default async function KundeklubbOverviewPage() {
           </div>
         </div>
 
-        <div className="overflow-hidden rounded-2xl border border-zinc-200 bg-white">
+        <div className="overflow-hidden rounded-2xl border border-zinc-200/80 bg-white shadow-[0_1px_2px_rgba(16,24,40,0.04)]">
           {(stores ?? []).map((s) => {
             const chain = s.chains as unknown as ChainRow | null
             const count = members.get(s.id) ?? 0

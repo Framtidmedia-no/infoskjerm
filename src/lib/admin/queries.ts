@@ -3,6 +3,13 @@ import type { Database } from '@/types/database'
 
 export type AdminSupabase = SupabaseClient<Database>
 
+const lastSeenDateFmt = new Intl.DateTimeFormat('nb-NO', {
+  timeZone: 'Europe/Oslo',
+  day: 'numeric',
+  month: 'short',
+  year: 'numeric',
+})
+
 export function formatLastSeen(timestamp: string | null): string {
   if (!timestamp) return 'Aldri'
   const diff = Date.now() - new Date(timestamp).getTime()
@@ -12,7 +19,8 @@ export function formatLastSeen(timestamp: string | null): string {
   const hours = Math.floor(minutes / 60)
   if (hours < 24) return `${hours} time${hours === 1 ? '' : 'r'} siden`
   const days = Math.floor(hours / 24)
-  return `${days} dag${days === 1 ? '' : 'er'} siden`
+  if (days <= 30) return `${days} dag${days === 1 ? '' : 'er'} siden`
+  return lastSeenDateFmt.format(new Date(timestamp))
 }
 
 export function getScreenStatusColor(status: string | null, lastHeartbeat: string | null): 'green' | 'yellow' | 'red' {
@@ -270,6 +278,34 @@ export async function getUsersWithDetails(
 
   const { data } = await query.order('full_name')
   return data ?? []
+}
+
+/**
+ * Sist innlogget per bruker. `last_sign_in_at` bor i auth.users og nås kun
+ * via admin-API-et (service role) — pagineres til alle ønskede ID-er er funnet.
+ */
+export async function getLastSignInAtMap(
+  admin: AdminSupabase,
+  userIds: string[]
+): Promise<Map<string, string | null>> {
+  const wanted = new Set(userIds)
+  const map = new Map<string, string | null>()
+  if (wanted.size === 0) return map
+
+  const perPage = 1000
+  for (let page = 1; map.size < wanted.size; page++) {
+    const { data, error } = await admin.auth.admin.listUsers({ page, perPage })
+    if (error) {
+      console.error('Kunne ikke hente sist innlogget fra auth:', error.message)
+      break
+    }
+    if (data.users.length === 0) break
+    for (const user of data.users) {
+      if (wanted.has(user.id)) map.set(user.id, user.last_sign_in_at ?? null)
+    }
+    if (data.users.length < perPage) break
+  }
+  return map
 }
 
 export async function getContentItems(

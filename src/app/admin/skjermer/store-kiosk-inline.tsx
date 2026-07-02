@@ -78,7 +78,7 @@ export function StoreKioskInline({
               onChange={(e) => setPassword(e.target.value)}
               placeholder={protectedNow ? "Nytt passord" : "Velg passord"}
               autoComplete="new-password"
-              className="flex-1 min-w-0 border border-zinc-200 rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-zinc-300"
+              className="min-w-0 flex-1 rounded-xl border border-zinc-200 bg-zinc-50 px-2.5 py-1.5 text-xs transition-colors focus:border-[var(--brand-primary)] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)]/15"
             />
             <button
               onClick={() => save(password)}
@@ -122,8 +122,8 @@ function KioskLink({ label, url }: { label: string; url: string }) {
   }
 
   return (
-    <div className="flex items-center gap-2 rounded-lg bg-zinc-50/70 px-2.5 py-1.5">
-      <span className="text-[11px] font-medium text-zinc-600 w-10 flex-shrink-0">{label}</span>
+    <div className="flex items-center gap-2 rounded-lg border border-zinc-100 bg-zinc-50/70 px-2.5 py-1.5 transition-colors hover:border-zinc-200">
+      <span className="w-14 flex-shrink-0 rounded-md bg-white px-1.5 py-0.5 text-center text-[10px] font-semibold text-zinc-600 ring-1 ring-zinc-200">{label}</span>
       <span className="text-[11px] text-zinc-400 truncate font-mono flex-1 min-w-0">{url}</span>
       <button onClick={copy} title="Kopier lenke" className="p-1 rounded-md text-zinc-400 hover:bg-zinc-200/70 hover:text-zinc-700 flex-shrink-0">
         {copied ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
