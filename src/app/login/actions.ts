@@ -1,8 +1,9 @@
 "use server"
 
-import { createClient } from "@/lib/supabase/server"
+import { createClient, createAdminClient } from "@/lib/supabase/server"
 import { logAudit } from "@/lib/admin/audit"
 import { TURNSTILE_ERROR_MESSAGE } from "@/lib/turnstile/verify"
+import { setTenantBrandHint } from "@/lib/tenant/brand-hint"
 
 interface LoginInput {
   email: string
@@ -47,6 +48,13 @@ export async function loginWithPassword(
     entityId: data.user.id,
     summary: "Logget inn",
   })
+
+  // Husk tenanten på enheten så neste login-besøk viser tenant-branding.
+  try {
+    const admin = createAdminClient()
+    const { data: profile } = await admin.from("users").select("tenant_id").eq("id", data.user.id).maybeSingle()
+    await setTenantBrandHint(profile?.tenant_id ?? null)
+  } catch {}
 
   return { ok: true }
 }

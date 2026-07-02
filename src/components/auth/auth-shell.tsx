@@ -1,12 +1,26 @@
 import Image from "next/image"
 import { displayFont } from "@/lib/fonts"
 
+export interface AuthBrand {
+  name: string
+  logoUrl: string | null
+}
+
 /**
  * Felles ramme for de mørke auth-sidene (/login, /glemt-passord, /velkommen):
  * nordisk nattehimmel med stjernefelt, nordlys-glød og glass-kort.
- * Ren presentasjon — sidene eier all logikk selv.
+ * Ren presentasjon — sidene eier all logikk selv. Med `brand` vises tenantens
+ * logo/navn i headeren (enhets-husket branding) i stedet for Framtid Tech.
  */
-export function AuthShell({ children, below }: { children: React.ReactNode; below?: React.ReactNode }) {
+export function AuthShell({
+  children,
+  below,
+  brand,
+}: {
+  children: React.ReactNode
+  below?: React.ReactNode
+  brand?: AuthBrand | null
+}) {
   return (
     <div
       className={`${displayFont.variable} auth-dark relative flex min-h-screen items-center justify-center overflow-hidden p-4`}
@@ -41,16 +55,30 @@ export function AuthShell({ children, below }: { children: React.ReactNode; belo
       <div className="relative w-full max-w-sm">
         {/* Logo + produktlinje */}
         <div className="fx-rise mb-8 text-center">
-          <div className="mb-4 flex justify-center">
-            <Image
-              src="/framtid-tech-logo-dark.png"
-              alt="Framtid Tech"
-              width={180}
-              height={48}
-              priority
-              className="h-10 w-auto"
-            />
-          </div>
+          {brand ? (
+            <div className="mb-4 flex flex-col items-center gap-3">
+              <span className="flex h-14 w-14 items-center justify-center overflow-hidden rounded-2xl bg-white p-2 shadow-[0_12px_36px_-12px_rgba(0,0,0,0.8)]">
+                {brand.logoUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={brand.logoUrl} alt="" className="h-full w-full object-contain" />
+                ) : (
+                  <span className="font-display text-2xl font-bold text-zinc-900">{brand.name.charAt(0)}</span>
+                )}
+              </span>
+              <span className="font-display text-lg font-semibold tracking-tight text-white">{brand.name}</span>
+            </div>
+          ) : (
+            <div className="mb-4 flex justify-center">
+              <Image
+                src="/framtid-tech-logo-dark.png"
+                alt="Framtid Tech"
+                width={180}
+                height={48}
+                priority
+                className="h-10 w-auto"
+              />
+            </div>
+          )}
           <p className="flex items-center justify-center gap-2 text-sm tracking-wide text-zinc-400">
             <svg aria-hidden viewBox="0 0 16 16" className="h-3 w-3 text-emerald-400">
               <path fill="currentColor" d="M8 0c.6 4.2 3.8 7.4 8 8-4.2.6-7.4 3.8-8 8-.6-4.2-3.8-7.4-8-8 4.2-.6 7.4-3.8 8-8Z" />
