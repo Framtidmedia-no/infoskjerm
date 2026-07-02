@@ -1,6 +1,7 @@
 "use client"
 
 import { Download, Inbox } from "lucide-react"
+import { SoftTable, SoftTd, SoftTh, SoftThead, SoftTr } from "@/components/ui/soft-table"
 
 export interface SignupRow {
   id: string
@@ -59,42 +60,38 @@ export function SignupsTable({ rows, eventTitle }: { rows: SignupRow[]; eventTit
   }
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-zinc-200/80 bg-white shadow-[0_1px_2px_rgba(16,24,40,0.04)]">
-      <div className="flex items-center justify-between border-b border-zinc-100 px-4 py-3">
-        <h2 className="text-sm font-semibold text-zinc-900">Påmeldingsliste</h2>
-        <button onClick={exportCsv} className="flex items-center gap-1.5 rounded-lg border border-zinc-200 px-3 py-1.5 text-xs font-medium text-zinc-600 hover:border-zinc-300 hover:text-zinc-900">
+    <section>
+      <div className="flex items-center justify-between px-1 pb-1">
+        <h2 className="text-sm font-semibold text-zinc-900">Påmeldingsliste <span className="text-zinc-400">({rows.length})</span></h2>
+        <button onClick={exportCsv} className="flex items-center gap-1.5 rounded-full bg-white px-3 py-1.5 text-xs font-semibold text-zinc-600 shadow-[0_1px_2px_rgba(16,24,40,0.06)] ring-1 ring-zinc-200 transition-all hover:text-zinc-900 hover:ring-zinc-300">
           <Download className="h-3.5 w-3.5" /> Last ned CSV
         </button>
       </div>
-      <div className="overflow-x-auto">
-        <table className="w-full text-left text-sm">
-          <thead>
-            <tr className="bg-zinc-900 text-left text-[11px] font-semibold uppercase tracking-widest text-zinc-400">
-              <th className="px-4 py-2.5 font-semibold">Navn</th>
-              <th className="px-4 py-2.5 font-semibold">Avdeling</th>
-              <th className="px-4 py-2.5 font-semibold">Følge</th>
-              <th className="px-4 py-2.5 font-semibold">Allergier</th>
-              <th className="px-4 py-2.5 font-semibold">Kontakt</th>
-              <th className="px-4 py-2.5 font-semibold">Påmeldt</th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((r) => (
-              <tr key={r.id} className="border-b border-zinc-50 last:border-0 hover:bg-zinc-50/60">
-                <td className="px-4 py-2.5 font-medium text-zinc-900">
-                  {r.name}
-                  {r.comment && <span className="mt-0.5 block text-[11px] font-normal text-zinc-400">{r.comment}</span>}
-                </td>
-                <td className="px-4 py-2.5 text-zinc-600">{r.department ?? "—"}</td>
-                <td className="px-4 py-2.5 text-zinc-600">{r.guests > 0 ? `+${r.guests}` : "—"}</td>
-                <td className="px-4 py-2.5 text-zinc-600">{r.dietary ?? "—"}</td>
-                <td className="px-4 py-2.5 text-zinc-600">{r.email || r.phone || "—"}</td>
-                <td className="px-4 py-2.5 text-zinc-400">{new Date(r.createdAt).toLocaleDateString("nb-NO", { timeZone: "Europe/Oslo", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </div>
+      <SoftTable>
+        <SoftThead>
+          <SoftTh>Navn</SoftTh>
+          <SoftTh>Avdeling</SoftTh>
+          <SoftTh>Følge</SoftTh>
+          <SoftTh>Allergier</SoftTh>
+          <SoftTh>Kontakt</SoftTh>
+          <SoftTh>Påmeldt</SoftTh>
+        </SoftThead>
+        <tbody>
+          {rows.map((r) => (
+            <SoftTr key={r.id}>
+              <SoftTd className="font-semibold text-zinc-900">
+                {r.name}
+                {r.comment && <span className="mt-0.5 block text-[11px] font-normal text-zinc-400">{r.comment}</span>}
+              </SoftTd>
+              <SoftTd className="text-zinc-600">{r.department ?? "—"}</SoftTd>
+              <SoftTd className="text-zinc-600">{r.guests > 0 ? `+${r.guests}` : "—"}</SoftTd>
+              <SoftTd className="text-zinc-600">{r.dietary ?? "—"}</SoftTd>
+              <SoftTd className="text-zinc-600">{r.email || r.phone || "—"}</SoftTd>
+              <SoftTd className="text-zinc-400">{new Date(r.createdAt).toLocaleDateString("nb-NO", { timeZone: "Europe/Oslo", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}</SoftTd>
+            </SoftTr>
+          ))}
+        </tbody>
+      </SoftTable>
+    </section>
   )
 }

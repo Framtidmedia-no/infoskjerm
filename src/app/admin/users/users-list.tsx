@@ -4,6 +4,7 @@ import { useMemo, useState } from "react"
 import { Search, Shield, Building2, LayoutGrid, UserCircle, Network, X } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Card, CardContent } from "@/components/ui/card"
+import { SoftTable, SoftTd, SoftTh, SoftThead, SoftTr } from "@/components/ui/soft-table"
 import { UserDeleteButton } from "./user-delete-button"
 import { UserRoleSelect } from "./user-role-select"
 import { UserStoreAccess } from "./user-store-access"
@@ -150,70 +151,66 @@ export function UsersList({ rows, allStores, canAdminister, unitLabelPlural }: U
         </div>
       ) : (
         <>
-          {/* Desktop: tabell */}
-          <Card className="hidden lg:block">
-            <CardContent className="p-0">
-              <table className="w-full">
-                <thead>
-                  <tr className="bg-zinc-900 text-left text-[11px] font-semibold uppercase tracking-widest text-zinc-400">
-                    <th className="px-5 py-3 font-semibold">Bruker</th>
-                    <th className="px-4 py-3 font-semibold">Rolle</th>
-                    <th className="px-4 py-3 font-semibold">Tilgang</th>
-                    <th className="px-4 py-3 font-semibold">Sist innlogget</th>
-                    <th className="px-4 py-3" />
-                  </tr>
-                </thead>
-                <tbody>
-                  {filtered.map((row) => {
-                    const cfg = roleConfig[row.role] ?? roleConfig.store_employee
-                    const Icon = cfg.icon
-                    return (
-                      <tr key={row.id} className="group border-b border-zinc-50 transition-colors hover:bg-zinc-50/70">
-                        <td className="px-5 py-3.5">
-                          <div className="flex items-center gap-3">
-                            <div className={`h-9 w-9 rounded-full ${cfg.bg} flex items-center justify-center ring-1 ring-inset ring-black/5`}>
-                              <span className={`text-xs font-bold ${cfg.color}`}>{row.displayName.charAt(0).toUpperCase()}</span>
-                            </div>
-                            <div>
-                              <p className="text-sm font-semibold text-zinc-900">{row.displayName}</p>
-                              <p className="text-xs text-zinc-400">{row.email}</p>
-                            </div>
+          {/* Desktop: pillekort-tabell */}
+          <div className="hidden lg:block">
+            <SoftTable>
+              <SoftThead>
+                <SoftTh>Bruker</SoftTh>
+                <SoftTh>Rolle</SoftTh>
+                <SoftTh>Tilgang</SoftTh>
+                <SoftTh>Sist innlogget</SoftTh>
+                <SoftTh />
+              </SoftThead>
+              <tbody>
+                {filtered.map((row) => {
+                  const cfg = roleConfig[row.role] ?? roleConfig.store_employee
+                  const Icon = cfg.icon
+                  return (
+                    <SoftTr key={row.id}>
+                      <SoftTd>
+                        <div className="flex items-center gap-3">
+                          <div className={`h-10 w-10 rounded-xl ${cfg.bg} flex items-center justify-center ring-1 ring-inset ring-black/5`}>
+                            <span className={`font-display text-sm font-bold ${cfg.color}`}>{row.displayName.charAt(0).toUpperCase()}</span>
                           </div>
-                        </td>
-                        <td className="px-4 py-3.5">
-                          <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${cfg.bg} ${cfg.color}`}>
-                            <Icon className="w-3 h-3" />
-                            {cfg.label}
+                          <div>
+                            <p className="text-sm font-semibold text-zinc-900">{row.displayName}</p>
+                            <p className="text-xs text-zinc-400">{row.email}</p>
                           </div>
-                        </td>
-                        <td className="px-4 py-3.5">
-                          <AccessCell row={row} allStores={allStores} editable={canAdminister} unitLabelPlural={unitLabelPlural} />
-                        </td>
-                        <td className="px-4 py-3.5">
-                          <span
-                            className={cn("text-xs", row.lastSignIn === "Aldri" ? "text-zinc-400" : "text-zinc-600")}
-                            title={row.lastSignInExact ?? undefined}
-                          >
-                            {row.lastSignIn}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3.5">
-                          {canAdminister && (
-                            <div className="flex items-center gap-2">
-                              <UserRoleSelect userId={row.id} currentRole={row.role} />
-                              <span className="opacity-0 transition-opacity focus-within:opacity-100 group-hover:opacity-100 pointer-coarse:opacity-100">
-                                <UserDeleteButton userId={row.id} userLabel={row.displayName} />
-                              </span>
-                            </div>
-                          )}
-                        </td>
-                      </tr>
-                    )
-                  })}
-                </tbody>
-              </table>
-            </CardContent>
-          </Card>
+                        </div>
+                      </SoftTd>
+                      <SoftTd>
+                        <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${cfg.bg} ${cfg.color}`}>
+                          <Icon className="w-3 h-3" />
+                          {cfg.label}
+                        </div>
+                      </SoftTd>
+                      <SoftTd>
+                        <AccessCell row={row} allStores={allStores} editable={canAdminister} unitLabelPlural={unitLabelPlural} />
+                      </SoftTd>
+                      <SoftTd>
+                        <span
+                          className={cn("text-xs", row.lastSignIn === "Aldri" ? "text-zinc-400" : "text-zinc-600")}
+                          title={row.lastSignInExact ?? undefined}
+                        >
+                          {row.lastSignIn}
+                        </span>
+                      </SoftTd>
+                      <SoftTd>
+                        {canAdminister && (
+                          <div className="flex items-center justify-end gap-2">
+                            <UserRoleSelect userId={row.id} currentRole={row.role} />
+                            <span className="opacity-0 transition-opacity focus-within:opacity-100 group-hover:opacity-100 pointer-coarse:opacity-100">
+                              <UserDeleteButton userId={row.id} userLabel={row.displayName} />
+                            </span>
+                          </div>
+                        )}
+                      </SoftTd>
+                    </SoftTr>
+                  )
+                })}
+              </tbody>
+            </SoftTable>
+          </div>
 
           {/* Mobil + nettbrett: kort */}
           <div className="space-y-3 lg:hidden">
