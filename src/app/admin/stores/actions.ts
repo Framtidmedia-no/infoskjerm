@@ -67,7 +67,45 @@ export async function updateStoreKundeklubb(
   return { ok: true }
 }
 
-export async function deleteStore(storeId: string) {
+export async function updateStore(storeId: string, data: {
+  name: string
+  company_name: string
+  org_number: string
+  gln: string
+  email: string
+  city: string
+}): Promise<{ ok: boolean; error?: string }> {
+  const { supabase, userId, tenantId } = await requireRole([...STORE_ROLES])
+
+  const name = data.name.trim()
+  const companyName = data.company_name.trim()
+  const orgNumber = data.org_number.replace(/\s/g, "")
+  const email = data.email.trim()
+  const city = data.city.trim()
+  const gln = data.gln.replace(/\s/g, "") || GLN_PLACEHOLDER
+
+  if (!name || !companyName || !orgNumber || !email || !city) {
+    return { ok: false, error: "Alle felt må fylles ut" }
+  }
+
+  const { data: updated, error } = await supabase
+    .from("stores")
+    .update({ name, company_name: companyName, org_number: orgNumber, gln, email, city })
+    .eq("id", storeId)
+    .eq("tenant_id", tenantId)
+    .select("id")
+    .maybeSingle()
+  if (error) return { ok: false, error: error.message }
+  // RLS kan filtrere bort raden uten feil → 0 rader. Ikke rapporter suksess da.
+  if (!updated) return { ok: false, error: "Ikke funnet" }
+
+  await logAudit({ userId, action: "store.update", entityType: "store", entityId: storeId, summary: `Oppdaterte butikk «${name}»` })
+  revalidatePath("/admin/stores")
+  revalidatePath(`/admin/stores/${storeId}`)
+  return { ok: true }
+}
+
+export async function deleteStore(storeId: string): Promise<{ ok: boolean; error?: string }> {
   const { supabase, userId, tenantId } = await requireRole([...STORE_ROLES])
   const { data: store } = await supabase.from("stores").select("name").eq("id", storeId).eq("tenant_id", tenantId).maybeSingle()
   const { error } = await supabase.from("stores").delete().eq("id", storeId).eq("tenant_id", tenantId)
