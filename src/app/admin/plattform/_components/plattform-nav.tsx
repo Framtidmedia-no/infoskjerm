@@ -21,7 +21,7 @@ export function PlattformNav() {
   return (
     <nav
       aria-label="Plattform-navigasjon"
-      className="mb-6 inline-flex rounded-xl border border-zinc-200 bg-white p-0.5 shadow-[0_1px_2px_rgba(16,24,40,0.05)]"
+      className="mb-6 inline-flex max-w-full overflow-x-auto whitespace-nowrap rounded-xl border border-zinc-200 bg-white p-0.5 shadow-[0_1px_2px_rgba(16,24,40,0.05)]"
     >
       {NAV_ITEMS.map((item) => {
         const isActive =

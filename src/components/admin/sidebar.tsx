@@ -81,6 +81,8 @@ interface SidebarProps {
     tenants: SwitcherTenant[]
     activeTenantId: string | null
   }
+  /** Kalles ved navigasjon/valg — MobileNav bruker den til å lukke skuffen. */
+  onNavigate?: () => void
 }
 
 const roleLabels: Record<string, string> = {
@@ -91,7 +93,7 @@ const roleLabels: Record<string, string> = {
   store_employee: "Redaktør",
 }
 
-export function Sidebar({ user }: SidebarProps) {
+export function Sidebar({ user, onNavigate }: SidebarProps) {
   const pathname = usePathname()
   const router = useRouter()
   const role = user.role as UserRole
@@ -111,7 +113,8 @@ export function Sidebar({ user }: SidebarProps) {
   }
 
   return (
-    <aside className="fixed left-0 top-0 z-40 flex h-screen w-60 flex-col border-r border-white/[0.06] bg-[#0b101c] text-zinc-300">
+    // pt-safe: i PWA (viewport-fit=cover) skal ikke brand-headeren ligge under statusbaren/notchen.
+    <aside className="fixed left-0 top-0 z-40 flex h-screen w-60 flex-col border-r border-white/[0.06] bg-[#0b101c] text-zinc-300 pt-[env(safe-area-inset-top)]">
       {/* Nattehimmel: tenant-tintet aurora + svakt stjernestøv (samme identitet som login) */}
       <div
         aria-hidden
@@ -148,10 +151,14 @@ export function Sidebar({ user }: SidebarProps) {
         </div>
       </div>
 
+      {/* Utenfor <nav> (som scroller): nedtrekket skal legge seg OVER menyen, ikke klippes av overflow-y-auto. */}
+      {role === "super_admin" && (
+        <div className="relative px-2 pt-3">
+          <TenantSwitcher tenants={user.tenants} activeTenantId={user.activeTenantId} onSelect={onNavigate} />
+        </div>
+      )}
+
       <nav className="relative flex-1 overflow-y-auto px-2 py-3">
-        {role === "super_admin" && (
-          <TenantSwitcher tenants={user.tenants} activeTenantId={user.activeTenantId} />
-        )}
         {groups.map((group) => {
           const visibleItems = group.items.filter((item) => item.roles.includes(role))
           if (visibleItems.length === 0) return null
@@ -172,6 +179,7 @@ export function Sidebar({ user }: SidebarProps) {
                     <li key={item.href}>
                       <Link
                         href={item.href}
+                        onClick={onNavigate}
                         className={cn(
                           "group flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-all duration-150",
                           active

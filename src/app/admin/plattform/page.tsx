@@ -37,7 +37,7 @@ export default async function PlattformPage() {
       <h1 className="font-display mb-1 text-2xl font-semibold tracking-tight text-zinc-900">Oversikt</h1>
       <p className="mb-6 text-zinc-500">Alle kunde-organisasjoner på plattformen.</p>
 
-      <div className="mb-6 grid grid-cols-3 gap-3">
+      <div className="mb-6 grid grid-cols-2 sm:grid-cols-3 gap-3">
         {kpis.map(({ label, value, suffix, icon: Icon, iconCls, glow }, i) => (
           <div
             key={label}
@@ -63,7 +63,7 @@ export default async function PlattformPage() {
         ))}
       </div>
 
-      <div className="fx-rise overflow-hidden rounded-2xl border border-zinc-200/80 bg-white shadow-[0_1px_2px_rgba(16,24,40,0.04)]" style={{ animationDelay: "180ms" }}>
+      <div className="fx-rise overflow-x-auto contain-inline-size rounded-2xl border border-zinc-200/80 bg-white shadow-[0_1px_2px_rgba(16,24,40,0.04)]" style={{ animationDelay: "180ms" }}>
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-zinc-100 bg-zinc-50/60 text-left text-xs uppercase tracking-wide text-zinc-400">
@@ -86,8 +86,8 @@ export default async function PlattformPage() {
                         <span className="font-display text-sm font-bold text-white">{t.name.charAt(0).toUpperCase()}</span>
                       </span>
                       <div>
-                        <p className="font-semibold text-zinc-900">{t.name}</p>
-                        <p className="text-xs text-zinc-400">{t.slug}</p>
+                        <p className="font-semibold text-zinc-900 whitespace-nowrap">{t.name}</p>
+                        <p className="text-xs text-zinc-400 whitespace-nowrap">{t.slug}</p>
                       </div>
                     </div>
                   </td>
