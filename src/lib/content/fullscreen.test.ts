@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest"
-import { pickFullscreenVariant, fullscreenItemSeconds, FULLSCREEN_PAGE_SECONDS } from "./fullscreen"
+import { pickFullscreenVariant, fullscreenItemSeconds, posterImageUrls, FULLSCREEN_PAGE_SECONDS } from "./fullscreen"
 
 const base = { imageUrl: null as string | null, pages: [] as string[], portraitUrl: null as string | null, portraitPages: [] as string[] }
 
@@ -40,5 +40,21 @@ describe("fullscreenItemSeconds", () => {
     const item = { ...base, imageUrl: "l.pdf", pages: ["1", "2"], portraitUrl: "p.pdf", portraitPages: ["1", "2", "3", "4"], imageMode: "fullskjerm", durationSeconds: null }
     expect(fullscreenItemSeconds(item, true, 16)).toBe(FULLSCREEN_PAGE_SECONDS * 4)
     expect(fullscreenItemSeconds(item, false, 16)).toBe(FULLSCREEN_PAGE_SECONDS * 2)
+  })
+})
+
+describe("posterImageUrls", () => {
+  it("foretrekker forhåndsrendrede sider foran rå imageUrls (kundeavis = PDF-URL i imageUrls)", () => {
+    const kundeavis = { imageUrl: "avis.pdf", imageUrls: ["avis.pdf"], pages: ["p1.jpg", "p2.jpg", "p3.jpg"] }
+    expect(posterImageUrls(kundeavis)).toEqual(["p1.jpg", "p2.jpg", "p3.jpg"])
+  })
+  it("bruker imageUrls for vanlige bilde-items uten sider", () => {
+    expect(posterImageUrls({ imageUrl: "a.jpg", imageUrls: ["a.jpg", "b.jpg"], pages: [] })).toEqual(["a.jpg", "b.jpg"])
+  })
+  it("faller tilbake til imageUrl alene", () => {
+    expect(posterImageUrls({ imageUrl: "a.jpg", imageUrls: [], pages: [] })).toEqual(["a.jpg"])
+  })
+  it("gir tom liste uten media", () => {
+    expect(posterImageUrls({ imageUrl: null, imageUrls: [], pages: [] })).toEqual([])
   })
 })
