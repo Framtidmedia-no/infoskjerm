@@ -3,6 +3,7 @@
 import { createAdminClient } from "@/lib/supabase/server"
 import { logAudit } from "@/lib/admin/audit"
 import { sendEventSignupConfirmation } from "@/lib/email/resend"
+import { verifyTurnstileToken, TURNSTILE_ERROR_MESSAGE } from "@/lib/turnstile/verify"
 
 export interface SignupInput {
   name: string
@@ -12,6 +13,7 @@ export interface SignupInput {
   comment: string
   email: string
   consent: boolean
+  turnstileToken: string
 }
 
 /**
@@ -24,6 +26,9 @@ export async function signupForEvent(
   storeId: string | null,
   input: SignupInput
 ): Promise<{ ok: true } | { ok: false; error: string }> {
+  const human = await verifyTurnstileToken(input.turnstileToken)
+  if (!human) return { ok: false, error: TURNSTILE_ERROR_MESSAGE }
+
   const name = input.name.trim()
   if (!name) return { ok: false, error: "Skriv inn navnet ditt" }
   if (!input.consent) return { ok: false, error: "Du må godta at vi lagrer påmeldingen" }

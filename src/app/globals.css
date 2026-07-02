@@ -69,3 +69,140 @@ body {
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: #d4d4d8; border-radius: 3px; }
 ::-webkit-scrollbar-thumb:hover { background: #a1a1aa; }
+
+/* ============================================================
+   Offentlige flater (login / glemt-passord / velkommen / pamelding)
+   Alle regler er klasse-scopet (fx-*, auth-dark, font-display) og
+   påvirker IKKE /widget/*-sidene.
+   ============================================================ */
+
+.font-display {
+  font-family: var(--font-display), var(--font-geist-sans), ui-sans-serif, sans-serif;
+}
+
+/* Stjernefelt — to lag med ulik tetthet for parallakse-følelse */
+.fx-stars {
+  background-image:
+    radial-gradient(1px 1px at 25px 35px, rgba(255, 255, 255, 0.9), transparent),
+    radial-gradient(1px 1px at 120px 90px, rgba(255, 255, 255, 0.5), transparent),
+    radial-gradient(1.5px 1.5px at 200px 40px, rgba(255, 255, 255, 0.75), transparent),
+    radial-gradient(1px 1px at 60px 150px, rgba(255, 255, 255, 0.45), transparent),
+    radial-gradient(1px 1px at 170px 190px, rgba(255, 255, 255, 0.65), transparent);
+  background-size: 240px 240px;
+}
+.fx-stars-2 {
+  background-image:
+    radial-gradient(1px 1px at 40px 60px, rgba(255, 255, 255, 0.6), transparent),
+    radial-gradient(1.5px 1.5px at 260px 200px, rgba(255, 255, 255, 0.8), transparent),
+    radial-gradient(1px 1px at 150px 280px, rgba(255, 255, 255, 0.5), transparent);
+  background-size: 320px 320px;
+}
+
+/* Kornete filmtekstur for dybde */
+.fx-grain {
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2'/><feColorMatrix type='saturate' values='0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)' opacity='0.5'/></svg>");
+  mix-blend-mode: overlay;
+}
+
+/* Chrome-autofill på mørke skjemaer (ellers hvit/gul bakgrunn) */
+.auth-dark input:-webkit-autofill,
+.auth-dark input:-webkit-autofill:hover,
+.auth-dark input:-webkit-autofill:focus {
+  -webkit-text-fill-color: #fff;
+  -webkit-box-shadow: 0 0 0 1000px #151a24 inset;
+  caret-color: #fff;
+  transition: background-color 600000s 0s;
+}
+
+@keyframes fx-rise {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: none; }
+}
+.fx-rise {
+  opacity: 0;
+  animation: fx-rise 0.65s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+@keyframes fx-drift {
+  from { transform: translate3d(-4%, 0, 0) scale(1); }
+  to { transform: translate3d(4%, 4%, 0) scale(1.1); }
+}
+.fx-drift { animation: fx-drift 18s ease-in-out infinite alternate; }
+.fx-drift-slow { animation: fx-drift 30s ease-in-out infinite alternate-reverse; }
+
+@keyframes fx-twinkle {
+  from { opacity: 0.25; }
+  to { opacity: 0.7; }
+}
+.fx-twinkle { animation: fx-twinkle 4s ease-in-out infinite alternate; }
+
+@keyframes fx-float {
+  from { transform: translateY(-6px) rotate(-3deg); }
+  to { transform: translateY(8px) rotate(4deg); }
+}
+.fx-float { animation: fx-float 5s ease-in-out infinite alternate; }
+
+@keyframes fx-shake {
+  10%, 90% { transform: translateX(-1px); }
+  20%, 80% { transform: translateX(2px); }
+  30%, 50%, 70% { transform: translateX(-3px); }
+  40%, 60% { transform: translateX(3px); }
+}
+.fx-shake { animation: fx-shake 0.45s ease both; }
+
+@keyframes fx-pop {
+  0% { opacity: 0; transform: scale(0.5); }
+  70% { transform: scale(1.08); }
+  100% { opacity: 1; transform: scale(1); }
+}
+.fx-pop { animation: fx-pop 0.5s cubic-bezier(0.22, 1, 0.36, 1) both; }
+
+@keyframes fx-confetti {
+  0% { transform: translate3d(0, -12px, 0) rotate(0deg); opacity: 0; }
+  12% { opacity: 1; }
+  100% { transform: translate3d(var(--fx-x, 0px), 150px, 0) rotate(var(--fx-r, 320deg)); opacity: 0; }
+}
+.fx-confetti-piece {
+  position: absolute;
+  top: 0;
+  width: 7px;
+  height: 11px;
+  border-radius: 2px;
+  pointer-events: none;
+  animation: fx-confetti 1.8s ease-in var(--fx-d, 0s) 3 backwards;
+}
+
+@keyframes fx-draw {
+  to { stroke-dashoffset: 0; }
+}
+.fx-draw {
+  stroke-dasharray: 52;
+  stroke-dashoffset: 52;
+  animation: fx-draw 0.5s ease-out 0.2s forwards;
+}
+
+/* Lys-sveip over primærknapper */
+.fx-btn { position: relative; overflow: hidden; }
+.fx-btn::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(105deg, transparent 42%, rgba(255, 255, 255, 0.22) 50%, transparent 58%);
+  transform: translateX(-130%);
+  transition: transform 0.7s ease;
+  pointer-events: none;
+}
+.fx-btn:hover::after { transform: translateX(130%); }
+.fx-btn:disabled::after { display: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  .fx-rise { animation: none; opacity: 1; }
+  .fx-drift,
+  .fx-drift-slow,
+  .fx-twinkle,
+  .fx-float,
+  .fx-shake,
+  .fx-pop,
+  .fx-confetti-piece { animation: none !important; }
+  .fx-btn::after { display: none; }
+}
