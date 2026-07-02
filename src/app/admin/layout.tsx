@@ -6,6 +6,7 @@ import { BiometricLock } from "@/components/pwa/biometric-lock"
 import { ChainThemeProvider } from "@/components/admin/chain-theme-provider"
 import { TenantConfigProvider } from "@/components/admin/tenant-config-provider"
 import { getTenantConfig } from "@/lib/tenant/config-server"
+import { displayFont } from "@/lib/fonts"
 import { createClient, createAdminClient } from "@/lib/supabase/server"
 import { getAdminContext } from "@/lib/admin/admin-context"
 import { listAllTenants } from "@/lib/admin/tenants"
@@ -67,7 +68,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       brandFg={chain?.brand_fg ?? undefined}
     >
       <TenantConfigProvider config={tenantConfig}>
-      <div className="min-h-screen bg-[var(--background)]">
+      <div className={`${displayFont.variable} min-h-screen bg-[var(--background)]`}>
         {(() => {
           const navUser = {
             email: user.email ?? "",
