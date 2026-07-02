@@ -1,6 +1,7 @@
 import QRCode from "qrcode"
 import { htmlToBlocks, type LiveItem } from "@/lib/content/live"
 import { isPdfUrl, isPptUrl } from "@/lib/content/deck"
+import { parseSeasonKey } from "@/lib/season"
 import { CampaignCard } from "@/app/widget/kampanje/campaign-card"
 import { getBaseUrl } from "@/lib/base-url"
 import { TilbudRotator } from "@/app/widget/tilbud/tilbud-rotator"
@@ -55,8 +56,10 @@ function normalizeUrl(raw: string): string {
   return /^https?:\/\//i.test(v) ? v : `https://${v}`
 }
 
-export default async function PreviewWidgetPage({ searchParams }: { searchParams: Promise<{ d?: string; o?: string }> }) {
-  const { d, o } = await searchParams
+export default async function PreviewWidgetPage({ searchParams }: { searchParams: Promise<{ d?: string; o?: string; season?: string }> }) {
+  const { d, o, season } = await searchParams
+  // Sesong-override kun i preview (?season=jul) — ekte widgets styres av tenant-flagget.
+  const seasonOverride = parseSeasonKey(season)
   let data: PreviewData = {}
   try {
     if (d) data = JSON.parse(Buffer.from(d, "base64url").toString("utf-8"))
@@ -170,7 +173,7 @@ export default async function PreviewWidgetPage({ searchParams }: { searchParams
   }
 
   if (!landscape && tilbudCanRender) {
-    return <TilbudRotator items={[item]} ticker={[]} storeName={null} chain={chain} qr={qr} />
+    return <TilbudRotator items={[item]} ticker={[]} storeName={null} chain={chain} qr={qr} season={seasonOverride} />
   }
-  return <NewsRotator items={[item]} qr={qr} ticker={[]} portrait={!landscape} />
+  return <NewsRotator items={[item]} qr={qr} ticker={[]} portrait={!landscape} chain={chain} season={seasonOverride} />
 }

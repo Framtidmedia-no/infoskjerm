@@ -1,6 +1,9 @@
 import QRCode from "qrcode"
 import { fetchLiveContent, type LiveItem } from "@/lib/content/live"
 import { getBaseUrl } from "@/lib/base-url"
+import { createAdminClient } from "@/lib/supabase/server"
+import { seasonForStore } from "@/lib/tenant/store-features"
+import type { ChainBrand } from "@/app/widget/tilbud/offer-card"
 import { NewsRotator } from "./news-rotator"
 
 /**
@@ -35,10 +38,19 @@ export default async function NewsWidgetPage({ searchParams }: { searchParams: P
   const audience = flate === "intern" ? "intern" : "kunde"
   const cardTypes = audience === "intern" ? INTERNAL_CARD_TYPES : CARD_TYPES
   // Avdeling-filtrering: «felles»/ingen → alt; ellers kun innhold for avdelingen.
-  const [items, tickerItems] = await Promise.all([
+  const [items, tickerItems, storeRow, season] = await Promise.all([
     fetchLiveContent(store ?? null, cardTypes, audience, avdeling),
     audience === "intern" ? fetchLiveContent(store ?? null, ["ticker"], "intern", avdeling) : Promise.resolve([]),
+    store
+      ? createAdminClient().from("stores").select("chains(name, logo_url, color, brand_fg)").eq("id", store).maybeSingle()
+      : Promise.resolve({ data: null }),
+    seasonForStore(store ?? null),
   ])
+  // Kjedens farge/logo driver chrome-aksenten (kicker/ticker/chips) — fallback grønn.
+  const chainRow = (storeRow.data as unknown as { chains: { name: string; logo_url: string | null; color: string; brand_fg: string | null } | null } | null)?.chains ?? null
+  const chain: ChainBrand | null = chainRow
+    ? { name: chainRow.name, logoUrl: chainRow.logo_url, color: chainRow.color, brandFg: chainRow.brand_fg }
+    : null
   const ticker = tickerItems.map((t) => t.title.trim()).filter(Boolean)
 
   // Pre-generate QR codes (PNG data URLs). Job ads + competitions use the
@@ -70,5 +82,5 @@ export default async function NewsWidgetPage({ searchParams }: { searchParams: P
     }
   }
 
-  return <NewsRotator items={items as LiveItem[]} qr={qr} ticker={ticker} portrait={portrait} />
+  return <NewsRotator items={items as LiveItem[]} qr={qr} ticker={ticker} portrait={portrait} chain={chain} season={season} />
 }
