@@ -23,7 +23,7 @@ export default async function PlattformPage() {
       <h1 className="text-2xl font-bold text-zinc-900 mb-1">Oversikt</h1>
       <p className="text-zinc-500 mb-6">Alle kunde-organisasjoner på plattformen.</p>
 
-      <div className="mb-6 grid grid-cols-3 gap-3">
+      <div className="mb-6 grid grid-cols-2 sm:grid-cols-3 gap-3">
         <div className="rounded-xl border border-zinc-100 bg-white px-4 py-3">
           <p className="text-xs text-zinc-400">Tenants</p>
           <p className="text-2xl font-bold text-zinc-900">{totalTenants}</p>
@@ -41,7 +41,8 @@ export default async function PlattformPage() {
         </div>
       </div>
 
-      <div className="overflow-hidden rounded-xl border border-zinc-100 bg-white">
+      {/* overflow-x-auto: 6 kolonner er bredere enn en mobil — tabellen scroller i egen boks i stedet for å presse hele siden bred. */}
+      <div className="overflow-x-auto contain-inline-size rounded-xl border border-zinc-100 bg-white">
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-zinc-100 text-left text-xs uppercase tracking-wide text-zinc-400">
@@ -59,8 +60,8 @@ export default async function PlattformPage() {
               return (
                 <tr key={t.id} className="border-b border-zinc-50 last:border-b-0">
                   <td className="px-4 py-3">
-                    <p className="font-semibold text-zinc-900">{t.name}</p>
-                    <p className="text-xs text-zinc-400">{t.slug}</p>
+                    <p className="font-semibold text-zinc-900 whitespace-nowrap">{t.name}</p>
+                    <p className="text-xs text-zinc-400 whitespace-nowrap">{t.slug}</p>
                   </td>
                   <td className="px-4 py-3 text-right tabular-nums text-zinc-700">
                     {t.storeCount}

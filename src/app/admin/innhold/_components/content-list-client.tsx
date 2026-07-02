@@ -292,7 +292,7 @@ export function ContentListClient({ items, stores, tags, newHref = "/admin/innho
                   onClick={() => toggleSelect(item.id)}
                   aria-label={selected.has(item.id) ? "Fjern fra valg" : "Velg"}
                   aria-pressed={selected.has(item.id)}
-                  className={`absolute top-2.5 left-2.5 z-10 w-6 h-6 rounded-md border flex items-center justify-center transition-all ${selected.has(item.id) ? "bg-zinc-900 border-zinc-900 text-white" : "bg-white/85 border-zinc-300 text-transparent opacity-0 group-hover:opacity-100 focus:opacity-100"}`}
+                  className={`absolute top-2.5 left-2.5 z-10 w-6 h-6 rounded-md border flex items-center justify-center transition-all ${selected.has(item.id) ? "bg-zinc-900 border-zinc-900 text-white" : "bg-white/85 border-zinc-300 text-transparent pointer-fine:opacity-0 pointer-fine:group-hover:opacity-100 focus:opacity-100"}`}
                 >
                   <Check className="w-4 h-4" />
                 </button>
@@ -357,7 +357,7 @@ export function ContentListClient({ items, stores, tags, newHref = "/admin/innho
                 </div>
 
                 <div className="absolute bottom-2.5 right-2.5">
-                  <button onClick={() => setMenuId(menuId === item.id ? null : item.id)} aria-label="Handlinger" aria-haspopup="menu" className="w-7 h-7 rounded-lg flex items-center justify-center text-zinc-400 bg-white/80 hover:bg-zinc-100 hover:text-zinc-700 opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity">
+                  <button onClick={() => setMenuId(menuId === item.id ? null : item.id)} aria-label="Handlinger" aria-haspopup="menu" className="w-7 h-7 rounded-lg flex items-center justify-center text-zinc-400 bg-white/80 hover:bg-zinc-100 hover:text-zinc-700 pointer-fine:opacity-0 pointer-fine:group-hover:opacity-100 focus:opacity-100 transition-opacity">
                     <MoreVertical className="w-4 h-4" />
                   </button>
                   {menuId === item.id && (

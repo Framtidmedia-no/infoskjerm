@@ -80,6 +80,8 @@ interface SidebarProps {
     tenants: SwitcherTenant[]
     activeTenantId: string | null
   }
+  /** Kalles ved navigasjon/valg — MobileNav bruker den til å lukke skuffen. */
+  onNavigate?: () => void
 }
 
 const roleLabels: Record<string, string> = {
@@ -90,7 +92,7 @@ const roleLabels: Record<string, string> = {
   store_employee: "Redaktør",
 }
 
-export function Sidebar({ user }: SidebarProps) {
+export function Sidebar({ user, onNavigate }: SidebarProps) {
   const pathname = usePathname()
   const router = useRouter()
   const role = user.role as UserRole
@@ -110,7 +112,8 @@ export function Sidebar({ user }: SidebarProps) {
   }
 
   return (
-    <aside className="fixed left-0 top-0 h-screen w-60 bg-white border-r border-zinc-100 flex flex-col z-40">
+    // pt-safe: i PWA (viewport-fit=cover) skal ikke brand-headeren ligge under statusbaren/notchen.
+    <aside className="fixed left-0 top-0 h-screen w-60 bg-white border-r border-zinc-100 flex flex-col z-40 pt-[env(safe-area-inset-top)]">
       {/* Logo/brand */}
       <div className="flex items-center gap-3 px-5 py-4 border-b border-zinc-100">
         <div
@@ -134,10 +137,14 @@ export function Sidebar({ user }: SidebarProps) {
         </div>
       </div>
 
+      {/* Utenfor <nav> (som scroller): nedtrekket skal legge seg OVER menyen, ikke klippes av overflow-y-auto. */}
+      {role === "super_admin" && (
+        <div className="px-2 pt-3">
+          <TenantSwitcher tenants={user.tenants} activeTenantId={user.activeTenantId} onSelect={onNavigate} />
+        </div>
+      )}
+
       <nav className="flex-1 overflow-y-auto py-3 px-2">
-        {role === "super_admin" && (
-          <TenantSwitcher tenants={user.tenants} activeTenantId={user.activeTenantId} />
-        )}
         {groups.map((group) => {
           const visibleItems = group.items.filter((item) => item.roles.includes(role))
           if (visibleItems.length === 0) return null
@@ -158,6 +165,7 @@ export function Sidebar({ user }: SidebarProps) {
                     <li key={item.href}>
                       <Link
                         href={item.href}
+                        onClick={onNavigate}
                         className={cn(
                           "flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all",
                           active
