@@ -21,7 +21,7 @@ export const dynamic = "force-dynamic"
 const VIEW_ROLES = ["super_admin", "chain_manager", "area_manager", "store_manager"] as const
 
 export default async function CmsDashboardPage() {
-  const { supabase, tenantId } = await requireRole([...VIEW_ROLES])
+  const { supabase, tenantId, userId } = await requireRole([...VIEW_ROLES])
   const { unitLabel, unitLabelPlural, brand, features } = await getTenantConfig(supabase, tenantId)
   // «Oppdater KPI nå» krever Drift-synk — kun tenants med kpi-funksjonen (Gange-Rolv),
   // aldri hardkodet tenant-navn. Uten den vises knappen ikke (f.eks. Mobile AS).
@@ -34,6 +34,13 @@ export default async function CmsDashboardPage() {
     .order("name")
 
   const list = stores ?? []
+
+  // «I dag»-heroen: hilsen + dagens driftsbilde i én setning.
+  const { data: me } = await supabase.from("users").select("full_name").eq("id", userId).maybeSingle()
+  const firstName = (me?.full_name ?? "").trim().split(" ")[0] || null
+  const osloHour = Number(new Intl.DateTimeFormat("nb-NO", { timeZone: "Europe/Oslo", hour: "numeric", hour12: false }).format(new Date()))
+  const greeting = osloHour < 5 ? "God natt" : osloHour < 10 ? "God morgen" : osloHour < 18 ? "God dag" : "God kveld"
+  const todayStr = new Intl.DateTimeFormat("nb-NO", { timeZone: "Europe/Oslo", weekday: "long", day: "numeric", month: "long" }).format(new Date())
 
   // Content health counts for the status strip.
   const nowMs = Date.now()
@@ -86,6 +93,18 @@ export default async function CmsDashboardPage() {
           <p className="text-sm text-zinc-500">{`Ingen ${unitLabelPlural.toLowerCase()} er satt opp ennå.`}</p>
         ) : (
           <div className="space-y-6">
+            <div className="fx-rise">
+              <p className="text-sm capitalize text-zinc-500">{todayStr}</p>
+              <h2 className="font-display mt-1 flex items-center gap-2.5 text-3xl font-bold tracking-tight text-zinc-900 sm:text-4xl">
+                {greeting}{firstName ? `, ${firstName}` : ""}
+                <svg aria-hidden viewBox="0 0 16 16" className="h-4 w-4 text-emerald-500">
+                  <path fill="currentColor" d="M8 0c.6 4.2 3.8 7.4 8 8-4.2.6-7.4 3.8-8 8-.6-4.2-3.8-7.4-8-8 4.2-.6 7.4-3.8 8-8Z" />
+                </svg>
+              </h2>
+              <p className="mt-1.5 text-sm text-zinc-600">
+                {counts.live} innslag live · {insight.faults.length > 0 ? `${insight.faults.length} skjermfeil` : "ingen skjermfeil"} · {counts.expiringSoon} utløper denne uka
+              </p>
+            </div>
             <ContentStatus counts={counts} />
             <InsightPanel insight={insight} />
             <ScreenPreview stores={previewStores} screens={screens} brand={brand} />
