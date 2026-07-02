@@ -47,6 +47,34 @@ export async function saveAvdelinger(
 
   const column = flate === "intern" ? "avdelinger_intern" : "avdelinger"
   const admin = createAdminClient()
+
+  // Blokker fjerning av avdelinger som er i bruk — skjermer ville ellers stille
+  // falt tilbake til «felles», og innholds-chips vist rå nøkkel.
+  const { data: tenantRow } = await admin.from("tenants").select(column).eq("id", tenantId).maybeSingle()
+  const oldList = ((tenantRow as unknown as Record<string, unknown> | null)?.[column] ?? []) as { key: string; label: string }[]
+  const removed = oldList.filter((o) => o.key !== "felles" && !seen.has(o.key))
+  for (const r of removed) {
+    // screens.flate/avdeling (migrasjon 037) er ikke i genererte typer ennå → cast.
+    const screensQuery = admin.from("screens").select("id", { count: "exact", head: true })
+      .eq("tenant_id", tenantId) as unknown as {
+        eq: (c: string, v: string) => { eq: (c: string, v: string) => PromiseLike<{ count: number | null }> }
+      }
+    const [{ count: screenCount }, { count: contentCount }] = await Promise.all([
+      screensQuery.eq("flate", flate).eq("avdeling", r.key),
+      admin.from("content_items").select("id", { count: "exact", head: true })
+        .eq("tenant_id", tenantId).eq("body->>avdeling", r.key),
+    ])
+    const s = screenCount ?? 0
+    const c = contentCount ?? 0
+    if (s > 0 || c > 0) {
+      const parts = [
+        s > 0 ? `${s} skjerm${s === 1 ? "" : "er"}` : null,
+        c > 0 ? `${c} oppslag` : null,
+      ].filter(Boolean).join(" og ")
+      return { ok: false, error: `Avdelingen «${r.label}» brukes av ${parts} — flytt dem til en annen avdeling først.` }
+    }
+  }
+
   const { error } = await (admin.from("tenants") as unknown as {
     update: (v: Record<string, unknown>) => { eq: (c: string, val: string) => Promise<{ error: { message: string } | null }> }
   })

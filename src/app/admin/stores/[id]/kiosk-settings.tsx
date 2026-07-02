@@ -34,7 +34,7 @@ export function KioskSettings({
   const [protectedNow, setProtectedNow] = useState(hasPassword)
   const [password, setPassword] = useState("")
   const [saving, setSaving] = useState(false)
-  const [msg, setMsg] = useState<string | null>(null)
+  const [msg, setMsg] = useState<{ text: string; kind: "success" | "error" } | null>(null)
 
   const avdList = withFelles(flate === "intern" ? avdelingerIntern : avdelinger, unitLabel)
 
@@ -58,12 +58,15 @@ export function KioskSettings({
     const res = await setKioskPassword(storeId, next)
     setSaving(false)
     if (!res.ok) {
-      setMsg(res.error ?? "Kunne ikke lagre")
+      setMsg({ text: res.error ?? "Kunne ikke lagre", kind: "error" })
       return
     }
     setProtectedNow(!!next.trim())
     setPassword("")
-    setMsg(next.trim() ? "Passord lagret." : "Passord fjernet – visningen er åpen.")
+    setMsg({
+      text: next.trim() ? "Passord lagret." : "Passord fjernet – visningen er åpen.",
+      kind: "success",
+    })
   }
 
   return (
@@ -141,7 +144,11 @@ export function KioskSettings({
             </button>
           )}
         </div>
-        {msg && <p className="text-xs text-emerald-600">{msg}</p>}
+        {msg && (
+          <p className={`text-xs ${msg.kind === "error" ? "text-red-600" : "text-emerald-600"}`}>
+            {msg.text}
+          </p>
+        )}
       </div>
     </div>
   )

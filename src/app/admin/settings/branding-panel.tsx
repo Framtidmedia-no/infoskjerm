@@ -110,7 +110,8 @@ export function BrandingPanel({ chains }: BrandingPanelProps) {
   )
   const [saving, setSaving] = useState<string | null>(null)
   const [saved, setSaved] = useState<string | null>(null)
-  const [error, setError] = useState<string | null>(null)
+  // Feil per kjede — én delt feil ville vist rød tekst på ALLE kjedekortene.
+  const [errors, setErrors] = useState<Record<string, string>>({})
 
   function update(chainId: string, key: "color" | "brand_light" | "brand_fg", value: string) {
     setValues((prev) => ({
@@ -123,10 +124,13 @@ export function BrandingPanel({ chains }: BrandingPanelProps) {
     const v = values[chainId]
     if (!v) return
     setSaving(chainId)
-    setError(null)
+    setErrors((prev) => ({ ...prev, [chainId]: "" }))
     const res = await updateChainBranding(chainId, v.color, v.brand_light, v.brand_fg)
     setSaving(null)
-    if (!res.ok) { setError(res.error ?? "Feil"); return }
+    if (!res.ok) {
+      setErrors((prev) => ({ ...prev, [chainId]: res.error ?? "Kunne ikke lagre" }))
+      return
+    }
     setSaved(chainId)
     setTimeout(() => setSaved(null), 2500)
   }
@@ -185,7 +189,7 @@ export function BrandingPanel({ chains }: BrandingPanelProps) {
                   <><CheckCircle2 className="w-3.5 h-3.5" />Lagret</>
                 ) : "Lagre farger"}
               </button>
-              {error && <p className="text-xs text-red-500">{error}</p>}
+              {errors[chain.id] && <p className="text-xs text-red-500">{errors[chain.id]}</p>}
             </div>
           </div>
         )
