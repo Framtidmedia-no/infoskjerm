@@ -38,9 +38,13 @@ tv_state() {
 STATE=$(tv_state)
 INFO="tvpower $(hostname) $(uname -r)"
 
+# jq -n bygger JSON trygt uansett hva hostname/uname inneholder.
+BODY=$(jq -n --arg token "$SCREEN_TOKEN" --arg tvState "$STATE" --arg info "$INFO" \
+  '{token: $token, tvState: $tvState, info: $info}')
+
 RESP=$(curl -s -m 15 -X POST "$APP_URL/api/screen/power" \
   -H "Content-Type: application/json" \
-  -d "{\"token\":\"$SCREEN_TOKEN\",\"tvState\":\"$STATE\",\"info\":\"$INFO\"}")
+  -d "$BODY")
 
 DESIRED=$(printf '%s' "$RESP" | jq -r '.desired // empty' 2>/dev/null)
 if [ "$DESIRED" != "on" ] && [ "$DESIRED" != "off" ]; then
