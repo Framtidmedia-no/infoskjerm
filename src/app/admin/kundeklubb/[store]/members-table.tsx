@@ -51,8 +51,8 @@ export function MembersTable({ rows, storeName }: { rows: MemberRow[]; storeName
               <SoftTh>Påmeldt</SoftTh>
             </SoftThead>
             <tbody>
-              {rows.map((r) => (
-                <SoftTr key={r.id}>
+              {rows.map((r, idx) => (
+                <SoftTr key={r.id} index={idx}>
                   <SoftTd>
                     <div className="flex items-center gap-3">
                       <span className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl bg-[var(--brand-light)] font-display text-sm font-bold text-[var(--brand-primary)]">

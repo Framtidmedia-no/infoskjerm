@@ -77,8 +77,8 @@ export function SignupsTable({ rows, eventTitle }: { rows: SignupRow[]; eventTit
           <SoftTh>Påmeldt</SoftTh>
         </SoftThead>
         <tbody>
-          {rows.map((r) => (
-            <SoftTr key={r.id}>
+          {rows.map((r, idx) => (
+            <SoftTr key={r.id} index={idx}>
               <SoftTd className="font-semibold text-zinc-900">
                 {r.name}
                 {r.comment && <span className="mt-0.5 block text-[11px] font-normal text-zinc-400">{r.comment}</span>}

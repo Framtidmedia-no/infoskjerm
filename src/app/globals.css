@@ -123,6 +123,16 @@ body {
   animation: fx-rise 0.65s cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
 
+/* Ren fade for tabellrader — transform på <tr> er upålitelig på tvers av nettlesere */
+@keyframes fx-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.fx-fade {
+  opacity: 0;
+  animation: fx-fade 0.5s ease-out forwards;
+}
+
 @keyframes fx-drift {
   from { transform: translate3d(-4%, 0, 0) scale(1); }
   to { transform: translate3d(4%, 4%, 0) scale(1.1); }
@@ -196,7 +206,8 @@ body {
 .fx-btn:disabled::after { display: none; }
 
 @media (prefers-reduced-motion: reduce) {
-  .fx-rise { animation: none; opacity: 1; }
+  .fx-rise,
+  .fx-fade { animation: none; opacity: 1; }
   .fx-drift,
   .fx-drift-slow,
   .fx-twinkle,

@@ -23,8 +23,8 @@ export default async function PlattformBrukerePage() {
           <SoftTh>Rolle</SoftTh>
         </SoftThead>
         <tbody>
-          {users.map((u) => (
-            <SoftTr key={u.id}>
+          {users.map((u, idx) => (
+            <SoftTr key={u.id} index={idx}>
               <SoftTd className="text-zinc-700">{u.tenantName}</SoftTd>
               <SoftTd>
                 <div className="flex items-center gap-3">

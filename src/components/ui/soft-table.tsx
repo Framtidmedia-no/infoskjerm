@@ -37,7 +37,7 @@ export function SoftTh({ className, children }: { className?: string; children?:
   )
 }
 
-export function SoftTr({ className, children }: { className?: string; children: React.ReactNode }) {
+export function SoftTr({ className, children, index }: { className?: string; children: React.ReactNode; index?: number }) {
   return (
     <tr
       className={cn(
@@ -46,8 +46,10 @@ export function SoftTr({ className, children }: { className?: string; children: 
         "[&>td:first-child]:rounded-l-2xl [&>td:first-child]:border-l [&>td:last-child]:rounded-r-2xl [&>td:last-child]:border-r",
         "[&>td]:shadow-[0_1px_2px_rgba(16,24,40,0.03)]",
         "[&:hover>td]:border-zinc-300/70 [&:hover>td]:bg-zinc-50/60",
+        index != null && "fx-fade",
         className
       )}
+      style={index != null ? { animationDelay: `${Math.min(index, 14) * 35}ms` } : undefined}
     >
       {children}
     </tr>
