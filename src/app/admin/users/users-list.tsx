@@ -162,11 +162,11 @@ export function UsersList({ rows, allStores, canAdminister, unitLabelPlural }: U
                 <SoftTh />
               </SoftThead>
               <tbody>
-                {filtered.map((row) => {
+                {filtered.map((row, idx) => {
                   const cfg = roleConfig[row.role] ?? roleConfig.store_employee
                   const Icon = cfg.icon
                   return (
-                    <SoftTr key={row.id}>
+                    <SoftTr key={row.id} index={idx}>
                       <SoftTd>
                         <div className="flex items-center gap-3">
                           <div className={`h-10 w-10 rounded-xl ${cfg.bg} flex items-center justify-center ring-1 ring-inset ring-black/5`}>

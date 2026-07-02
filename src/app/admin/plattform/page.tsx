@@ -1,6 +1,7 @@
 import { Building2, Monitor, Store as StoreIcon } from "lucide-react"
 import { getAdminContext } from "@/lib/admin/admin-context"
 import { getCrossTenantOverview } from "@/lib/admin/cross-tenant-queries"
+import { CountUp } from "@/components/ui/count-up"
 import { SoftTable, SoftTd, SoftTh, SoftThead, SoftTr } from "@/components/ui/soft-table"
 import { setActiveTenant } from "./actions"
 
@@ -21,11 +22,11 @@ export default async function PlattformPage() {
   const totalScreensOnline = overview.reduce((sum, t) => sum + t.screenOnline, 0)
 
   const kpis = [
-    { label: "Tenants", value: `${totalTenants}`, suffix: "", icon: Building2, iconCls: "bg-indigo-50 text-indigo-600", glow: "rgba(99,102,241,0.10)" },
-    { label: "Butikker", value: `${totalStores}`, suffix: "", icon: StoreIcon, iconCls: "bg-emerald-50 text-emerald-600", glow: "rgba(16,185,129,0.10)" },
+    { label: "Tenants", value: totalTenants, suffix: "", icon: Building2, iconCls: "bg-indigo-50 text-indigo-600", glow: "rgba(99,102,241,0.10)" },
+    { label: "Butikker", value: totalStores, suffix: "", icon: StoreIcon, iconCls: "bg-emerald-50 text-emerald-600", glow: "rgba(16,185,129,0.10)" },
     {
       label: "Skjermer online",
-      value: `${totalScreensOnline}`,
+      value: totalScreensOnline,
       suffix: `/${totalScreens}`,
       icon: Monitor,
       iconCls: totalScreensOnline === 0 && totalScreens > 0 ? "bg-red-50 text-red-600" : "bg-sky-50 text-sky-600",
@@ -55,7 +56,7 @@ export default async function PlattformPage() {
             </span>
             <span className="min-w-0">
               <span className="font-display block text-2xl font-bold leading-none tracking-tight text-zinc-900 tabular-nums">
-                {value}
+                <CountUp value={value} />
                 {suffix && <span className="text-base font-medium text-zinc-400">{suffix}</span>}
               </span>
               <span className="mt-1 block truncate text-[11px] text-zinc-500">{label}</span>
@@ -75,10 +76,10 @@ export default async function PlattformPage() {
             <SoftTh />
           </SoftThead>
           <tbody>
-            {overview.map((t) => {
+            {overview.map((t, idx) => {
               const isActive = ctx?.activeTenant?.id === t.id
               return (
-                <SoftTr key={t.id}>
+                <SoftTr key={t.id} index={idx}>
                   <SoftTd>
                     <div className="flex items-center gap-3">
                       <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-zinc-900 shadow-sm">

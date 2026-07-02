@@ -80,10 +80,12 @@ export function AvdelingerCard() {
 
         <div className="space-y-2">
           {/* Låst «Hele enheten» */}
-          <div className="flex items-center gap-2 rounded-lg border border-zinc-200 bg-zinc-50/70 px-3 py-2">
-            <Lock className="w-3.5 h-3.5 text-zinc-400 flex-shrink-0" />
-            <span className="text-sm text-zinc-600 flex-1">{felles}</span>
-            <span className="text-[10px] text-zinc-400 uppercase tracking-wide">alltid</span>
+          <div className="flex items-center gap-2.5 rounded-xl border border-zinc-200/70 bg-zinc-50/70 px-3.5 py-2.5">
+            <span className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-lg bg-white ring-1 ring-inset ring-zinc-200/80">
+              <Lock className="w-3.5 h-3.5 text-zinc-400" />
+            </span>
+            <span className="text-sm font-medium text-zinc-600 flex-1">{felles}</span>
+            <span className="rounded-full bg-white px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-zinc-400 ring-1 ring-inset ring-zinc-200/80">alltid</span>
           </div>
 
           {list.map((a, i) => (
@@ -92,15 +94,15 @@ export function AvdelingerCard() {
                 value={a.label}
                 onChange={(e) => setLabel(i, e.target.value)}
                 placeholder="Ny avdeling…"
-                className="flex-1 rounded-lg border border-zinc-200 px-3 py-2 text-sm transition-colors focus:border-[var(--brand-primary)] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)]/15"
+                className="flex-1 rounded-xl border border-zinc-200/70 bg-white px-3.5 py-2.5 text-sm shadow-[0_1px_2px_rgba(16,24,40,0.03)] transition-colors focus:border-[var(--brand-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)]/15"
               />
-              <button type="button" onClick={() => remove(i)} title="Fjern" className="p-2 rounded-lg text-zinc-400 hover:bg-red-50 hover:text-red-600">
+              <button type="button" onClick={() => remove(i)} title="Fjern" className="p-2 rounded-lg text-zinc-400 transition-colors hover:bg-red-50 hover:text-red-600">
                 <Trash2 className="w-4 h-4" />
               </button>
             </div>
           ))}
 
-          <button type="button" onClick={add} className="inline-flex items-center gap-1.5 text-xs font-semibold text-zinc-600 border border-dashed border-zinc-300 hover:border-zinc-400 rounded-lg px-3 py-2">
+          <button type="button" onClick={add} className="inline-flex items-center gap-1.5 text-xs font-semibold text-zinc-600 border border-dashed border-zinc-300 hover:border-zinc-400 rounded-xl px-3.5 py-2.5 transition-colors">
             <Plus className="w-4 h-4" /> Legg til avdeling
           </button>
         </div>
