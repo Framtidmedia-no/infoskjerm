@@ -10,6 +10,8 @@ import { withAlpha } from "./types"
 
 interface StoreCardProps {
   store: BoardStore
+  /** undefined = laster (streames), null = ukjent (Xibo nede), tall = fasit. */
+  screenCount: number | null | undefined
   chainName: string
   chainColor: string
   tags: BoardTag[]
@@ -23,6 +25,7 @@ interface StoreCardProps {
 
 export function StoreCard({
   store,
+  screenCount,
   chainName,
   chainColor,
   tags,
@@ -33,7 +36,8 @@ export function StoreCard({
   onUpdateTag,
   onDeleteTag,
 }: StoreCardProps) {
-  const online = store.screenCount > 0
+  const online = (screenCount ?? 0) > 0
+  const countPending = screenCount === undefined
   const [tagOpen, setTagOpen] = useState(false)
 
   return (
@@ -59,7 +63,7 @@ export function StoreCard({
               )}
               <span
                 className={`relative inline-flex h-2.5 w-2.5 rounded-full ${
-                  online ? "bg-emerald-500" : "bg-zinc-300"
+                  online ? "bg-emerald-500" : countPending ? "animate-pulse bg-zinc-200" : "bg-zinc-300"
                 }`}
               />
             </span>
@@ -129,9 +133,18 @@ export function StoreCard({
 
         {/* Footer */}
         <div className="mt-auto flex items-center justify-between border-t border-zinc-100 pt-3">
-          <div className="inline-flex items-center gap-1.5 rounded-lg bg-zinc-100 px-2.5 py-1 text-xs font-medium text-zinc-600">
+          <div
+            className="inline-flex items-center gap-1.5 rounded-lg bg-zinc-100 px-2.5 py-1 text-xs font-medium text-zinc-600"
+            title={screenCount === null ? "Kunne ikke hente skjermstatus fra skjermsystemet" : undefined}
+          >
             <Monitor className="h-3.5 w-3.5 text-zinc-400" />
-            {store.screenCount} skjerm{store.screenCount !== 1 ? "er" : ""}
+            {countPending ? (
+              <span className="inline-block h-3 w-14 animate-pulse rounded bg-zinc-200" aria-label="Henter skjermer…" />
+            ) : screenCount === null ? (
+              "– skjermer"
+            ) : (
+              `${screenCount} skjerm${screenCount !== 1 ? "er" : ""}`
+            )}
           </div>
           <Link
             href={`/admin/stores/${store.id}`}

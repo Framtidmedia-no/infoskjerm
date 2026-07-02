@@ -12,7 +12,6 @@ export interface BoardStore {
   email: string | null
   org_number: string | null
   gln: string | null
-  screenCount: number
   tags: BoardTag[]
 }
 
