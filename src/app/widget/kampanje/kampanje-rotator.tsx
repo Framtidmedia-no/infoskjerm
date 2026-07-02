@@ -12,6 +12,8 @@ import { SeasonLayer } from "@/app/widget/_shared/season-layer"
 import { formatPeriod, expiryLabel } from "@/app/widget/_shared/period"
 import { KEYFRAMES as TOKEN_KEYFRAMES, hexAlpha } from "@/app/widget/_shared/tokens"
 import type { Season } from "@/lib/season"
+import { FullscreenMedia } from "@/app/widget/_shared/fullscreen-media"
+import { fullscreenItemSeconds } from "@/lib/content/fullscreen"
 
 /**
  * Liggende kunde-kampanjeskjerm (1920×1080). Roterer butikkens kunde-slides:
@@ -109,7 +111,7 @@ export function KampanjeRotator({ items, chain = null, qr = {}, season = null }:
   useEffect(() => {
     if (items.length <= 1) return
     const it = items[i % items.length]
-    const secs = it?.durationSeconds ?? DEFAULT_SECONDS
+    const secs = (it ? fullscreenItemSeconds(it, false, DEFAULT_SECONDS) : null) ?? it?.durationSeconds ?? DEFAULT_SECONDS
     const id = setTimeout(() => setI((v) => (v + 1) % items.length), secs * 1000)
     return () => clearTimeout(id)
   }, [i, items])
@@ -137,7 +139,10 @@ export function KampanjeRotator({ items, chain = null, qr = {}, season = null }:
       ) : (
         <div style={{ position: "absolute", inset: 0 }}>
           <SceneTransition itemKey={item.id}>
-            {item.campaign ? (
+            {item.imageMode === "fullskjerm" ? (
+              // Fullskjerm-media: kant til kant uten tekstpanel — foran alle kort-typer.
+              <FullscreenMedia item={item} portrait={false} />
+            ) : item.campaign ? (
               <CampaignCard item={item} chain={chain} />
             ) : item.type === "competition" ? (
               <CompetitionCard item={item} qrUrl={qr[item.id]} />

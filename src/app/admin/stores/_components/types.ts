@@ -27,3 +27,6 @@ export interface BoardChain {
 export function withAlpha(hex: string, alpha: string): string {
   return `${hex}${alpha}`
 }
+
+/** GLN-plassholderen som brukes for enheter uten reelt EPD-lokasjonsnummer. */
+export const GLN_PLACEHOLDER = "0000000000000"

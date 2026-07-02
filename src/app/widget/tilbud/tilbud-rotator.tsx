@@ -13,6 +13,8 @@ import { SeasonLayer } from "@/app/widget/_shared/season-layer"
 import { formatPeriod, expiryLabel } from "@/app/widget/_shared/period"
 import { KEYFRAMES as TOKEN_KEYFRAMES, hexAlpha } from "@/app/widget/_shared/tokens"
 import type { Season } from "@/lib/season"
+import { FullscreenMedia } from "@/app/widget/_shared/fullscreen-media"
+import { fullscreenItemSeconds } from "@/lib/content/fullscreen"
 
 /**
  * Full-screen offer presentation: a left side panel with the heading, period and
@@ -162,7 +164,7 @@ export function TilbudRotator({ items, ticker, storeName, chain = null, qr = {},
     if (items.length <= 1) return
     // PDF flyers (kundeavis) get longer so several pages show before advancing.
     const it = items[i % items.length]
-    const secs = it?.durationSeconds ?? (it?.isPdf ? 45 : SECONDS)
+    const secs = (it ? fullscreenItemSeconds(it, true, SECONDS) : null) ?? it?.durationSeconds ?? (it?.isPdf ? 45 : SECONDS)
     const id = setTimeout(() => setI((v) => (v + 1) % items.length), secs * 1000)
     return () => clearTimeout(id)
   }, [i, items])
@@ -183,7 +185,10 @@ export function TilbudRotator({ items, ticker, storeName, chain = null, qr = {},
   usePreloadNext(next)
 
   // Ett kort per gren — alle går gjennom samme SceneTransition (crossfade).
-  const card = !item ? null : item.klubb ? (
+  const card = !item ? null : item.imageMode === "fullskjerm" ? (
+    // Fullskjerm-media: kant til kant uten tittel/panel — foran alle kort-typer.
+    <FullscreenMedia item={item} portrait />
+  ) : item.klubb ? (
     // Customer-club invite → full-bleed QR card (per-store sign-up link).
     <KundeklubbCard headline={item.klubb.headline} subtext={item.klubb.subtext} cta={item.klubb.cta || undefined} qrUrl={qr[item.id] ?? ""} accent={chain?.color || "#16a34a"} logoUrl={chain?.logoUrl ?? null} chainName={chain?.name ?? null} />
   ) : item.type === "competition" ? (

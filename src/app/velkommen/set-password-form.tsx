@@ -3,7 +3,27 @@
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
-import { Eye, EyeOff, Loader2 } from "lucide-react"
+import { Check, Eye, EyeOff, Loader2, Lock } from "lucide-react"
+
+const INPUT_CLS =
+  "w-full rounded-xl border border-white/10 bg-white/[0.04] py-3 pl-10 pr-10 text-sm text-white placeholder-zinc-600 transition-all focus:border-emerald-400/60 focus:bg-white/[0.06] focus:outline-none focus:ring-2 focus:ring-emerald-400/20"
+
+function Requirement({ met, children }: { met: boolean; children: React.ReactNode }) {
+  return (
+    <li
+      className={`flex items-center gap-2 text-xs transition-colors ${met ? "text-emerald-400" : "text-zinc-500"}`}
+    >
+      <span
+        className={`flex h-4 w-4 items-center justify-center rounded-full border transition-colors ${
+          met ? "border-emerald-400/50 bg-emerald-500/15" : "border-white/15"
+        }`}
+      >
+        {met && <Check className="h-2.5 w-2.5" />}
+      </span>
+      {children}
+    </li>
+  )
+}
 
 export function SetPasswordForm() {
   const router = useRouter()
@@ -12,6 +32,9 @@ export function SetPasswordForm() {
   const [show, setShow] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  const longEnough = password.length >= 8
+  const matches = confirm.length > 0 && password === confirm
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -39,59 +62,74 @@ export function SetPasswordForm() {
     router.refresh()
   }
 
-  const inputCls =
-    "w-full bg-zinc-800 border border-zinc-700 text-white placeholder-zinc-600 rounded-lg px-3.5 py-2.5 pr-10 text-sm focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-colors"
-
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div>
-        <label className="block text-xs font-medium text-zinc-400 mb-1.5">Nytt passord</label>
+        <label htmlFor="new-password" className="mb-1.5 block text-xs font-medium text-zinc-400">
+          Nytt passord
+        </label>
         <div className="relative">
+          <Lock aria-hidden className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-600" />
           <input
+            id="new-password"
             type={show ? "text" : "password"}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             placeholder="Minst 8 tegn"
+            autoComplete="new-password"
             required
             autoFocus
-            className={inputCls}
+            className={INPUT_CLS}
           />
           <button
             type="button"
             onClick={() => setShow(!show)}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300 transition-colors"
+            aria-label={show ? "Skjul passord" : "Vis passord"}
+            className="absolute right-3 top-1/2 -translate-y-1/2 rounded p-0.5 text-zinc-500 transition-colors hover:text-zinc-300 focus-visible:outline focus-visible:outline-emerald-400/60"
           >
-            {show ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+            {show ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
           </button>
         </div>
       </div>
 
       <div>
-        <label className="block text-xs font-medium text-zinc-400 mb-1.5">Bekreft passord</label>
-        <input
-          type={show ? "text" : "password"}
-          value={confirm}
-          onChange={(e) => setConfirm(e.target.value)}
-          placeholder="Gjenta passordet"
-          required
-          className={inputCls.replace(" pr-10", "")}
-        />
+        <label htmlFor="confirm-password" className="mb-1.5 block text-xs font-medium text-zinc-400">
+          Bekreft passord
+        </label>
+        <div className="relative">
+          <Lock aria-hidden className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-600" />
+          <input
+            id="confirm-password"
+            type={show ? "text" : "password"}
+            value={confirm}
+            onChange={(e) => setConfirm(e.target.value)}
+            placeholder="Gjenta passordet"
+            autoComplete="new-password"
+            required
+            className={INPUT_CLS}
+          />
+        </div>
       </div>
 
+      <ul className="space-y-1.5 rounded-xl border border-white/5 bg-white/[0.03] px-4 py-3">
+        <Requirement met={longEnough}>Minst 8 tegn</Requirement>
+        <Requirement met={matches}>Passordene er like</Requirement>
+      </ul>
+
       {error && (
-        <div className="bg-red-950/50 border border-red-900 rounded-lg px-4 py-3">
-          <p className="text-red-400 text-sm">{error}</p>
+        <div role="alert" className="fx-shake rounded-xl border border-red-500/25 bg-red-950/40 px-4 py-3">
+          <p className="text-sm text-red-300">{error}</p>
         </div>
       )}
 
       <button
         type="submit"
         disabled={loading}
-        className="w-full bg-emerald-600 hover:bg-emerald-500 disabled:bg-zinc-700 disabled:text-zinc-500 text-white font-semibold rounded-lg py-2.5 text-sm transition-all flex items-center justify-center gap-2"
+        className="fx-btn flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-b from-emerald-500 to-emerald-600 py-3 text-sm font-semibold text-white shadow-[0_10px_28px_-10px_rgba(16,185,129,0.55)] transition-all hover:from-emerald-400 hover:to-emerald-500 active:scale-[0.985] disabled:from-zinc-800 disabled:to-zinc-800 disabled:text-zinc-500 disabled:shadow-none"
       >
         {loading ? (
           <>
-            <Loader2 className="w-4 h-4 animate-spin" />
+            <Loader2 className="h-4 w-4 animate-spin" />
             Lagrer...
           </>
         ) : (

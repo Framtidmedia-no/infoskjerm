@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import { Monitor, Wrench, Copy, Check, Plus, Trash2, Loader2, Smartphone, Wifi, WifiOff } from "lucide-react"
 import { useTenantConfig } from "@/components/admin/tenant-config-provider"
+import { ConfirmDialog } from "@/components/admin/confirm-dialog"
 import {
   assignDisplay, setScreenAssignment, addKiosk, deleteScreenRow,
   type Flate, type Orientation, type Assignment,
@@ -177,6 +178,7 @@ function KioskCard({
 }) {
   const router = useRouter()
   const [saving, setSaving] = useState(false)
+  const [confirmOpen, setConfirmOpen] = useState(false)
   const [value, setValue] = useState<Assignment>({ flate: row.flate, avdeling: row.avdeling, orientation: row.orientation })
 
   async function apply(next: Assignment) {
@@ -189,7 +191,6 @@ function KioskCard({
   }
 
   async function remove() {
-    if (!confirm("Slette denne kiosk-skjermen?")) return
     setSaving(true)
     const res = await deleteScreenRow(row.id)
     setSaving(false)
@@ -203,9 +204,18 @@ function KioskCard({
         {value.flate === "intern" ? <Wrench className="w-4 h-4 text-zinc-400 flex-shrink-0" /> : <Smartphone className="w-4 h-4 text-zinc-400 flex-shrink-0" />}
         <span className="text-sm font-medium text-zinc-800 truncate flex-1">Kiosk-skjerm {value.flate === "intern" ? "(intern)" : "(kunde)"}</span>
         {saving && <Loader2 className="w-3.5 h-3.5 text-zinc-400 animate-spin" />}
-        <button onClick={remove} disabled={saving} title="Slett" className="p-1 rounded text-zinc-400 hover:text-red-600 disabled:opacity-50">
+        <button onClick={() => setConfirmOpen(true)} disabled={saving} title="Slett" aria-label="Slett kiosk-skjerm" className="p-1 rounded text-zinc-400 hover:text-red-600 disabled:opacity-50">
           <Trash2 className="w-3.5 h-3.5" />
         </button>
+        <ConfirmDialog
+          open={confirmOpen}
+          onOpenChange={setConfirmOpen}
+          title="Slett kiosk-skjerm"
+          description="Skjermen slutter å vise innhold umiddelbart, og lenken blir ugyldig. Dette kan ikke angres."
+          confirmLabel="Slett skjerm"
+          destructive
+          onConfirm={remove}
+        />
       </div>
 
       <AssignmentControls

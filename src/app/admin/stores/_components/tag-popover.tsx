@@ -14,6 +14,7 @@ const PALETTE = [
 interface TagPopoverProps {
   assigned: BoardTag[]
   allTags: BoardTag[]
+  tagUsage: Record<string, number>
   open: boolean
   onOpenChange: (open: boolean) => void
   onToggle: (tag: BoardTag, assign: boolean) => void
@@ -25,6 +26,7 @@ interface TagPopoverProps {
 export function TagPopover({
   assigned,
   allTags,
+  tagUsage,
   open,
   onOpenChange,
   onToggle,
@@ -41,6 +43,7 @@ export function TagPopover({
   const [editColor, setEditColor] = useState(PALETTE[0])
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [editError, setEditError] = useState<string | null>(null)
+  const [createError, setCreateError] = useState<string | null>(null)
   const ref = useRef<HTMLDivElement>(null)
   const triggerRef = useRef<HTMLButtonElement>(null)
 
@@ -78,6 +81,7 @@ export function TagPopover({
       setEditing(null)
       setConfirmDelete(false)
       setEditError(null)
+      setCreateError(null)
     }
   }
 
@@ -90,9 +94,11 @@ export function TagPopover({
     const name = query.trim()
     if (!name || busy) return
     setBusy(true)
+    setCreateError(null)
     const res = await onCreate(name, color)
     setBusy(false)
     if (res.ok) setQuery("")
+    else setCreateError(res.error ?? "Kunne ikke lage taggen")
   }
 
   function startEdit(tag: BoardTag) {
@@ -231,7 +237,12 @@ export function TagPopover({
                 </div>
 
                 <p className="text-[11px] leading-snug text-zinc-400">
-                  Endringer gjelder alle enheter som har taggen.
+                  {(() => {
+                    const count = tagUsage[editing.id] ?? 0
+                    return count > 0
+                      ? `Brukes av ${count} enhet${count === 1 ? "" : "er"} — endringer og sletting gjelder alle.`
+                      : "Taggen er ikke i bruk på noen enheter."
+                  })()}
                 </p>
               </div>
             </div>
@@ -241,7 +252,10 @@ export function TagPopover({
                 <input
                   autoFocus
                   value={query}
-                  onChange={(e) => setQuery(e.target.value)}
+                  onChange={(e) => {
+                    setQuery(e.target.value)
+                    setCreateError(null)
+                  }}
                   onKeyDown={(e) => {
                     if (e.key === "Enter" && canCreate) handleCreate()
                   }}
@@ -278,7 +292,7 @@ export function TagPopover({
                         type="button"
                         onClick={() => startEdit(tag)}
                         aria-label={`Rediger tag ${tag.name}`}
-                        className="mr-1 flex-shrink-0 rounded-md p-1 text-zinc-400 opacity-0 transition-all hover:bg-zinc-200/60 hover:text-zinc-700 focus-visible:opacity-100 group-hover/row:opacity-100"
+                        className="mr-1 flex-shrink-0 rounded-md p-1 text-zinc-400 opacity-0 transition-all hover:bg-zinc-200/60 hover:text-zinc-700 focus-visible:opacity-100 group-hover/row:opacity-100 pointer-coarse:opacity-100"
                       >
                         <Pencil className="h-3 w-3" />
                       </button>
@@ -289,6 +303,7 @@ export function TagPopover({
 
               {canCreate && (
                 <div className="border-t border-zinc-100 p-2">
+                  {createError && <p className="mb-2 px-1 text-xs text-red-600">{createError}</p>}
                   <div className="mb-2 flex items-center gap-1.5">
                     {PALETTE.map((c) => (
                       <button

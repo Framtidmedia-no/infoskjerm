@@ -13,6 +13,8 @@ import { SeasonLayer } from "@/app/widget/_shared/season-layer"
 import { formatPeriod, expiryLabel } from "@/app/widget/_shared/period"
 import { KEYFRAMES as TOKEN_KEYFRAMES, hexAlpha } from "@/app/widget/_shared/tokens"
 import type { Season } from "@/lib/season"
+import { FullscreenMedia } from "@/app/widget/_shared/fullscreen-media"
+import { fullscreenItemSeconds } from "@/lib/content/fullscreen"
 
 const KICKER: Record<string, string> = {
   competition: "KONKURRANSE",
@@ -349,6 +351,8 @@ function SlideCard({ item, portrait = false }: { item: LiveItem; portrait?: bool
 }
 
 function Card({ item, qrUrl, portrait = false, accent = "#16a34a", accentFg = "#fff" }: { item: LiveItem; qrUrl?: string; portrait?: boolean; accent?: string; accentFg?: string }) {
+  // Fullskjerm-media: kant til kant uten tittel/kicker/ramme — foran alt annet.
+  if (item.imageMode === "fullskjerm") return <FullscreenMedia item={item} portrait={portrait} />
   // Kjedefarget chrome kun på kortene som bruker den delte chromen — kort med
   // eget fargespråk (konkurranse/invitasjon/galleri/slide) røres ikke.
   if (item.type === "competition") return <CompetitionCard item={item} qrUrl={qrUrl} portrait={portrait} />
@@ -411,10 +415,10 @@ export function NewsRotator({ items, qr, ticker, portrait = false, chain = null,
   useEffect(() => {
     if (items.length <= 1) return
     const it = items[i % items.length]
-    const secs = it?.durationSeconds ?? SECONDS[it?.type ?? ""] ?? DEFAULT_SECONDS
+    const secs = (it ? fullscreenItemSeconds(it, portrait, DEFAULT_SECONDS) : null) ?? it?.durationSeconds ?? SECONDS[it?.type ?? ""] ?? DEFAULT_SECONDS
     const id = setTimeout(() => setI((v) => (v + 1) % items.length), secs * 1000)
     return () => clearTimeout(id)
-  }, [i, items])
+  }, [i, items, portrait])
 
   // Refresh the page periodically so newly published content appears on screen.
   useEffect(() => {

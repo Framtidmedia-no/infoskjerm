@@ -119,43 +119,64 @@ async function uploadPage(path, jpeg) {
   return `${SB}/storage/v1/object/public/media/${path}`
 }
 
-// Live slide-items med en PowerPoint-fil.
+/** PDF hentes direkte; PPT/PPTX går via LibreOffice. */
+async function deckToPdfBytes(url, kind) {
+  if (kind === "ppt") return pptToPdfBytes(url)
+  return new Uint8Array(await (await fetch(url)).arrayBuffer())
+}
+
+const deckKind = (u) => {
+  const s = String(u || "").toLowerCase().split("?")[0]
+  return s.endsWith(".pptx") || s.endsWith(".ppt") ? "ppt" : s.endsWith(".pdf") ? "pdf" : null
+}
+
+// Live slide-items — hver kan ha to deck-varianter (liggende imageUrl +
+// stående portraitUrl for fullskjerm-media). PDF prerendres kun i fullskjerm-
+// modus (plakat-PDF vises fortsatt som iframe, og kundeavis har egen flyt).
 const items = await (
   await fetch(`${SB}/rest/v1/content_items?select=id,title,body,status&type=eq.slide&status=eq.live&limit=200`, { headers: H })
 ).json()
-const pptItems = (items || []).filter((x) => {
-  const u = String(x.body?.imageUrl || "").toLowerCase().split("?")[0]
-  return u.endsWith(".pptx") || u.endsWith(".ppt")
-})
-console.log(`Fant ${pptItems.length} live PowerPoint-item(er)`)
+console.log(`Sjekker ${(items || []).length} live slide-item(er)`)
 
 let rendered = 0
-for (const item of pptItems) {
-  const pptUrl = item.body.imageUrl
-  const havePages = Array.isArray(item.body.pages) && item.body.pages.length > 0
-  // Re-render når sider mangler ELLER ble rendret fra en annen fil.
-  if (havePages && item.body.pagesFor === pptUrl) {
-    console.log(`  – ${item.title}: allerede rendret (${item.body.pages.length} sider)`)
-    continue
-  }
-  try {
-    const pdfBytes = await pptToPdfBytes(pptUrl)
-    const buffers = await renderPdfBytes(pdfBytes)
-    const urls = []
-    for (let i = 0; i < buffers.length; i++) {
-      urls.push(await uploadPage(`decks/${item.id}-p${i + 1}.jpg`, buffers[i]))
+for (const item of items || []) {
+  const b = item.body || {}
+  const variants = [
+    { url: b.imageUrl, pages: b.pages, renderedFor: b.pagesFor, pagesKey: "pages", forKey: "pagesFor", suffix: "" },
+    { url: b.portraitUrl, pages: b.portraitPages, renderedFor: b.portraitPagesFor, pagesKey: "portraitPages", forKey: "portraitPagesFor", suffix: "-portrait" },
+  ]
+  const patch = {}
+  for (const v of variants) {
+    const kind = deckKind(v.url)
+    if (!kind) continue
+    if (kind === "pdf" && b.imageMode !== "fullskjerm") continue
+    // Re-render når sider mangler ELLER ble rendret fra en annen fil.
+    if (Array.isArray(v.pages) && v.pages.length > 0 && v.renderedFor === v.url) {
+      console.log(`  – ${item.title}${v.suffix}: allerede rendret (${v.pages.length} sider)`)
+      continue
     }
-    const newBody = { ...item.body, pages: urls, pagesFor: pptUrl }
-    const patch = await fetch(`${SB}/rest/v1/content_items?id=eq.${item.id}`, {
+    try {
+      const pdfBytes = await deckToPdfBytes(v.url, kind)
+      const buffers = await renderPdfBytes(pdfBytes)
+      const urls = []
+      for (let i = 0; i < buffers.length; i++) {
+        urls.push(await uploadPage(`decks/${item.id}${v.suffix}-p${i + 1}.jpg`, buffers[i]))
+      }
+      patch[v.pagesKey] = urls
+      patch[v.forKey] = v.url
+      rendered++
+      console.log(`  ✓ ${item.title}${v.suffix}: ${urls.length} sider rendret`)
+    } catch (err) {
+      console.error(`  ✗ ${item.title}${v.suffix}: ${err.message}`)
+    }
+  }
+  if (Object.keys(patch).length > 0) {
+    const res = await fetch(`${SB}/rest/v1/content_items?id=eq.${item.id}`, {
       method: "PATCH",
       headers: { ...H, "Content-Type": "application/json", Prefer: "return=minimal" },
-      body: JSON.stringify({ body: newBody }),
+      body: JSON.stringify({ body: { ...b, ...patch } }),
     })
-    if (!patch.ok) throw new Error(`patch ${patch.status}: ${await patch.text()}`)
-    rendered++
-    console.log(`  ✓ ${item.title}: ${urls.length} sider rendret + lagret`)
-  } catch (err) {
-    console.error(`  ✗ ${item.title}: ${err.message}`)
+    if (!res.ok) console.error(`  ✗ ${item.title}: patch ${res.status}: ${await res.text()}`)
   }
 }
-console.log(`\n✅ ferdig: ${rendered} PowerPoint-deck(er) rendret.`)
+console.log(`\n✅ ferdig: ${rendered} deck-variant(er) rendret.`)

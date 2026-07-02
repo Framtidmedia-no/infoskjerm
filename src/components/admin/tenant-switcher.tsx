@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { Check, ChevronsUpDown, Search } from "lucide-react"
+import { Check, ChevronsUpDown, Loader2, Search } from "lucide-react"
 import { setActiveTenant } from "@/app/admin/plattform/actions"
 import { cn } from "@/lib/utils"
 
@@ -38,6 +38,9 @@ function TenantAvatar({ logoUrl, name, className, textClass }: { logoUrl: string
 export function TenantSwitcher({ tenants, activeTenantId }: { tenants: SwitcherTenant[]; activeTenantId: string | null }) {
   const [open, setOpen] = useState(false)
   const [query, setQuery] = useState("")
+  // Byttet er cookie + redirect server-side — vis spinner og lås listen imens,
+  // ellers ser det dødt ut på treg linje og man kan klikke flere tenants.
+  const [switchingTo, setSwitchingTo] = useState<string | null>(null)
 
   // Ingenting å bytte mellom → ikke vis velgeren i det hele tatt.
   if (tenants.length < 2) return null
@@ -85,13 +88,14 @@ export function TenantSwitcher({ tenants, activeTenantId }: { tenants: SwitcherT
                 const isActive = t.id === activeTenantId
                 return (
                   <li key={t.id}>
-                    <form action={setActiveTenant.bind(null, t.id)}>
+                    <form action={setActiveTenant.bind(null, t.id)} onSubmit={() => setSwitchingTo(t.id)}>
                       <button
                         type="submit"
                         role="option"
                         aria-selected={isActive}
+                        disabled={switchingTo !== null}
                         className={cn(
-                          "w-full flex items-center gap-2 px-3 py-2 text-left hover:bg-zinc-50 transition-colors",
+                          "w-full flex items-center gap-2 px-3 py-2 text-left hover:bg-zinc-50 transition-colors disabled:opacity-60",
                           isActive && "bg-zinc-50"
                         )}
                       >
@@ -100,7 +104,11 @@ export function TenantSwitcher({ tenants, activeTenantId }: { tenants: SwitcherT
                           <span className="block text-sm font-medium text-zinc-900 truncate">{t.name}</span>
                           <span className="block text-[11px] text-zinc-400 truncate">{t.slug}</span>
                         </span>
-                        {isActive && <Check className="w-4 h-4 text-emerald-600 flex-shrink-0" />}
+                        {switchingTo === t.id ? (
+                          <Loader2 className="w-4 h-4 text-zinc-400 animate-spin flex-shrink-0" />
+                        ) : (
+                          isActive && <Check className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+                        )}
                       </button>
                     </form>
                   </li>

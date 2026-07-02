@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache"
 import { logAudit } from "@/lib/admin/audit"
 import { requireRole } from "@/lib/admin/require-role"
 import { hashKioskPassword } from "@/lib/kiosk/auth"
+import { GLN_PLACEHOLDER } from "./_components/types"
 
 const STORE_ROLES = ["super_admin", "chain_manager", "area_manager"] as const
 // Kiosk-passord kan settes av alle enhets-admins (også store_manager) for EGEN
@@ -186,16 +187,43 @@ export async function createStore(data: {
   email: string
   city: string
   chain_id: string
-}) {
+}): Promise<{ ok: boolean; error?: string }> {
   const { supabase, userId, tenantId } = await requireRole([...STORE_ROLES])
 
+  const name = data.name.trim()
+  const companyName = data.company_name.trim()
+  const orgNumber = data.org_number.replace(/\s/g, "")
+  const email = data.email.trim()
+  const city = data.city.trim()
+  // Alle stores-kolonner er NOT NULL — enheter uten reelt GLN får plassholderen.
+  const gln = data.gln.replace(/\s/g, "") || GLN_PLACEHOLDER
+
+  if (!name || !companyName || !orgNumber || !email || !city || !data.chain_id) {
+    return { ok: false, error: "Alle felt må fylles ut" }
+  }
+
+  // chains er delt på tvers av tenants i skjemaet — verifiser eierskap før insert.
+  const { data: chain } = await supabase
+    .from("chains")
+    .select("id")
+    .eq("id", data.chain_id)
+    .eq("tenant_id", tenantId)
+    .maybeSingle()
+  if (!chain) return { ok: false, error: "Ugyldig kjede" }
+
   const { error } = await supabase.from("stores").insert({
-    ...data,
+    name,
+    company_name: companyName,
+    org_number: orgNumber,
+    gln,
+    email,
+    city,
+    chain_id: data.chain_id,
     tenant_id: tenantId,
   })
 
   if (error) return { ok: false, error: error.message }
-  await logAudit({ userId, action: "store.create", entityType: "store", summary: `Opprettet butikk «${data.name}»`, metadata: { chain_id: data.chain_id, city: data.city } })
+  await logAudit({ userId, action: "store.create", entityType: "store", summary: `Opprettet butikk «${name}»`, metadata: { chain_id: data.chain_id, city } })
   revalidatePath("/admin/stores")
   return { ok: true }
 }

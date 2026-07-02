@@ -66,9 +66,11 @@ export async function bulkCreateOffers(
   rows: BulkOfferRow[],
   shared: BulkShared,
   publish: boolean
-): Promise<{ ok: boolean; created: number; failed: number }> {
+): Promise<{ ok: boolean; created: number; failed: number; errors: string[] }> {
   let created = 0
   let failed = 0
+  // Unike feilmeldinger fra saveContent — så UI-et kan si HVORFOR rader feilet.
+  const errors = new Set<string>()
   for (const row of rows) {
     if (!row.offer.varenavn?.trim()) { failed++; continue }
     const input: ContentInput = {
@@ -90,7 +92,10 @@ export async function bulkCreateOffers(
     }
     const res = await saveContent(input)
     if (res.ok) created++
-    else failed++
+    else {
+      failed++
+      if (res.error) errors.add(res.error)
+    }
   }
-  return { ok: true, created, failed }
+  return { ok: true, created, failed, errors: Array.from(errors).slice(0, 3) }
 }

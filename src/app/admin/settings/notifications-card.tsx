@@ -31,6 +31,8 @@ export function NotificationsCard() {
       }
       const ok = await subscribeToPush()
       toast[ok ? "success" : "error"](ok ? "Varsler er på for denne enheten." : "Kunne ikke registrere abonnement.")
+    } catch {
+      toast.error("Kunne ikke skru på varsler — prøv igjen.")
     } finally {
       setBusy(false)
     }
@@ -41,6 +43,8 @@ export function NotificationsCard() {
     try {
       await unsubscribeFromPush()
       toast.success("Varsler er av på denne enheten.")
+    } catch {
+      toast.error("Kunne ikke skru av varsler — prøv igjen.")
     } finally {
       setBusy(false)
     }
@@ -54,6 +58,8 @@ export function NotificationsCard() {
       if (res.ok && data.sent && data.sent > 0) toast.success("Testvarsel sendt 🎉")
       else if (res.ok) toast.message("Ingen aktive abonnement på denne kontoen ennå.")
       else toast.error("Kunne ikke sende testvarsel.")
+    } catch {
+      toast.error("Kunne ikke kontakte serveren — sjekk nettforbindelsen.")
     } finally {
       setBusy(false)
     }

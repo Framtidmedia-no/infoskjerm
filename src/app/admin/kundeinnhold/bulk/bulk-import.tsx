@@ -1,10 +1,11 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { toast } from "sonner"
 import { ChevronLeft, Loader2, Send, Save, Trash2, CheckCircle2, AlertTriangle, Search, Globe, Store as StoreIcon, Tag, Sparkles } from "lucide-react"
+import { ConfirmDialog } from "@/components/admin/confirm-dialog"
 import type { OfferFields, LiveItem } from "@/lib/content/live"
 import { OfferCard } from "@/app/widget/tilbud/offer-card"
 import { MediaUploader } from "@/components/admin/media-uploader"
@@ -53,7 +54,7 @@ const EMPTY_OFFER: OfferFields = { varenavn: "", vareinfo: null, badge: null, pr
 function toLiveItem(offer: OfferFields, imageUrl: string | null, validFrom: string | null, validTo: string | null): LiveItem {
   return {
     id: "p", type: "slide", title: offer.varenavn || "", blocks: [], imageUrl, imageUrls: imageUrl ? [imageUrl] : [],
-    imageMode: "plakat", isPdf: false, isPpt: false, isVideo: false, durationSeconds: null, pages: [], validFrom, validTo,
+    imageMode: "plakat", isPdf: false, isPpt: false, isVideo: false, durationSeconds: null, pages: [], portraitUrl: null, portraitPages: [], validFrom, validTo,
     author: "", date: "", contactPerson: null, applyUrl: null, statsValue: null, statsChange: null,
     offer, campaign: null, avdeling: "felles", bgColor: null, textColor: null, klubb: null, invitation: null, gallery: null,
   }
@@ -169,23 +170,58 @@ export function BulkImport({ stores, tags, initialLinks = "", canTargetAll = tru
   const removeRow = (id: string) => setRows((prev) => prev.filter((r) => r.id !== id))
 
   const ready = rows.filter((r) => r.offer.varenavn.trim())
+  const [confirmPublish, setConfirmPublish] = useState(false)
 
-  async function save(publish: boolean) {
-    if (ready.length === 0) { toast.error("Ingen varer med varenavn å lagre"); return }
-    if (publish && (!validFrom || !validTo)) { toast.error("Sett fra- og til-dato før publisering"); return }
-    if (!targetChosen) { toast.error("Velg hvor tilbudene skal vises (Vis på)"); return }
-    if (targetMode === "stores" && storeIds.length === 0) { toast.error(`Velg minst én ${unitLabel.toLowerCase()}`); return }
-    if (targetMode === "tags" && tagIds.length === 0) { toast.error("Velg minst én tagg"); return }
+  // En hel masseredigerings-økt lever kun i state — vern mot utilsiktet
+  // refresh/lukk så lenge det ligger rader her.
+  useEffect(() => {
+    if (rows.length === 0 || saving) return
+    function onBeforeUnload(e: BeforeUnloadEvent) {
+      e.preventDefault()
+      e.returnValue = ""
+    }
+    window.addEventListener("beforeunload", onBeforeUnload)
+    return () => window.removeEventListener("beforeunload", onBeforeUnload)
+  }, [rows.length, saving])
+
+  function validate(publish: boolean): boolean {
+    if (ready.length === 0) { toast.error("Ingen varer med varenavn å lagre"); return false }
+    if (publish && (!validFrom || !validTo)) { toast.error("Sett fra- og til-dato før publisering"); return false }
+    if (validFrom && validTo && validFrom > validTo) { toast.error("Perioden er snudd — «Fra» må være før «Til»"); return false }
+    if (!targetChosen) { toast.error("Velg hvor tilbudene skal vises (Vis på)"); return false }
+    if (targetMode === "stores" && storeIds.length === 0) { toast.error(`Velg minst én ${unitLabel.toLowerCase()}`); return false }
+    if (targetMode === "tags" && tagIds.length === 0) { toast.error("Velg minst én tagg"); return false }
     const emptyOverride = ready.find((r) => r.target && r.target.mode !== "all" && (r.target.mode === "stores" ? r.target.storeIds.length === 0 : r.target.tagIds.length === 0))
-    if (emptyOverride) { toast.error(`«${emptyOverride.offer.varenavn}» har egen synlighet uten valgt ${unitLabel.toLowerCase()}/tagg`); return }
+    if (emptyOverride) { toast.error(`«${emptyOverride.offer.varenavn}» har egen synlighet uten valgt ${unitLabel.toLowerCase()}/tagg`); return false }
+    return true
+  }
+
+  function save(publish: boolean) {
+    if (!validate(publish)) return
+    // Massepublisering treffer mange enheter på én gang — krever bekreftelse,
+    // samme prinsipp som enkeltpublisering i innholdsskjemaet.
+    if (publish) { setConfirmPublish(true); return }
+    doSave(false)
+  }
+
+  async function doSave(publish: boolean) {
     setSaving(true)
     const shared: BulkShared = { validFrom: validFrom || null, validTo: validTo || null, targetMode, storeIds, tagIds }
     const res = await bulkCreateOffers(ready.map((r) => ({ offer: r.offer, imageUrl: r.imageUrl, avdeling: r.avdeling, validFrom: r.validFrom ?? null, validTo: r.validTo ?? null, targetMode: r.target?.mode ?? null, storeIds: r.target?.storeIds ?? null, tagIds: r.target?.tagIds ?? null })), shared, publish)
     setSaving(false)
-    if (res.ok) {
-      toast.success(`${res.created} tilbud ${publish ? "publisert" : "lagret som utkast"}${res.failed ? ` · ${res.failed} feilet` : ""}`)
-      router.push("/admin/kundeinnhold")
-    } else toast.error("Noe gikk galt")
+    setConfirmPublish(false)
+    if (!res.ok || res.created === 0) {
+      const detail = res.errors?.[0] ? `: ${res.errors[0]}` : ""
+      toast.error(`Ingen tilbud ble ${publish ? "publisert" : "lagret"}${detail}`)
+      return
+    }
+    if (res.failed > 0) {
+      const detail = res.errors?.length ? ` (${res.errors.join(" · ")})` : ""
+      toast.warning(`${res.created} tilbud ${publish ? "publisert" : "lagret"} — ${res.failed} feilet${detail}`)
+    } else {
+      toast.success(`${res.created} tilbud ${publish ? "publisert" : "lagret som utkast"}`)
+    }
+    router.push("/admin/kundeinnhold")
   }
 
   const focused = rows.find((r) => r.id === focusId) ?? null
@@ -206,6 +242,15 @@ export function BulkImport({ stores, tags, initialLinks = "", canTargetAll = tru
           </button>
         </div>
       </div>
+
+      <ConfirmDialog
+        open={confirmPublish}
+        onOpenChange={setConfirmPublish}
+        title={`Publiser ${ready.length} tilbud?`}
+        description={`Tilbudene publiseres for perioden ${validFrom} – ${validTo} og vises på skjermene med en gang perioden starter.`}
+        confirmLabel={`Publiser ${ready.length} tilbud`}
+        onConfirm={() => doSave(true)}
+      />
 
       <div className="flex-1 p-4 sm:p-6 space-y-5 max-w-6xl w-full">
         {/* Paste box */}
@@ -258,8 +303,8 @@ export function BulkImport({ stores, tags, initialLinks = "", canTargetAll = tru
         {/* Review: table (left) + big preview (right) */}
         {rows.length > 0 && (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-            <div className="lg:col-span-2 rounded-xl border border-zinc-200 bg-white overflow-hidden">
-              <table className="w-full text-sm">
+            <div className="lg:col-span-2 rounded-xl border border-zinc-200 bg-white overflow-hidden overflow-x-auto">
+              <table className="w-full min-w-[540px] text-sm">
                 <thead className="bg-zinc-50 text-zinc-500 text-[11px] uppercase tracking-wide">
                   <tr>
                     <th className="text-left font-semibold px-3 py-2 w-8"></th>
