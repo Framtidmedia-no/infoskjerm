@@ -1,6 +1,5 @@
 import { requireRole } from "@/lib/admin/require-role"
-import type { ContentType } from "./actions"
-import { audienceForType, type Audience } from "./audience"
+import { storedAudienceOf, audienceMatches, type Audience } from "./audience"
 import type { ContentRow } from "./_components/content-list-client"
 
 /**
@@ -51,11 +50,6 @@ export async function loadContentForAudience(audience: Audience): Promise<Conten
 
   type Item = NonNullable<typeof items>[number]
 
-  function audienceOf(it: Item): Audience {
-    const a = (it.body as { audience?: Audience } | null)?.audience
-    return a === "kunde" || a === "intern" ? a : audienceForType(it.type as ContentType)
-  }
-
   function canSee(it: Item): boolean {
     if (privileged) return true
     if (it.created_by === userId) return true
@@ -74,8 +68,9 @@ export async function loadContentForAudience(audience: Audience): Promise<Conten
   const storeName = new Map((stores ?? []).map((s) => [s.id, s.name]))
   const tagName = new Map((tags ?? []).map((t) => [t.id, t.name]))
 
+  // «begge»-innhold (fullskjerm-media) hører hjemme i BEGGE listene.
   const rows: ContentRow[] = (items ?? [])
-    .filter((it) => audienceOf(it) === audience)
+    .filter((it) => audienceMatches(storedAudienceOf(it.type, (it.body as { audience?: unknown } | null)?.audience), audience))
     .filter(canSee)
     .map((it) => {
       const targets = (it.content_targets ?? []) as { target_all: boolean | null; store_id: string | null; tag_id: string | null }[]
@@ -92,13 +87,13 @@ export async function loadContentForAudience(audience: Audience): Promise<Conten
           ? tagIds.map((id) => tagName.get(id)).filter((x): x is string => !!x)
           : []
 
-      const body = (it.body ?? {}) as { imageUrl?: string | null; avdeling?: string | null; durationSeconds?: number | null }
+      const body = (it.body ?? {}) as { imageUrl?: string | null; portraitUrl?: string | null; avdeling?: string | null; durationSeconds?: number | null }
       return {
         id: it.id,
         title: it.title,
         type: it.type,
         status: it.status,
-        imageUrl: body.imageUrl ?? null,
+        imageUrl: body.imageUrl ?? body.portraitUrl ?? null,
         validFrom: it.valid_from,
         validTo: it.valid_to,
         updatedAt: it.updated_at,
