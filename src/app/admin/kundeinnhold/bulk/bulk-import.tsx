@@ -54,7 +54,7 @@ const EMPTY_OFFER: OfferFields = { varenavn: "", vareinfo: null, badge: null, pr
 function toLiveItem(offer: OfferFields, imageUrl: string | null, validFrom: string | null, validTo: string | null): LiveItem {
   return {
     id: "p", type: "slide", title: offer.varenavn || "", blocks: [], imageUrl, imageUrls: imageUrl ? [imageUrl] : [],
-    imageMode: "plakat", isPdf: false, isPpt: false, isVideo: false, durationSeconds: null, pages: [], portraitUrl: null, portraitPages: [], validFrom, validTo,
+    imageMode: "plakat", isPdf: false, isPpt: false, isVideo: false, durationSeconds: null, pages: [], portraitUrl: null, portraitPages: [], htmlLandscape: null, htmlPortrait: null, validFrom, validTo,
     author: "", date: "", contactPerson: null, applyUrl: null, statsValue: null, statsChange: null,
     offer, campaign: null, avdeling: "felles", bgColor: null, textColor: null, klubb: null, invitation: null, gallery: null,
   }

@@ -32,7 +32,10 @@ interface PreviewData {
   /** Fullskjerm: valgfri stående variant + dens forhåndsrendrede sider. */
   portraitUrl?: string | null
   portraitPages?: string[]
-  imageMode?: "plakat" | "bakgrunn" | "liten" | "fullskjerm"
+  /** HTML-type: URL til sanert HTML-fil for liggende / stående. */
+  htmlLandscape?: string | null
+  htmlPortrait?: string | null
+  imageMode?: "plakat" | "bakgrunn" | "liten" | "fullskjerm" | "html"
   offer?: LiveItem["offer"]
   campaign?: LiveItem["campaign"]
   avdeling?: string | null
@@ -76,7 +79,7 @@ export default async function PreviewWidgetPage({ searchParams }: { searchParams
     blocks: htmlToBlocks(data.bodyHtml ?? ""),
     imageUrl: firstImage,
     imageUrls,
-    imageMode: data.imageMode === "plakat" ? "plakat" : data.imageMode === "liten" ? "liten" : data.imageMode === "fullskjerm" ? "fullskjerm" : "bakgrunn",
+    imageMode: data.imageMode === "plakat" ? "plakat" : data.imageMode === "liten" ? "liten" : data.imageMode === "fullskjerm" ? "fullskjerm" : data.imageMode === "html" ? "html" : "bakgrunn",
     isPdf: isPdfUrl(firstImage),
     isPpt: isPptUrl(firstImage),
     isVideo: /\.(mp4|webm|mov|m4v)$/.test((firstImage ?? "").toLowerCase().split("?")[0]),
@@ -84,6 +87,8 @@ export default async function PreviewWidgetPage({ searchParams }: { searchParams
     pages: Array.isArray(data.pages) ? data.pages.filter(Boolean) : [],
     portraitUrl: data.portraitUrl ?? null,
     portraitPages: Array.isArray(data.portraitPages) ? data.portraitPages.filter(Boolean) : [],
+    htmlLandscape: data.htmlLandscape ?? null,
+    htmlPortrait: data.htmlPortrait ?? null,
     validFrom: data.validFrom || null,
     validTo: data.validTo || null,
     author: "",

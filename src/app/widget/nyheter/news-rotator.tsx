@@ -14,6 +14,7 @@ import { formatPeriod, expiryLabel } from "@/app/widget/_shared/period"
 import { KEYFRAMES as TOKEN_KEYFRAMES, hexAlpha } from "@/app/widget/_shared/tokens"
 import type { Season } from "@/lib/season"
 import { FullscreenMedia } from "@/app/widget/_shared/fullscreen-media"
+import { HtmlSlide } from "@/app/widget/_shared/html-slide"
 import { fullscreenItemSeconds } from "@/lib/content/fullscreen"
 
 const KICKER: Record<string, string> = {
@@ -353,6 +354,8 @@ function SlideCard({ item, portrait = false }: { item: LiveItem; portrait?: bool
 function Card({ item, qrUrl, portrait = false, accent = "#16a34a", accentFg = "#fff" }: { item: LiveItem; qrUrl?: string; portrait?: boolean; accent?: string; accentFg?: string }) {
   // Fullskjerm-media: kant til kant uten tittel/kicker/ramme — foran alt annet.
   if (item.imageMode === "fullskjerm") return <FullscreenMedia item={item} portrait={portrait} />
+  // Sanert HTML-side i låst sandbox-iframe — også foran alle kort-typer.
+  if (item.imageMode === "html") return <HtmlSlide id={item.id} landscapeUrl={item.htmlLandscape} portraitUrl={item.htmlPortrait} portrait={portrait} />
   // Kjedefarget chrome kun på kortene som bruker den delte chromen — kort med
   // eget fargespråk (konkurranse/invitasjon/galleri/slide) røres ikke.
   if (item.type === "competition") return <CompetitionCard item={item} qrUrl={qrUrl} portrait={portrait} />

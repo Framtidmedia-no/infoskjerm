@@ -41,6 +41,8 @@ export async function EditContentView({ id, listHref }: { id: string; listHref?:
     gallery?: { theme?: "catering" | "meny" | "ansattilbud"; items?: { name?: string; price?: string | null; priceInfo?: string | null; imageUrl?: string | null }[]; qrUrl?: string | null; qrLabel?: string | null } | null
     durationSeconds?: number | null
     pages?: string[]
+    htmlLandscape?: string | null
+    htmlPortrait?: string | null
   }
   // «begge»-innhold (fullskjerm) redigeres under flaten det ble åpnet fra.
   const stored = body.audience === "kunde" || body.audience === "intern" || body.audience === "begge" ? body.audience : audienceForType(item.type as ContentType)
@@ -98,6 +100,8 @@ export async function EditContentView({ id, listHref }: { id: string; listHref?:
         }
       : null,
     durationSeconds: body.durationSeconds ?? null,
+    htmlLandscape: body.htmlLandscape ?? null,
+    htmlPortrait: body.htmlPortrait ?? null,
   }
 
   return <ContentForm stores={storeOptions} tags={(tags ?? []) as TagOption[]} screens={screenOptions} initial={initial} audience={audience} listHref={listHref} canTargetAll={canTargetAllStores(role)} />

@@ -11,7 +11,7 @@ import type { Json } from "@/types/database"
 
 const AUTHOR_ROLES = ["super_admin", "chain_manager", "area_manager", "store_manager", "store_employee"] as const
 
-export type ContentType = "news" | "competition" | "stats" | "weather" | "slide" | "job" | "birthday" | "ticker" | "invitation" | "gallery"
+export type ContentType = "news" | "competition" | "stats" | "weather" | "slide" | "job" | "birthday" | "ticker" | "invitation" | "gallery" | "html"
 
 /** En vare i et galleri (rett, meny, ansattilbud). */
 export interface GalleryItem {
@@ -47,7 +47,7 @@ export interface InvitationFields {
   /** Egen lenke QR-koden skal peke til. Tom → innebygd påmeldingsside (/pamelding/<id>). */
   signupUrl: string | null
 }
-export type ImageMode = "plakat" | "bakgrunn" | "liten" | "fullskjerm"
+export type ImageMode = "plakat" | "bakgrunn" | "liten" | "fullskjerm" | "html"
 export type { Audience, StoredAudience } from "./audience"
 
 export interface ContentInput {
@@ -93,6 +93,9 @@ export interface ContentInput {
   gallery?: GalleryFields | null
   /** Optional per-item display time in seconds. */
   durationSeconds?: number | null
+  /** HTML type only: URL til sanert HTML-fil for liggende / stående skjermer. */
+  htmlLandscape?: string | null
+  htmlPortrait?: string | null
 }
 
 export interface SaveResult {
@@ -134,6 +137,7 @@ function buildBody(input: ContentInput): Json {
     ...(input.type === "slide" && input.klubb ? { klubb: input.klubb } : {}),
     ...(input.type === "invitation" && input.invitation ? { invitation: input.invitation } : {}),
     ...(input.type === "gallery" && input.gallery ? { gallery: input.gallery } : {}),
+    ...(input.type === "html" ? { htmlLandscape: input.htmlLandscape ?? null, htmlPortrait: input.htmlPortrait ?? null } : {}),
     ...(input.durationSeconds ? { durationSeconds: input.durationSeconds } : {}),
   })) as Json
 }
@@ -145,6 +149,8 @@ export async function saveContent(input: ContentInput, id?: string): Promise<Sav
   if (!input.title.trim()) return { ok: false, error: "Tittel er påkrevd" }
   if (input.imageMode === "fullskjerm" && !input.imageUrl && !input.portraitUrl)
     return { ok: false, error: "Last opp minst én fil (liggende eller stående)" }
+  if (input.type === "html" && !input.htmlLandscape && !input.htmlPortrait)
+    return { ok: false, error: "Last opp minst én HTML-fil (liggende eller stående)" }
   // Snudd gyldighetsperiode ville lagret innhold som aldri vises på skjermen.
   if (input.validFrom && input.validTo && input.validFrom > input.validTo) {
     return { ok: false, error: "Gyldighetsperioden er snudd — «Fra» må være før «Til»" }

@@ -14,6 +14,7 @@ import { formatPeriod, expiryLabel } from "@/app/widget/_shared/period"
 import { KEYFRAMES as TOKEN_KEYFRAMES, hexAlpha } from "@/app/widget/_shared/tokens"
 import type { Season } from "@/lib/season"
 import { FullscreenMedia } from "@/app/widget/_shared/fullscreen-media"
+import { HtmlSlide } from "@/app/widget/_shared/html-slide"
 import { fullscreenItemSeconds } from "@/lib/content/fullscreen"
 
 /**
@@ -188,6 +189,9 @@ export function TilbudRotator({ items, ticker, storeName, chain = null, qr = {},
   const card = !item ? null : item.imageMode === "fullskjerm" ? (
     // Fullskjerm-media: kant til kant uten tittel/panel — foran alle kort-typer.
     <FullscreenMedia item={item} portrait />
+  ) : item.imageMode === "html" ? (
+    // Sanert HTML-side i låst sandbox-iframe (stående variant).
+    <HtmlSlide id={item.id} landscapeUrl={item.htmlLandscape} portraitUrl={item.htmlPortrait} portrait />
   ) : item.klubb ? (
     // Customer-club invite → full-bleed QR card (per-store sign-up link).
     <KundeklubbCard headline={item.klubb.headline} subtext={item.klubb.subtext} cta={item.klubb.cta || undefined} qrUrl={qr[item.id] ?? ""} accent={chain?.color || "#16a34a"} logoUrl={chain?.logoUrl ?? null} chainName={chain?.name ?? null} />
