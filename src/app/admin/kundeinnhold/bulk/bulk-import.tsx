@@ -255,7 +255,7 @@ export function BulkImport({ stores, tags, initialLinks = "", canTargetAll = tru
       <div className="flex-1 p-4 sm:p-6 space-y-5 max-w-6xl w-full">
         {/* Paste box */}
         <section className="rounded-2xl border border-zinc-200/80 bg-white shadow-[0_1px_2px_rgba(16,24,40,0.04)] p-4">
-          <h3 className="text-xs font-semibold text-zinc-600 mb-2">Lim inn spar.no-lenker eller GTIN — én per linje</h3>
+          <h3 className="text-xs font-semibold text-zinc-600 mb-2">Lim inn spar.no-lenker, GTIN eller PLU (f.eks. 4011) — én per linje</h3>
           <textarea value={raw} onChange={(e) => setRaw(e.target.value)} rows={4} placeholder={"https://spar.no/varer/...\n7039610001234\nhttps://spar.no/varer/..."} className="w-full text-sm rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 font-mono transition-colors focus:border-[var(--brand-primary)] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)]/15" />
           <button onClick={handleLookup} disabled={loading} className="mt-2 flex items-center gap-1.5 text-xs font-semibold text-white rounded-lg px-3.5 py-2 disabled:opacity-50" style={{ backgroundColor: "var(--brand-primary)" }}>
             {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />} Hent alle

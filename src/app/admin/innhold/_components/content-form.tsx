@@ -622,18 +622,18 @@ export function ContentForm({ stores, tags, screens = [], initial, audience = "i
           {isOfferStruktur && (
             <div className="space-y-4 rounded-2xl border border-zinc-200/80 bg-white p-4 shadow-[0_1px_2px_rgba(16,24,40,0.04)]">
               <div className="rounded-lg bg-zinc-50 border border-zinc-200 p-3">
-                <label className="block text-[10px] text-zinc-400 mb-1">Hent fra spar.no (lim inn lenke eller GTIN)</label>
+                <label className="block text-[10px] text-zinc-400 mb-1">Hent fra spar.no (lim inn lenke, GTIN eller PLU)</label>
                 <div className="flex gap-2">
                   <input value={gtinInput} onChange={(e) => setGtinInput(e.target.value)}
                     onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); doLookup() } }}
-                    placeholder="https://spar.no/varer/… eller 54492653"
+                    placeholder="https://spar.no/varer/… eller 54492653 eller 4011"
                     className="flex-1 text-sm rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 transition-colors focus:border-[var(--brand-primary)] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)]/15" />
                   <button type="button" onClick={doLookup} disabled={looking}
                     className="px-3 py-2 rounded-lg text-xs font-semibold text-white disabled:opacity-50 whitespace-nowrap" style={{ backgroundColor: "var(--brand-primary)" }}>
                     {looking ? "Henter…" : "Hent"}
                   </button>
                 </div>
-                <p className="text-[10px] text-zinc-400 mt-1">Fyller varenavn, vareinfo, pris, enhetspris, pant og produktbilde automatisk.</p>
+                <p className="text-[10px] text-zinc-400 mt-1">Fyller varenavn, vareinfo, pris, enhetspris, pant og produktbilde automatisk. Løsvekt frukt/grønt: skriv bare PLU-nummeret (f.eks. 4011 for banan) — koden utvides automatisk.</p>
               </div>
               <div>
                 <label className="block text-[10px] text-zinc-400 mb-1">Varenavn *</label>
