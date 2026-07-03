@@ -21,7 +21,7 @@ export const dynamic = "force-dynamic"
 // full-screen layout). Internal/back-room screens additionally show staff
 // "ukens tilbud" slides (poster/PDF/structured offer) + the ticker.
 const CARD_TYPES = ["news", "competition", "job", "birthday"]
-const INTERNAL_CARD_TYPES = [...CARD_TYPES, "slide", "invitation", "gallery"]
+const INTERNAL_CARD_TYPES = [...CARD_TYPES, "slide", "invitation", "gallery", "html"]
 
 function normalizeUrl(raw: string): string {
   const v = raw.trim()

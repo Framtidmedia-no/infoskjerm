@@ -11,6 +11,7 @@ import { lookupSparProduct } from "../spar-actions"
 import type { OfferFields, CampaignFields } from "@/lib/content/live"
 import { LivePreview } from "./live-preview"
 import { FullscreenMediaFields } from "./fullscreen-media-fields"
+import { HtmlFields } from "./html-fields"
 import { useTenantConfig, useTenantFeature } from "@/components/admin/tenant-config-provider"
 import { toast } from "sonner"
 import {
@@ -19,7 +20,7 @@ import {
 import {
   Newspaper, Trophy, ImageIcon, Briefcase, PartyPopper, Megaphone, FileText, Ticket, MapPin, LayoutGrid, Plus, Trash2, QrCode,
   Store as StoreIcon, Tag, Globe, X, Calendar, Save, Send, ChevronLeft, Image as ImageLucide, Maximize2, PanelRight, CalendarOff, Search,
-  Loader2, Monitor,
+  Loader2, Monitor, Code2,
 } from "lucide-react"
 import Link from "next/link"
 import { ConfirmDialog } from "@/components/admin/confirm-dialog"
@@ -89,6 +90,8 @@ export interface ContentInitial {
   invitation?: InvitationFields | null
   gallery?: GalleryFields | null
   durationSeconds?: number | null
+  htmlLandscape?: string | null
+  htmlPortrait?: string | null
 }
 
 const EMPTY_INVITATION: InvitationFields = {
@@ -135,6 +138,7 @@ const TYPES: { key: ContentType; label: string; icon: React.ElementType }[] = [
   { key: "birthday", label: "Gratulerer", icon: PartyPopper },
   { key: "invitation", label: "Invitasjon", icon: Ticket },
   { key: "gallery", label: "Galleri", icon: LayoutGrid },
+  { key: "html", label: "HTML-side", icon: Code2 },
   { key: "ticker", label: "Ticker", icon: Megaphone },
 ]
 
@@ -143,10 +147,10 @@ const IMAGE_TYPES: ContentType[] = ["news", "competition", "slide", "job", "birt
 // Which content types belong to each audience/menu.
 const AUDIENCE_TYPES: Record<Audience, ContentType[]> = {
   // Kunde: tilbud, konkurranse, artikkel/egenreklame, galleri (catering/meny) + valgfri ticker.
-  kunde: ["slide", "competition", "news", "gallery", "ticker"],
+  kunde: ["slide", "competition", "news", "gallery", "html", "ticker"],
   // Internt kan også vise tilbud/plakat (f.eks. ukens tilbud til betjeningen),
   // invitasjoner til arrangement (julebord, kurs …) og galleri (ansattilbud).
-  intern: ["news", "competition", "job", "birthday", "invitation", "gallery", "ticker", "slide"],
+  intern: ["news", "competition", "job", "birthday", "invitation", "gallery", "html", "ticker", "slide"],
 }
 
 export function ContentForm({ stores, tags, screens = [], initial, audience = "intern", defaultType, listHref: listHrefProp, prefillImage, canTargetAll = true }: { stores: StoreOption[]; tags: TagOption[]; screens?: ScreenOption[]; initial?: ContentInitial; audience?: Audience; defaultType?: ContentType; listHref?: string; prefillImage?: string; canTargetAll?: boolean }) {
@@ -185,6 +189,8 @@ export function ContentForm({ stores, tags, screens = [], initial, audience = "i
   const [offerMode, setOfferMode] = useState<"struktur" | "kampanje" | "plakat" | "klubb" | "fullskjerm">(initial?.imageMode === "fullskjerm" ? "fullskjerm" : initial?.offer ? "struktur" : initial?.campaign ? "kampanje" : initial?.klubb ? "klubb" : "plakat")
   // Fullskjerm-modus: stående variant + «vis på begge flater» (audience «begge»).
   const [fsPortraitUrl, setFsPortraitUrl] = useState<string | null>(initial?.portraitUrl ?? null)
+  const [htmlLandscape, setHtmlLandscape] = useState<string | null>(initial?.htmlLandscape ?? null)
+  const [htmlPortrait, setHtmlPortrait] = useState<string | null>(initial?.htmlPortrait ?? null)
   const [showBoth, setShowBoth] = useState(initial?.audienceBoth ?? false)
   // Nyheter har samme fullskjerm-valg som slides (egen toggle — offerMode er slide-spesifikk).
   const [newsFullscreen, setNewsFullscreen] = useState(initial?.type === "news" && initial?.imageMode === "fullskjerm")
@@ -212,9 +218,10 @@ export function ContentForm({ stores, tags, screens = [], initial, audience = "i
   const isKlubb = type === "slide" && offerMode === "klubb"
   const isCampaign = type === "slide" && offerMode === "kampanje"
   const isFullscreen = (type === "slide" && offerMode === "fullskjerm") || (type === "news" && newsFullscreen)
+  const isHtml = type === "html"
   // Utseende (bakgrunn/skrift) på alt innhold unntatt ticker, strukturert
   // tilbudskort, kampanjekort, kundeklubb og fullskjerm (egne/faste design).
-  const usesColors = type !== "ticker" && !isOfferStruktur && !isKlubb && !isCampaign && !isFullscreen
+  const usesColors = type !== "ticker" && !isOfferStruktur && !isKlubb && !isCampaign && !isFullscreen && !isHtml
   // Kundeklubb styres per butikk (Butikker → butikk → Kundeklubb), ikke som
   // innholdselement — så ingen «klubb»-modus her.
   const OFFER_MODES: { k: "struktur" | "kampanje" | "plakat" | "klubb" | "fullskjerm"; label: string }[] = [
@@ -338,7 +345,7 @@ export function ContentForm({ stores, tags, screens = [], initial, audience = "i
   }
 
   const usesImage = IMAGE_TYPES.includes(type) && !isKlubb
-  const usesBody = type !== "ticker" && type !== "gallery" && !isOfferStruktur && !isKlubb && !isFullscreen
+  const usesBody = type !== "ticker" && type !== "gallery" && !isOfferStruktur && !isKlubb && !isFullscreen && !isHtml
   // Standard visningstid per type/flate (matcher rotatorene). Vises til brukeren
   // så de vet hva «tom = standard» faktisk betyr.
   const fsDeck = isFullscreen && (isDeckUrl(imageUrls[0]) || isDeckUrl(fsPortraitUrl))
@@ -383,7 +390,7 @@ export function ContentForm({ stores, tags, screens = [], initial, audience = "i
   const formSnapshot = JSON.stringify({
     title, type, bodyHtml, imageUrls, offer, campaign, klubb, invitation, gallery,
     offerMode, avdeling, imageMode, validFrom, validTo, targetMode, storeIds, tagIds, screenIds,
-    bgColor, textColor, contactPerson, applyUrl, durationSeconds, fsPortraitUrl,
+    bgColor, textColor, contactPerson, applyUrl, durationSeconds, fsPortraitUrl, htmlLandscape, htmlPortrait,
   })
   const initialSnapshot = useRef<string | null>(null)
   if (initialSnapshot.current === null) initialSnapshot.current = formSnapshot
@@ -411,6 +418,7 @@ export function ContentForm({ stores, tags, screens = [], initial, audience = "i
       if (!klubb.headline.trim()) { toast.error("Skriv en overskrift"); return }
     } else if (!title.trim()) { toast.error("Skriv en tittel først"); return }
     if (isFullscreen && !imageUrls[0] && !fsPortraitUrl) { toast.error("Last opp minst én fil (liggende eller stående)"); return }
+    if (isHtml && !htmlLandscape && !htmlPortrait) { toast.error("Last opp minst én HTML-fil (liggende eller stående)"); return }
     if (!targetChosen) { toast.error("Velg hvor innholdet skal vises (Vis på)"); return }
     if (targetMode === "stores" && storeIds.length === 0) { toast.error(`Velg minst én ${unitLabel.toLowerCase()}`); return }
     if (targetMode === "tags" && tagIds.length === 0) { toast.error("Velg minst én tagg"); return }
@@ -453,7 +461,7 @@ export function ContentForm({ stores, tags, screens = [], initial, audience = "i
         } : null,
         avdeling,
         // 2+ images always render full-page (side by side), so force plakat-style.
-        imageMode: usesImage ? (isFullscreen ? "fullskjerm" : type === "slide" || isMulti ? "plakat" : imageMode) : "bakgrunn",
+        imageMode: isHtml ? "html" : usesImage ? (isFullscreen ? "fullskjerm" : type === "slide" || isMulti ? "plakat" : imageMode) : "bakgrunn",
         targetMode, storeIds, tagIds, screenIds,
         validFrom: validFrom || null, validTo: validTo || null, publish,
         contactPerson: type === "job" ? contactPerson || null : null,
@@ -461,6 +469,8 @@ export function ContentForm({ stores, tags, screens = [], initial, audience = "i
         bgColor: usesColors ? bgColor || null : null,
         textColor: usesColors ? textColor || null : null,
         durationSeconds: durationSeconds ? Math.max(3, Math.min(600, Number(durationSeconds))) : null,
+        htmlLandscape: isHtml ? htmlLandscape : null,
+        htmlPortrait: isHtml ? htmlPortrait : null,
       },
       initial?.id
     )
@@ -495,8 +505,10 @@ export function ContentForm({ stores, tags, screens = [], initial, audience = "i
     // (bytter redaktøren fil, forkastes de gamle sidene — de rendres på nytt).
     pages: isDeck && initial?.pages && initial.pages.length > 0 && imageUrls[0] === (initial.imageUrls?.[0] ?? initial.imageUrl) ? initial.pages : [],
     portraitUrl: isFullscreen ? fsPortraitUrl : null,
+    htmlLandscape: isHtml ? htmlLandscape : null,
+    htmlPortrait: isHtml ? htmlPortrait : null,
     portraitPages: isFullscreen && initial?.portraitPages?.length && fsPortraitUrl === initial?.portraitUrl ? initial.portraitPages : [],
-    imageMode: (isFullscreen ? "fullskjerm" : type === "slide" || isMulti ? "plakat" : imageMode) as ImageMode,
+    imageMode: (isHtml ? "html" : isFullscreen ? "fullskjerm" : type === "slide" || isMulti ? "plakat" : imageMode) as ImageMode,
     offer: isOfferStruktur ? offer : null,
     campaign: isCampaign ? campaign : null,
     invitation: type === "invitation" ? invitation : null,
@@ -582,10 +594,10 @@ export function ContentForm({ stores, tags, screens = [], initial, audience = "i
                 type="text"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                placeholder={isFullscreen ? "Internt navn (vises ikke på skjermen)..." : type === "slide" ? "Tittel på plakaten..." : type === "gallery" ? "Overskrift på galleriet..." : "Tittel på saken..."}
+                placeholder={isFullscreen || isHtml ? "Internt navn (vises ikke på skjermen)..." : type === "slide" ? "Tittel på plakaten..." : type === "gallery" ? "Overskrift på galleriet..." : "Tittel på saken..."}
                 className="w-full text-2xl font-bold text-zinc-900 bg-transparent border-none focus:outline-none placeholder:text-zinc-300"
               />
-              {isFullscreen && <p className="text-[10px] text-zinc-400 mt-1">Tittelen er kun til admin-lista — den vises aldri på skjermen.</p>}
+              {(isFullscreen || isHtml) && <p className="text-[10px] text-zinc-400 mt-1">Tittelen er kun til admin-lista — den vises aldri på skjermen.</p>}
             </div>
           )}
 
@@ -744,6 +756,15 @@ export function ContentForm({ stores, tags, screens = [], initial, audience = "i
               showBoth={showBoth}
               onShowBoth={setShowBoth}
               surface={audience}
+            />
+          )}
+
+          {isHtml && (
+            <HtmlFields
+              landscapeUrl={htmlLandscape}
+              portraitUrl={htmlPortrait}
+              onLandscape={setHtmlLandscape}
+              onPortrait={setHtmlPortrait}
             />
           )}
 
