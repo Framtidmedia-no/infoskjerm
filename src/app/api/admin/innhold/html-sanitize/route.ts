@@ -43,13 +43,19 @@ export async function POST(req: Request) {
 
   const supabase = createAdminClient()
   const path = `uploads/${randomUUID()}.html`
+  // NB: content-type MÅ være «text/html» uten charset-parameter — Storage matcher
+  // hele strengen mot bucketens allowed_mime_types (som har «text/html»), så
+  // «text/html; charset=utf-8» avvises med 415. Charset kommer fra <meta> i fila.
   const { error } = await supabase.storage
     .from("media")
-    .upload(path, Buffer.from(result.html, "utf8"), { contentType: "text/html; charset=utf-8", upsert: false })
+    .upload(path, Buffer.from(result.html, "utf8"), { contentType: "text/html", upsert: false })
   if (error) {
     return NextResponse.json({ error: `Kunne ikke lagre fila: ${error.message}` }, { status: 500 })
   }
 
+  // Returnerer også den sanerte HTML-en så admin kan forhåndsvise via srcdoc
+  // (Storage serverer .html som text/plain, så en direkte iframe-src ville vist
+  // rå kildekode — derfor srcdoc i admin og egen serve-route på skjermen).
   const { data } = supabase.storage.from("media").getPublicUrl(path)
-  return NextResponse.json({ url: data.publicUrl })
+  return NextResponse.json({ url: data.publicUrl, html: result.html })
 }

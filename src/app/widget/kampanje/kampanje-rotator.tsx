@@ -161,7 +161,7 @@ export function KampanjeRotator({ items, chain = null, qr = {}, season = null }:
               <FullscreenMedia item={item} portrait={false} />
             ) : item.imageMode === "html" ? (
               // Sanert HTML-side i låst sandbox-iframe (liggende variant).
-              <HtmlSlide landscapeUrl={item.htmlLandscape} portraitUrl={item.htmlPortrait} portrait={false} />
+              <HtmlSlide id={item.id} landscapeUrl={item.htmlLandscape} portraitUrl={item.htmlPortrait} portrait={false} />
             ) : item.campaign ? (
               <CampaignCard item={item} chain={chain} />
             ) : item.type === "competition" ? (

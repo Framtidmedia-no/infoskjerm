@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useId } from "react"
+import { useState, useId, useEffect } from "react"
 import { Code2, X, Loader2, Upload, Copy, Check, Sparkles } from "lucide-react"
 import { toast } from "sonner"
 
@@ -49,16 +49,16 @@ HARDE TEKNISKE KRAV — MÅ følges nøyaktig, ellers virker det ikke hos oss:
 LEVER: hver fil som én komplett kodeblokk (start med <!doctype html>), tydelig merket
 «LIGGENDE (1920×1080)» og «STÅENDE (1080×1920)». Lag noe råflott og profesjonelt.`
 
-async function uploadHtml(file: File): Promise<string> {
+async function uploadHtml(file: File): Promise<{ url: string; html: string }> {
   const text = await file.text()
   const res = await fetch("/api/admin/innhold/html-sanitize", {
     method: "POST",
     headers: { "Content-Type": "text/html; charset=utf-8" },
     body: text,
   })
-  const data = (await res.json().catch(() => ({}))) as { url?: string; error?: string }
+  const data = (await res.json().catch(() => ({}))) as { url?: string; html?: string; error?: string }
   if (!res.ok || !data.url) throw new Error(data.error ?? "Opplasting feilet")
-  return data.url
+  return { url: data.url, html: data.html ?? "" }
 }
 
 function Slot({ label, hint, url, onChange, ratio }: {
@@ -70,7 +70,19 @@ function Slot({ label, hint, url, onChange, ratio }: {
 }) {
   const [busy, setBusy] = useState(false)
   const [dragging, setDragging] = useState(false)
+  const [previewHtml, setPreviewHtml] = useState<string | null>(null)
   const inputId = useId()
+
+  // Storage serverer .html som text/plain, så forhåndsvisningen bruker srcdoc.
+  // Ved redigering får vi en URL uten strengen — hent den (kroppen ER HTML-en).
+  useEffect(() => {
+    if (url && !previewHtml) {
+      let alive = true
+      fetch(url).then((r) => (r.ok ? r.text() : null)).then((t) => { if (alive && t) setPreviewHtml(t) }).catch(() => {})
+      return () => { alive = false }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [url])
 
   async function handleFile(file?: File | null) {
     if (!file) return
@@ -84,7 +96,9 @@ function Slot({ label, hint, url, onChange, ratio }: {
     }
     setBusy(true)
     try {
-      onChange(await uploadHtml(file))
+      const { url: u, html } = await uploadHtml(file)
+      setPreviewHtml(html)
+      onChange(u)
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Opplasting feilet")
     } finally {
@@ -100,9 +114,9 @@ function Slot({ label, hint, url, onChange, ratio }: {
       </div>
       {url ? (
         <div className="relative rounded-xl overflow-hidden border border-zinc-200 group bg-black" style={{ aspectRatio: ratio }}>
-          <iframe src={url} title={`Forhåndsvisning ${label}`} sandbox="" scrolling="no"
+          <iframe srcDoc={previewHtml ?? ""} title={`Forhåndsvisning ${label}`} sandbox="" scrolling="no"
             className="absolute inset-0 w-full h-full border-0 pointer-events-none" />
-          <button type="button" onClick={() => onChange(null)} aria-label="Fjern fil"
+          <button type="button" onClick={() => { onChange(null); setPreviewHtml(null) }} aria-label="Fjern fil"
             className="absolute top-2 right-2 w-7 h-7 rounded-full bg-black/60 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity">
             <X className="w-4 h-4" />
           </button>

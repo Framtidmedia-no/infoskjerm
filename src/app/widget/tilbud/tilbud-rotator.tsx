@@ -191,7 +191,7 @@ export function TilbudRotator({ items, ticker, storeName, chain = null, qr = {},
     <FullscreenMedia item={item} portrait />
   ) : item.imageMode === "html" ? (
     // Sanert HTML-side i låst sandbox-iframe (stående variant).
-    <HtmlSlide landscapeUrl={item.htmlLandscape} portraitUrl={item.htmlPortrait} portrait />
+    <HtmlSlide id={item.id} landscapeUrl={item.htmlLandscape} portraitUrl={item.htmlPortrait} portrait />
   ) : item.klubb ? (
     // Customer-club invite → full-bleed QR card (per-store sign-up link).
     <KundeklubbCard headline={item.klubb.headline} subtext={item.klubb.subtext} cta={item.klubb.cta || undefined} qrUrl={qr[item.id] ?? ""} accent={chain?.color || "#16a34a"} logoUrl={chain?.logoUrl ?? null} chainName={chain?.name ?? null} />

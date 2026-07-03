@@ -986,7 +986,7 @@ export function ContentForm({ stores, tags, screens = [], initial, audience = "i
           <section className="rounded-2xl border border-zinc-200/80 bg-white p-4 shadow-[0_1px_2px_rgba(16,24,40,0.04)]">
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-xs font-semibold text-zinc-600">Forhåndsvisning</h3>
-              {type !== "ticker" && (
+              {type !== "ticker" && !isHtml && (
                 <div className="inline-flex rounded-lg border border-zinc-200 p-0.5 bg-zinc-50">
                   <button type="button" onClick={() => setPreviewPortrait(true)} className={`px-2.5 py-1 rounded-md text-[11px] font-semibold transition-colors ${previewPortrait ? "bg-zinc-900 text-white" : "text-zinc-500 hover:text-zinc-800"}`}>Stående</button>
                   <button type="button" onClick={() => setPreviewPortrait(false)} className={`px-2.5 py-1 rounded-md text-[11px] font-semibold transition-colors ${!previewPortrait ? "bg-zinc-900 text-white" : "text-zinc-500 hover:text-zinc-800"}`}>Liggende</button>
@@ -995,6 +995,8 @@ export function ContentForm({ stores, tags, screens = [], initial, audience = "i
             </div>
             {type === "ticker" ? (
               <p className="text-[11px] text-zinc-400">Ticker vises som en rullende stripe nederst på {audience === "kunde" ? "kundeskjermen" : "internskjermen"}.</p>
+            ) : isHtml ? (
+              <p className="text-[11px] text-zinc-400">Live forhåndsvisning av HTML-siden vises i opplastingsfeltene (stående + liggende) — akkurat slik den animerer på skjermen.</p>
             ) : (
               <>
                 <LivePreview data={previewData} portrait={previewPortrait} />

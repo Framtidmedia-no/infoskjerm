@@ -355,7 +355,7 @@ function Card({ item, qrUrl, portrait = false, accent = "#16a34a", accentFg = "#
   // Fullskjerm-media: kant til kant uten tittel/kicker/ramme — foran alt annet.
   if (item.imageMode === "fullskjerm") return <FullscreenMedia item={item} portrait={portrait} />
   // Sanert HTML-side i låst sandbox-iframe — også foran alle kort-typer.
-  if (item.imageMode === "html") return <HtmlSlide landscapeUrl={item.htmlLandscape} portraitUrl={item.htmlPortrait} portrait={portrait} />
+  if (item.imageMode === "html") return <HtmlSlide id={item.id} landscapeUrl={item.htmlLandscape} portraitUrl={item.htmlPortrait} portrait={portrait} />
   // Kjedefarget chrome kun på kortene som bruker den delte chromen — kort med
   // eget fargespråk (konkurranse/invitasjon/galleri/slide) røres ikke.
   if (item.type === "competition") return <CompetitionCard item={item} qrUrl={qrUrl} portrait={portrait} />
