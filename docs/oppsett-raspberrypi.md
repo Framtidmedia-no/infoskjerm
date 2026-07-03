@@ -335,14 +335,37 @@ begge 2026-07-03 — se [raspberry-enheter.md](raspberry-enheter.md) for status 
 | Portrett-layout som smal stripe (`scale: ... result 607x1080`) | skjerm liggende, layout portrett | `echo right > ~/.kiosk-rotate` (steg 7d) |
 | WiFi-radio død | mangler land-kode | `sudo raspi-config nonint do_wifi_country NO` |
 
-## Konvensjoner + golden image
+## Konvensjoner
 - **Hostnavn:** `gr-<butikk><nr>` (kunde = `1`, bakrom = `2`).
 - **Rotasjon:** kunde = `right` (portrett 1080×1920); bakrom = `normal` (liggende). Justeres i `~/.kiosk-rotate`.
 - **Skjerm/X:** fbdev FJERNET (modeset/vc4 primær), getty-autologin (B2), kiosk via `~/.bash_profile`-loop.
-- **Golden image:** når en Pi er komplett (Arexibo + skjerm-deps + getty-kiosk + fbdev fjernet + Connect + TV-strømagent) og
-  verifisert, klon SD-kortet. Per klon endres bare: hostnavn, `~/.kiosk-rotate`, WiFi (`kundenett`),
-  ny Xibo-registrering (`rm ~/xibo/cms.json` → re-registrer) + autoriser/tilordne, ny Connect-signin (+ SSH-nøkkel),
-  nytt skjerm-token i `/etc/infoskjerm/tvpower.env` (fra skjermkortet i admin).
+
+## Golden image — «sett inn kort, skriv navn, ferdig» (scripts/pi/goldenimage/)
+
+Nye Pi-er settes IKKE opp manuelt (steg 1–9) — de flashes fra golden image.
+Full oppskrift i [`scripts/pi/goldenimage/README.md`](../scripts/pi/goldenimage/README.md); kortversjonen:
+
+```bash
+# ENGANGS: gjør en ferdig Pi til golden-kilde (installerer sovende firstboot-tjeneste)
+scp -r scripts/pi/goldenimage frlund3@<pi-ip>:/tmp/goldenimage
+ssh frlund3@<pi-ip> "sudo HALT=1 bash /tmp/goldenimage/prepare-golden.sh"   # slår av Pi-en
+# → trekk SD-kortet, sett i Mac-en:
+./scripts/pi/goldenimage/capture-golden-image.sh          # → ~/infoskjerm-golden-YYYYMMDD.img.gz
+
+# PER NY PI: sett inn blankt kort i Mac-en og:
+./scripts/pi/goldenimage/flash-pi.sh gr-spar-butikk1 --butikk "SPAR Butikk"
+# → oppretter/gjenbruker skjermrad i Supabase (token), flasher, legger provision-fil
+#   på boot-partisjonen. Pi-en booter to ganger og ordner selv: hostname, machine-id,
+#   SSH-nøkler, tvpower-token, rotasjon, NY Xibo-identitet, Connect-innmelding (org-key).
+
+# ETTERPÅ (når Pi-en har bootet og når CMS-et): autoriser + grupper i Xibo
+node scripts/xibo/adopt-display.mjs gr-spar-butikk1 --group "SPAR Butikk"
+```
+
+Firstboot håndterer fellene naiv kloning ville gitt: delt Xibo-identitet (display_id =
+machine-id → nullstilles), delt Connect-identitet (state slettes, ny signin med org-auth-key),
+delte SSH-vertsnøkler (regenereres). Provision-fila inneholder hemmeligheter og flyttes av
+firstboot til `/var/lib/infoskjerm-firstboot/` (root-only) før kiosken starter.
 
 ---
 
