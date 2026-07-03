@@ -13,17 +13,22 @@ set -euo pipefail
 
 OUT="${OUT:-$HOME/infoskjerm-golden-$(date +%Y%m%d).img.gz}"
 
+# SD-kort = removable fysisk disk. Mac-ens INNEBYGDE kortleser regnes som
+# «internal» av diskutil, så vi kan ikke filtrere på external — kun removable.
 find_sd_disk() {
-  diskutil list external physical | awk '/^\/dev\/disk/ {print $1}' | sed 's|/dev/||'
+  local d
+  for d in $(diskutil list physical | awk '/^\/dev\/disk/ {print $1}' | sed 's|/dev/||'); do
+    diskutil info "/dev/$d" 2>/dev/null | grep -qE "Removable Media:.*Removable" && echo "$d"
+  done
 }
 
 DISK="${1:-}"
 if [[ -z "$DISK" ]]; then
   CANDIDATES=($(find_sd_disk))
-  if [[ ${#CANDIDATES[@]} -eq 0 ]]; then echo "Fant ingen eksterne disker — sett inn SD-kortet."; exit 1; fi
+  if [[ ${#CANDIDATES[@]} -eq 0 ]]; then echo "Fant ingen minnekort — sett inn SD-kortet."; exit 1; fi
   if [[ ${#CANDIDATES[@]} -gt 1 ]]; then
-    echo "Flere eksterne disker funnet — oppgi hvilken: $0 <diskN>"
-    diskutil list external physical
+    echo "Flere minnekort/removable disker funnet — oppgi hvilken: $0 <diskN>"
+    diskutil list physical
     exit 1
   fi
   DISK="${CANDIDATES[0]}"

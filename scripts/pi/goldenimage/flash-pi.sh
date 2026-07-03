@@ -114,9 +114,17 @@ if [[ -z "$TOKEN" ]]; then
 fi
 
 # ---------- finn og bekreft SD-kort ----------
+# SD-kort = removable fysisk disk (Mac-ens innebygde kortleser er «internal»,
+# så vi kan ikke filtrere på external — kun removable).
+find_sd_disk() {
+  local d
+  for d in $(diskutil list physical | awk '/^\/dev\/disk/ {print $1}' | sed 's|/dev/||'); do
+    diskutil info "/dev/$d" 2>/dev/null | grep -qE "Removable Media:.*Removable" && echo "$d"
+  done
+}
 if [[ -z "$DISK" ]]; then
-  CANDIDATES=($(diskutil list external physical | awk '/^\/dev\/disk/ {print $1}' | sed 's|/dev/||'))
-  [[ ${#CANDIDATES[@]} -eq 1 ]] || { echo "Fant ${#CANDIDATES[@]} eksterne disker — oppgi --disk diskN:"; diskutil list external physical; exit 1; }
+  CANDIDATES=($(find_sd_disk))
+  [[ ${#CANDIDATES[@]} -eq 1 ]] || { echo "Fant ${#CANDIDATES[@]} minnekort — oppgi --disk diskN:"; diskutil list physical; exit 1; }
   DISK="${CANDIDATES[0]}"
 fi
 
