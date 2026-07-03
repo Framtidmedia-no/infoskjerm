@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { ean13CheckDigit, expandPluToGtin, normalizeGtinInput } from "./gtin"
+import { catalogGtinFrom23, ean13CheckDigit, expandPluToGtin, normalizeGtinInput } from "./gtin"
 
 describe("ean13CheckDigit", () => {
   it("banan-basen gir kontrollsiffer 0", () => {
@@ -30,7 +30,26 @@ describe("expandPluToGtin", () => {
   })
 })
 
+describe("catalogGtinFrom23", () => {
+  it("katalogform er stabil (allerede nullstilt kode beholdes)", () => {
+    expect(catalogGtinFrom23("2371564300003")).toBe("2371564300003")
+  })
+  it("nullstiller vekt/pris-sifre fra vekta", () => {
+    expect(catalogGtinFrom23("2371564312349")).toBe("2371564300003")
+  })
+  it("godtar bare de 8 identifiserende sifrene", () => {
+    expect(catalogGtinFrom23("23715643")).toBe("2371564300003")
+  })
+})
+
 describe("normalizeGtinInput", () => {
+  it("nullstiller 23-koder til katalogform", () => {
+    expect(normalizeGtinInput("2371564312349")).toBe("2371564300003")
+    expect(normalizeGtinInput("23715643")).toBe("2371564300003")
+  })
+  it("rører ikke korte tall som starter på 23 (6–7 siffer er vanlig GTIN)", () => {
+    expect(normalizeGtinInput("234567")).toBe("234567")
+  })
   it("utvider 4-sifret PLU", () => {
     expect(normalizeGtinInput("4011")).toBe("2000401100000")
   })
