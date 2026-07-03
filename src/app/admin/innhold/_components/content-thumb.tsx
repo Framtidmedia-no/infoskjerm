@@ -3,6 +3,7 @@ import {
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { isDeckUrl } from "@/lib/content/deck"
+import { HtmlThumb } from "./html-thumb"
 
 /**
  * Delt kilde-til-sannhet for innholdstype-metadata (etikett, ikon, badge, gradient)
@@ -36,9 +37,12 @@ export function isVideoUrl(url: string): boolean {
  * type-farget kort med type-ikon (ikke en «ødelagt»-lignende grå klosse).
  * `className` styrer størrelse/form fra kalleren (f.eks. w-full h-full).
  */
-export function ContentThumb({ imageUrl, type, className }: { imageUrl: string | null; type: string; className?: string }) {
+export function ContentThumb({ imageUrl, type, id, className }: { imageUrl: string | null; type: string; id?: string; className?: string }) {
   const tm = TYPE_META[type] ?? TYPE_META.slide
   const TypeIcon = tm.icon
+
+  // HTML-side: live mini-forhåndsvisning av selve innholdet (skalert i sandbox).
+  if (type === "html" && id) return <HtmlThumb id={id} className={className} />
 
   if (imageUrl && isDeckUrl(imageUrl)) {
     // PDF (kundeavis) og PowerPoint vises begge som dokument-ikon i miniatyren.
