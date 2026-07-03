@@ -9,10 +9,15 @@ hostnavn, rolle, Xibo-ID, MAC, Connect-status. Oppsett-oppskriften ligger i
 
 ## Hele flåten
 
-| Butikk | Hostnavn | Rolle | Xibo-ID | Xibo-gruppe (id) | Rotasjon | Auto-start | Connect | Satt opp |
-|--------|----------|-------|---------|------------------|----------|-----------|---------|----------|
-| EUROSPAR MOA | `gr-eurospar-moa1` | Kundeskjerm | 1 | EUROSPAR MOA (9) | `right` (portrett) | ✅ getty | ✅ org | 2026-06-30 |
-| EUROSPAR MOA | `gr-eurospar-moa2` | Bakrom/intern | 2 | EUROSPAR MOA – Bakrom (25) | `normal` | ✅ getty | ✅ org | 2026-06-30 |
+| Butikk | Hostnavn | Rolle | Xibo-ID | Xibo-gruppe (id) | Rotasjon | Auto-start | Connect | TV-agent | Satt opp |
+|--------|----------|-------|---------|------------------|----------|-----------|---------|----------|----------|
+| EUROSPAR MOA | `gr-eurospar-moa1` | Kundeskjerm | 1 | EUROSPAR MOA (9) | `right` (portrett) | ✅ getty | ✅ org | ✅ * | 2026-06-30 |
+| EUROSPAR MOA | `gr-eurospar-moa2` | Bakrom/intern | 2 | EUROSPAR MOA – Bakrom (25) | `normal` | ✅ getty | ✅ org | ⬜ | 2026-06-30 |
+
+\* TV-agent installert og rapporterer til appen — men TV-kontroll (av/på via CEC) er ikke fysisk
+verifisert ennå: ved installasjon 2026-07-03 var ingen TV synlig på HDMI (`tvState=unknown`).
+Når Pi-en står ved TV-en: sjekk at CEC er PÅ i TV-menyen (Anynet+/SimpLink/Bravia Sync) og
+test «Slå av nå / Slå på nå» fra skjermkortet i admin.
 
 Status: **2 / 32 skjermer ferdig** (16 butikker × ~2 skjermer). Oppdater raden når en Pi fullføres.
 Begge MOA-skjermer kjører nå **getty-autologin + fbdev fjernet** (riktige farger) og er meldt inn i **Framtid Tech AS** (org-auth-key, headless).
@@ -26,6 +31,8 @@ Begge MOA-skjermer kjører nå **getty-autologin + fbdev fjernet** (riktige farg
 - MAC: wlan0 `88:a2:9e:ed:b1:e2` · eth0 `88:a2:9e:ed:b1:e1`
 - Rotasjon `right` (portrett 1080×1920) · viser hele butikken (`/widget/tilbud?store=…`)
 - Connect: signed in (remote shell + screen allowed, linger on)
+- TV-agent: installert 2026-07-03 (`infoskjerm-tvpower.timer`, poller hvert minutt, token fra
+  skjermkortet «EUROSPAR MOA kunde»). Fysisk CEC-test gjenstår — se fotnoten i flåtetabellen.
 
 **`gr-eurospar-moa2` — Bakrom/intern** ✅ ferdig
 - Xibo: display-id **2**, gruppe «EUROSPAR MOA – Bakrom» (25), viser layout 163

@@ -311,12 +311,12 @@ ssh frlund3@<pi-ip> 'journalctl -u infoskjerm-tvpower -n 5 --no-pager'
 
 | Hostnavn | Rolle | Display-id | Gruppe | Rotasjon | Auto-start | Emoji | Connect |
 |----------|-------|-----------|--------|----------|-----------|-------|---------|
-| `gr-eurospar-moa1` | **Kundeskjerm** | 1 | `EUROSPAR MOA` (id 9) | `right` (portrett) | ✅* | ✅ | ✅ signed in |
+| `gr-eurospar-moa1` | **Kundeskjerm** | 1 | `EUROSPAR MOA` (id 9) | `right` (portrett) | ✅ getty | ✅ | ✅ signed in |
 | `gr-eurospar-moa2` | **Bakrom/intern** | 2 | `EUROSPAR MOA – Bakrom` (id 25) | `normal` | ✅ getty | ✅ | ✅ signed in |
 
-`gr-eurospar-moa2` er **ferdig** (getty-autologin, fbdev fjernet → riktige farger, Connect signed-in).
-\* `gr-eurospar-moa1` kjører fortsatt den gamle systemd-metoden (fungerer, men bør **migreres til getty-autologin
-+ fbdev-fjerning** for robusthet/parity — gjøres neste gang den er på).
+Begge MOA-Pi-ene er **ferdige** (getty-autologin, fbdev fjernet → riktige farger, Connect signed-in;
+moa1 migrert fra gammel systemd-metode, verifisert 2026-07-03). TV-agent (steg 9): installert på
+moa1 2026-07-03 — se [raspberry-enheter.md](raspberry-enheter.md) for status per enhet.
 
 > **Fjernaksess = Raspberry Pi Connect (Organisations), IKKE Tailscale.** Verifiser per Pi
 > med `rpi-connect status` → «Signed in: yes» + «Remote shell: allowed». moa1 ✅.
