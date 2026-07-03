@@ -12,6 +12,7 @@
  */
 
 import { normalizeGtinInput } from "@/lib/gtin"
+import { NG_SEARCH_URL, ngHitToProduct, type NgContentData } from "@/lib/spar-ng"
 
 const UA =
   "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124 Safari/537.36"
@@ -64,14 +65,17 @@ export async function lookupSparProduct(input: string): Promise<SparLookupResult
   // ellers kunne f.eks. https://evil.com/spar.no/ passere og bli hentet (SSRF).
   const url = sparUrl(raw)
   // The id/GTIN is the trailing number in the URL, or the raw number itself.
-  // Bare tall med 4–5 siffer tolkes som PLU (løsvekt) og utvides til EAN-13.
+  // Alt normaliseres: 4–5 siffer = PLU som utvides, 23-koder nullstilles til
+  // katalogform (vekt/pris fra vekta ligger i de siste sifrene).
   const idMatch = (url ?? raw).match(/(\d{6,})(?:[/?#]|$)/)
-  const gtin = idMatch?.[1] ?? normalizeGtinInput(raw)
+  const gtin = normalizeGtinInput(idMatch?.[1] ?? raw)
   if (!gtin) return { ok: false, error: "Fant ikke GTIN i lenken. Lim inn hele spar.no-lenken, GTIN eller PLU-nummeret (4–5 siffer)." }
 
-  // Without a URL we can still give the image; name/price needs the product page.
+  // Without a URL: name/price/image comes from NG's platform API (same source
+  // spar.no's own search uses) — falls back to just the deterministic image.
   if (!url) {
-    return { ok: true, product: { gtin, varenavn: null, vareinfo: null, pris: null, enhetspris: null, pant: false, imageUrl: imageFor(gtin) } }
+    const ng = await lookupNgProduct(gtin)
+    return { ok: true, product: ng ?? { gtin, varenavn: null, vareinfo: null, pris: null, enhetspris: null, pant: false, imageUrl: imageFor(gtin) } }
   }
 
   try {
@@ -106,7 +110,27 @@ export async function lookupSparProduct(input: string): Promise<SparLookupResult
       },
     }
   } catch (err) {
-    // Page fetch failed — still return the image so the user can fill the rest.
-    return { ok: true, product: { gtin, varenavn: null, vareinfo: null, pris: null, enhetspris: null, pant: false, imageUrl: imageFor(gtin) }, error: err instanceof Error ? err.message : undefined }
+    // Page fetch failed — try the platform API before falling back to image-only.
+    const ng = await lookupNgProduct(gtin)
+    return {
+      ok: true,
+      product: ng ?? { gtin, varenavn: null, vareinfo: null, pris: null, enhetspris: null, pant: false, imageUrl: imageFor(gtin) },
+      error: ng ? undefined : err instanceof Error ? err.message : undefined,
+    }
+  }
+}
+
+/** Slår opp navn/pris/bilde i NG-plattform-API-et for en ren GTIN (best effort). */
+async function lookupNgProduct(gtin: string): Promise<SparProduct | null> {
+  try {
+    const res = await fetch(`${NG_SEARCH_URL}?search=${gtin}&page_size=1`, {
+      headers: { "User-Agent": UA },
+      cache: "no-store",
+    })
+    if (!res.ok) return null
+    const data = (await res.json()) as { hits?: { contentData?: NgContentData }[] }
+    return ngHitToProduct(gtin, data.hits?.[0]?.contentData)
+  } catch {
+    return null
   }
 }
