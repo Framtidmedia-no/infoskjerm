@@ -6,17 +6,18 @@ import { toast } from "sonner"
 
 /**
  * HTML-innholdstype: to opplastingsslots (liggende + stående). Brukeren lager en
- * selvstendig HTML-side (gjerne med Claude/ChatGPT — se startprompten under),
- * laster den opp, og den saneres server-side FØR den lagres. På skjermen vises
- * den i en låst sandbox-iframe (ingen JavaScript kjøres) — CSS-animasjon kjører.
+ * selvstendig HTML-side (gjerne med Claude/ChatGPT — se startprompten under) og
+ * laster den opp. På skjermen vises den i en sandbox-iframe (allow-scripts, uten
+ * same-origin): CSS-animasjon OG JavaScript kjører, men koden er jailet fra
+ * systemet vårt. Hold alt i én fil så den også virker offline.
  *
  * Minst én slot må fylles; mangler én, vises den andre på begge orienteringer.
  */
 
-const MAX_BYTES = 1_600_000
+const MAX_BYTES = 4_000_000
 
-// Startprompt brukeren kan kopiere rett inn i Claude/ChatGPT. Matcher det
-// saneringen tillater (ingen JS, selvstendig fil, begge orienteringer).
+// Startprompt brukeren kan kopiere rett inn i Claude/ChatGPT. Matcher det vi
+// tillater: selvstendig fil, begge orienteringer, JS er lov (men hold alt inline).
 const STARTER_PROMPT = `Du skal lage innhold til en digital infoskjerm (digital signage). Jeg er ikke
 utvikler, så gi meg ferdige, komplette filer jeg bare kan laste ned og bruke.
 
@@ -33,18 +34,18 @@ INNHOLD:
 - Farger / merkevare: [FARGER]  (f.eks. «mørk bakgrunn, gull aksent»)
 - Stemning/stil: [STIL]  (f.eks. elegant, leken, minimalistisk, premium)
 
-HARDE TEKNISKE KRAV — MÅ følges nøyaktig, ellers virker det ikke hos oss:
-1. ÉN selvstendig .html-fil per retning. ALT inne i fila: CSS i en <style>-blokk,
-   ev. bilder/logo som data:-URI (base64). INGEN <link>, INGEN Google Fonts/CDN,
-   INGEN eksterne bilder. Bruk web-trygge systemfonter (Arial, Georgia, system-ui).
-2. INGEN JavaScript — det kjøres aldri (låst sandkasse). ALL bevegelse er ren CSS
-   (@keyframes, animation, transition, transform). La animasjonen loope rolig og
-   sømløst; ingen harde blink/stroboskop.
+HARDE TEKNISKE KRAV — MÅ følges nøyaktig:
+1. ÉN selvstendig .html-fil per retning. ALT inne i fila: CSS i <style>, ev. JS i
+   <script>, bilder/logo som data:-URI (base64). INGEN <link>, INGEN Google
+   Fonts/CDN, INGEN eksterne bilder eller kall ut på nettet — alt inline. (Da
+   spiller siden videre selv om skjermen mister nettet.) Web-trygge systemfonter.
+2. Bevegelse: CSS (@keyframes/transition/transform) ELLER JavaScript — begge
+   kjører. La animasjonen loope rolig og sømløst; ingen harde blink/stroboskop.
 3. Fyll HELE flaten. <body> uten marg/scrollbar, overflow: hidden, ingen hvite kanter.
 4. STOR, lesbar typografi (ses på flere meters avstand). Sterk kontrast. Ett
    dominerende budskap.
 5. TRYGG MARG: hold viktig tekst/logo minst 6–8 % inn fra hver kant (TV-er kan beskjære).
-6. Under ca. 1,5 MB per fil. Bruk helst CSS-gradienter i stedet for fotobakgrunner.
+6. Under ca. 4 MB per fil.
 
 LEVER: hver fil som én komplett kodeblokk (start med <!doctype html>), tydelig merket
 «LIGGENDE (1920×1080)» og «STÅENDE (1080×1920)». Lag noe råflott og profesjonelt.`
@@ -91,7 +92,7 @@ function Slot({ label, hint, url, onChange, ratio }: {
       return
     }
     if (file.size > MAX_BYTES) {
-      toast.error(`Fila er ${(file.size / 1024 / 1024).toFixed(1)} MB — maks 1,5 MB. Komprimer bilder eller bruk CSS-gradienter.`)
+      toast.error(`Fila er ${(file.size / 1024 / 1024).toFixed(1)} MB — maks 4 MB. Komprimer bilder eller legg dem inn som data-URI.`)
       return
     }
     setBusy(true)
@@ -114,7 +115,7 @@ function Slot({ label, hint, url, onChange, ratio }: {
       </div>
       {url ? (
         <div className="relative rounded-xl overflow-hidden border border-zinc-200 group bg-black" style={{ aspectRatio: ratio }}>
-          <iframe srcDoc={previewHtml ?? ""} title={`Forhåndsvisning ${label}`} sandbox="" scrolling="no"
+          <iframe srcDoc={previewHtml ?? ""} title={`Forhåndsvisning ${label}`} sandbox="allow-scripts" scrolling="no"
             className="absolute inset-0 w-full h-full border-0 pointer-events-none" />
           <button type="button" onClick={() => { onChange(null); setPreviewHtml(null) }} aria-label="Fjern fil"
             className="absolute top-2 right-2 w-7 h-7 rounded-full bg-black/60 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity">
@@ -131,7 +132,7 @@ function Slot({ label, hint, url, onChange, ratio }: {
           <input id={inputId} type="file" accept=".html,text/html" className="hidden"
             onChange={(e) => { handleFile(e.target.files?.[0]); e.target.value = "" }} disabled={busy} />
           {busy ? (
-            <><Loader2 className="w-5 h-5 text-zinc-500 animate-spin" /><span className="text-[11px] text-zinc-500">Saniterer og laster opp …</span></>
+            <><Loader2 className="w-5 h-5 text-zinc-500 animate-spin" /><span className="text-[11px] text-zinc-500">Laster opp …</span></>
           ) : (
             <><Upload className="w-5 h-5 text-zinc-400" /><span className="text-[11px] font-medium text-zinc-600">Dra inn eller velg .html</span></>
           )}
@@ -167,9 +168,10 @@ export function HtmlFields({ landscapeUrl, portraitUrl, onLandscape, onPortrait 
         <Code2 className="w-3.5 h-3.5" /> HTML-side
       </label>
       <p className="text-[11px] text-zinc-500 bg-blue-50 border border-blue-100 rounded-lg px-3 py-2">
-        Last opp en <strong>selvstendig HTML-fil</strong> (én for liggende, én for stående). Den saneres
-        automatisk og vises i en <strong>låst sandkasse uten JavaScript</strong> — CSS-animasjon kjører,
-        men ingenting kan kjøre kode eller laste noe fra nettet. Lag den gjerne med Claude/ChatGPT ↓
+        Last opp en <strong>selvstendig HTML-fil</strong> (én for liggende, én for stående). Den vises i en
+        <strong>sandkasse på skjermen</strong> — CSS-animasjon og JavaScript kjører, men koden er jailet og
+        kan aldri røre systemet, andre butikker eller kundedata. Hold alt i én fil (ingen eksterne kall) så
+        den også spiller videre om skjermen mister nettet. Lag den gjerne med Claude/ChatGPT ↓
       </p>
 
       {/* Startprompt til Claude/ChatGPT */}
@@ -202,7 +204,8 @@ export function HtmlFields({ landscapeUrl, portraitUrl, onLandscape, onPortrait 
       </div>
       <p className="text-[10px] text-zinc-400">
         Tips: sterk kontrast, ett dominerende budskap, rolig animasjon som looper — og hold viktig tekst
-        innenfor 6–8 % marg (TV-er kan beskjære kantene). Maks 1,5 MB per fil.
+        innenfor 6–8 % marg (TV-er kan beskjære kantene). Hold alt i én fil (ingen eksterne kall) så den
+        virker offline. Maks 4 MB per fil.
       </p>
     </div>
   )

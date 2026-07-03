@@ -2,20 +2,20 @@ import { NextResponse } from "next/server"
 import { randomUUID } from "crypto"
 import { getAdminContext } from "@/lib/admin/admin-context"
 import { createAdminClient } from "@/lib/supabase/server"
-import { sanitizeSignageHtml } from "@/lib/content/html-sanitize"
+import { prepareSignageHtml } from "@/lib/content/html-prepare"
 
 /**
- * Saniterer en opplastet HTML-side og lagrer den TRYGGE versjonen i media-
- * bucketen. Råen sendes hit som ren tekst (POST body); serveren fjerner
- * <script>/event-handlere/eksterne referanser og injiserer en streng CSP FØR
- * fila blir tilgjengelig. Klienten får kun tilbake URL-en til den sanerte fila.
+ * Tar imot en opplastet HTML-side, validerer størrelse, og lagrer den i media-
+ * bucketen. Råen sendes hit som ren tekst (POST body). Vi SANITERER IKKE —
+ * <script> beholdes: sikkerheten er sandkassen på skjermen (se html-slide.tsx +
+ * /widget/html-content), ikke sanering. Klienten får tilbake URL + selve HTML-en
+ * (til srcdoc-forhåndsvisning).
  *
- * Går via egen route (ikke server action) fordi HTML-en kan være opptil ~1,5 MB
- * — over server actions' body-grense. På skjermen vises fila kun i en
- * <iframe sandbox> uten script-kjøring (se html-slide.tsx).
+ * Går via egen route (ikke server action) fordi HTML-en kan være opptil ~4 MB
+ * — over server actions' body-grense.
  *
  * POST /api/admin/innhold/html-sanitize   body: rå HTML (text/html)
- *   → { url }  eller  { error }
+ *   → { url, html }  eller  { error }
  */
 
 export const dynamic = "force-dynamic"
@@ -36,7 +36,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Kunne ikke lese fila" }, { status: 400 })
   }
 
-  const result = sanitizeSignageHtml(raw)
+  const result = prepareSignageHtml(raw)
   if (!result.ok || !result.html) {
     return NextResponse.json({ error: result.error ?? "Ugyldig HTML-fil" }, { status: 400 })
   }
@@ -53,9 +53,9 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: `Kunne ikke lagre fila: ${error.message}` }, { status: 500 })
   }
 
-  // Returnerer også den sanerte HTML-en så admin kan forhåndsvise via srcdoc
-  // (Storage serverer .html som text/plain, så en direkte iframe-src ville vist
-  // rå kildekode — derfor srcdoc i admin og egen serve-route på skjermen).
+  // Returnerer også HTML-en så admin kan forhåndsvise via srcdoc (Storage
+  // serverer .html som text/plain, så en direkte iframe-src ville vist rå
+  // kildekode — derfor srcdoc i admin og egen serve-route på skjermen).
   const { data } = supabase.storage.from("media").getPublicUrl(path)
   return NextResponse.json({ url: data.publicUrl, html: result.html })
 }
