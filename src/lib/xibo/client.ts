@@ -18,6 +18,11 @@ interface CachedToken {
 
 // Module-level token cache (per server instance). Xibo tokens last ~1h.
 let cached: CachedToken | null = null
+// In-flight refresh, delt av samtidige kallere. KRITISK: Xibo (client_credentials)
+// gjør bare det NYESTE tokenet gyldig per klient. Uten denne låsen kan to samtidige
+// Xibo-kall (f.eks. skjerm-status + drift-innsikt) begge be om nytt token; det ene
+// revokerer det andre, og et dødt token blir cachet → 401 på alt til cachen utløper.
+let inflight: Promise<string> | null = null
 
 function assertConfigured() {
   if (!XIBO_API_URL || !XIBO_CLIENT_ID || !XIBO_CLIENT_SECRET) {
@@ -27,13 +32,8 @@ function assertConfigured() {
   }
 }
 
-async function getAccessToken(): Promise<string> {
-  assertConfigured()
+async function fetchNewToken(): Promise<string> {
   const now = Date.now()
-  if (cached && cached.expiresAt > now + 30_000) {
-    return cached.token
-  }
-
   const body = new URLSearchParams({
     grant_type: "client_credentials",
     client_id: XIBO_CLIENT_ID,
@@ -60,6 +60,21 @@ async function getAccessToken(): Promise<string> {
   return cached.token
 }
 
+async function getAccessToken(): Promise<string> {
+  assertConfigured()
+  const now = Date.now()
+  if (cached && cached.expiresAt > now + 30_000) {
+    return cached.token
+  }
+  // Dedup: samtidige refresh-kallere deler ETT token-kall, så vi aldri ber om
+  // to tokens samtidig (som ville revokert hverandre hos Xibo).
+  if (inflight) return inflight
+  inflight = fetchNewToken().finally(() => {
+    inflight = null
+  })
+  return inflight
+}
+
 type QueryValue = string | number | boolean | undefined | null
 
 export interface XiboRequestOptions {
@@ -70,15 +85,13 @@ export interface XiboRequestOptions {
   query?: Record<string, QueryValue>
 }
 
-/**
- * Low-level Xibo API call. Returns parsed JSON (or null for empty responses).
- * Throws on non-2xx with the Xibo error message.
- */
-export async function xiboFetch<T = unknown>(path: string, opts: XiboRequestOptions = {}): Promise<T> {
-  assertConfigured()
-  const token = await getAccessToken()
-  const method = opts.method ?? "GET"
+/** Tøm token-cachen så neste getAccessToken() henter ferskt (ved 401/revokert). */
+function invalidateToken() {
+  cached = null
+}
 
+function buildXiboRequest(path: string, opts: XiboRequestOptions, token: string): { url: string; init: RequestInit } {
+  const method = opts.method ?? "GET"
   let url = `${XIBO_API_URL}/api${path.startsWith("/") ? path : `/${path}`}`
   if (opts.query) {
     const qs = new URLSearchParams()
@@ -88,10 +101,8 @@ export async function xiboFetch<T = unknown>(path: string, opts: XiboRequestOpti
     const s = qs.toString()
     if (s) url += `?${s}`
   }
-
   const headers: Record<string, string> = { Authorization: `Bearer ${token}` }
   let bodyInit: BodyInit | undefined
-
   if (opts.form && method !== "GET") {
     const form = new URLSearchParams()
     for (const [k, v] of Object.entries(opts.form)) {
@@ -100,8 +111,32 @@ export async function xiboFetch<T = unknown>(path: string, opts: XiboRequestOpti
     bodyInit = form
     headers["Content-Type"] = "application/x-www-form-urlencoded"
   }
+  return { url, init: { method, headers, body: bodyInit, cache: "no-store" } }
+}
 
-  const res = await fetch(url, { method, headers, body: bodyInit, cache: "no-store" })
+/**
+ * Low-level Xibo API call. Returns parsed JSON (or null for empty responses).
+ * Throws on non-2xx with the Xibo error message.
+ *
+ * Selv-healer på 401/403: hvis det cachede tokenet er utløpt/revokert (f.eks.
+ * fordi Xibo bare holder det NYESTE tokenet gyldig per klient), tømmes cachen og
+ * kallet prøves ÉN gang til med ferskt token. Slik kan aldri et dødt token bli
+ * «hengende» i cachen og slå ut skjerm-status til det utløper — ingen restart.
+ */
+export async function xiboFetch<T = unknown>(path: string, opts: XiboRequestOptions = {}): Promise<T> {
+  assertConfigured()
+  const method = opts.method ?? "GET"
+
+  let token = await getAccessToken()
+  let { url, init } = buildXiboRequest(path, opts, token)
+  let res = await fetch(url, init)
+
+  if (res.status === 401 || res.status === 403) {
+    invalidateToken()
+    token = await getAccessToken()
+    ;({ url, init } = buildXiboRequest(path, opts, token))
+    res = await fetch(url, init)
+  }
 
   if (!res.ok) {
     const text = await res.text().catch(() => "")
