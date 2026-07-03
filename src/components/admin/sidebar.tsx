@@ -4,7 +4,7 @@ import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import { cn } from "@/lib/utils"
 import {
-  Store, Monitor, Tv, Users, Settings, ChevronRight, LogOut, Newspaper, Megaphone, ScrollText, Ticket, QrCode, CalendarRange,
+  Store, Monitor, Tv, Users, Settings, ChevronRight, LogOut, Newspaper, Megaphone, ScrollText, Ticket, QrCode, CalendarRange, LayoutGrid,
 } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 import { ImpersonationBanner } from "@/components/admin/impersonation-banner"
@@ -39,6 +39,7 @@ const navGroups: NavGroup[] = [
   {
     label: "Oversikt",
     items: [
+      { href: "/admin/skjermflate", label: "Skjermflåte", icon: LayoutGrid, roles: ["super_admin", "chain_manager", "area_manager", "store_manager"], matchPrefix: true },
       { href: "/admin/plan", label: "Planen", icon: CalendarRange, roles: ALL_AUTHORS, matchPrefix: true },
       { href: "/admin/cms", label: "Forhåndsvisning", icon: Monitor, roles: ["super_admin", "chain_manager", "area_manager", "store_manager"], matchPrefix: true },
     ],
