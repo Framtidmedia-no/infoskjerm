@@ -45,7 +45,7 @@ function SortableRow({ item, index, onDuration }: { item: ContentRow; index: num
       </button>
       <span className="w-5 text-center text-[11px] font-semibold text-zinc-400 flex-shrink-0 tabular-nums">{index + 1}</span>
       <span className="w-10 h-10 rounded-md overflow-hidden bg-zinc-100 flex-shrink-0">
-        <ContentThumb imageUrl={item.imageUrl} type={item.type} className="w-full h-full" />
+        <ContentThumb imageUrl={item.imageUrl} type={item.type} id={item.id} className="w-full h-full" />
       </span>
       <span className="flex-1 min-w-0 text-sm font-medium text-zinc-900 truncate">{item.title || "Uten tittel"}</span>
       <label className="flex items-center gap-1 flex-shrink-0 text-[11px] text-zinc-400" title="Spilletid i sekunder (tom = standard for typen)">

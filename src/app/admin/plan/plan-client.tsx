@@ -167,7 +167,7 @@ function Bar({ item, geo, today, view }: { item: PlanItem; geo: Geometry; today:
       >
         {showThumb ? (
           <>
-            <ContentThumb imageUrl={item.imageUrl} type={item.type} className="h-10 w-16 flex-shrink-0 rounded-md" />
+            <ContentThumb imageUrl={item.imageUrl} type={item.type} id={item.id} className="h-10 w-16 flex-shrink-0 rounded-md" />
             <span className="flex min-w-0 flex-col justify-center leading-tight">
               <span className="flex items-center gap-1">
                 <span className="truncate font-semibold">{item.title}</span>

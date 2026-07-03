@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useId, useEffect } from "react"
+import { useState, useId, useEffect, useRef } from "react"
 import { Code2, X, Loader2, Upload, Copy, Check, Sparkles } from "lucide-react"
 import { toast } from "sonner"
 
@@ -74,6 +74,22 @@ function Slot({ label, hint, url, onChange, ratio }: {
   const [previewHtml, setPreviewHtml] = useState<string | null>(null)
   const inputId = useId()
 
+  // Skaler forhåndsvisningen: rendrer iframen i EKTE designoppløsning (1920×1080
+  // / 1080×1920) og krymper den til boksen med transform — ellers ville en side
+  // laget for stor skjerm sett klemt/avkuttet ut i den lille preview-boksen.
+  const [designW, designH] = ratio.trim().startsWith("9") ? [1080, 1920] : [1920, 1080]
+  const boxRef = useRef<HTMLDivElement>(null)
+  const [scale, setScale] = useState(0)
+  useEffect(() => {
+    const el = boxRef.current
+    if (!el) return
+    const measure = () => setScale(el.clientWidth / designW)
+    measure()
+    const ro = new ResizeObserver(measure)
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [designW, url])
+
   // Storage serverer .html som text/plain, så forhåndsvisningen bruker srcdoc.
   // Ved redigering får vi en URL uten strengen — hent den (kroppen ER HTML-en).
   useEffect(() => {
@@ -114,9 +130,10 @@ function Slot({ label, hint, url, onChange, ratio }: {
         <p className="text-[10px] text-zinc-400">{hint}</p>
       </div>
       {url ? (
-        <div className="relative rounded-xl overflow-hidden border border-zinc-200 group bg-black" style={{ aspectRatio: ratio }}>
+        <div ref={boxRef} className="relative rounded-xl overflow-hidden border border-zinc-200 group bg-black" style={{ aspectRatio: ratio }}>
           <iframe srcDoc={previewHtml ?? ""} title={`Forhåndsvisning ${label}`} sandbox="allow-scripts" scrolling="no"
-            className="absolute inset-0 w-full h-full border-0 pointer-events-none" />
+            style={{ position: "absolute", top: 0, left: 0, width: designW, height: designH, transformOrigin: "top left", transform: `scale(${scale || 0.0001})`, border: 0 }}
+            className="pointer-events-none" />
           <button type="button" onClick={() => { onChange(null); setPreviewHtml(null) }} aria-label="Fjern fil"
             className="absolute top-2 right-2 w-7 h-7 rounded-full bg-black/60 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity">
             <X className="w-4 h-4" />
