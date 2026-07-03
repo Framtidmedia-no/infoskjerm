@@ -10,6 +10,7 @@ import {
 import { pushToScreen, requestNewScreenshot } from "@/app/admin/cms/actions"
 import { useTenantConfig } from "@/components/admin/tenant-config-provider"
 import { TYPE_META as THUMB_META, isVideoUrl } from "@/app/admin/innhold/_components/content-thumb"
+import { HtmlThumb } from "@/app/admin/innhold/_components/html-thumb"
 import { isDeckUrl } from "@/lib/content/deck"
 import { cn } from "@/lib/utils"
 import type { ScreenSync } from "@/lib/xibo/screens"
@@ -119,6 +120,9 @@ export function NowPlaying({ card, store, heleLabel, showKpi }: { card: CardSpec
               <div className="h-full w-full [&>div]:h-full [&>div]:w-full"><DeckContent spec={card} w={card.orientation === "landscape" ? 380 : 280} /></div>
             ) : selected?.kind === "widget" ? (
               <ScaledWidget src={selected.src} portrait={false} />
+            ) : selected?.kind === "content" && selected.item.type === "html" ? (
+              // HTML-side serveres via sitt EKTE innslags-ID (samme rute som skjermen bruker), ikke /widget/preview.
+              <ScaledWidget src={`/widget/html-content/${selected.item.id}?o=${previewLandscape ? "landscape" : "portrait"}`} portrait={!previewLandscape} />
             ) : selected?.kind === "content" && selected.item.previewData ? (
               <ScaledWidget src={`/widget/preview?d=${selected.item.previewData}&o=${previewLandscape ? "landscape" : "portrait"}`} portrait={!previewLandscape} />
             ) : selected?.kind === "content" ? (
@@ -215,7 +219,11 @@ function InspectRow({ entry, avdLabel, active, onClick }: { entry: InspectEntry;
   return (
     <li>
       <button onClick={onClick} className={cls} style={activeStyle}>
-        <LiveThumb imageUrl={it.imageUrl} type={it.type} className="h-10 w-10 shrink-0 rounded-lg ring-1 ring-white/10" />
+        {it.type === "html" ? (
+          <HtmlThumb id={it.id} portrait className="h-10 w-10 shrink-0 rounded-lg ring-1 ring-white/10" />
+        ) : (
+          <LiveThumb imageUrl={it.imageUrl} type={it.type} className="h-10 w-10 shrink-0 rounded-lg ring-1 ring-white/10" />
+        )}
         <div className="min-w-0 flex-1">
           <p className="truncate text-[13px] font-semibold text-[#e7e5ea]">{it.title || "Uten tittel"}</p>
           <p className="truncate text-[11.5px] text-[#6b6a72]">
