@@ -13,6 +13,7 @@ import { formatPeriod, expiryLabel } from "@/app/widget/_shared/period"
 import { KEYFRAMES as TOKEN_KEYFRAMES, hexAlpha } from "@/app/widget/_shared/tokens"
 import type { Season } from "@/lib/season"
 import { FullscreenMedia } from "@/app/widget/_shared/fullscreen-media"
+import { HtmlSlide } from "@/app/widget/_shared/html-slide"
 import { fullscreenItemSeconds, posterImageUrls } from "@/lib/content/fullscreen"
 
 /**
@@ -158,6 +159,9 @@ export function KampanjeRotator({ items, chain = null, qr = {}, season = null }:
             {item.imageMode === "fullskjerm" ? (
               // Fullskjerm-media: kant til kant uten tekstpanel — foran alle kort-typer.
               <FullscreenMedia item={item} portrait={false} />
+            ) : item.imageMode === "html" ? (
+              // Sanert HTML-side i låst sandbox-iframe (liggende variant).
+              <HtmlSlide id={item.id} landscapeUrl={item.htmlLandscape} portraitUrl={item.htmlPortrait} portrait={false} />
             ) : item.campaign ? (
               <CampaignCard item={item} chain={chain} />
             ) : item.type === "competition" ? (

@@ -201,6 +201,7 @@ export function ContentListClient({ items, stores, tags, newHref = "/admin/innho
           <option value="slide">Tilbud / annet</option>
           <option value="job">Stilling</option>
           <option value="birthday">Gratulerer</option>
+          <option value="html">HTML-side</option>
           <option value="ticker">Ticker</option>
         </select>
         <select value={storeF} onChange={(e) => resetPage(setStoreF)(e.target.value)} className={selectCls}>
