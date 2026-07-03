@@ -1,11 +1,10 @@
 /**
- * Viser en sanert HTML-side kant til kant i en LÅST sandbox-iframe.
+ * Viser en opplastet HTML-side kant til kant i en sandbox-iframe.
  *
- * `sandbox` uten allow-scripts/allow-same-origin = ingen JavaScript-kjøring,
- * ingen tilgang til vår origin, ingen navigasjon — kun tegning. CSS-animasjon
- * kjører fint. Fila serveres via /widget/html-content/<id> med Content-Type
- * text/html (Storage serverer den som text/plain, så den kan ikke iframes
- * direkte) + streng CSP. Tredje sikkerhetslag over sanering + CSP.
+ * `sandbox="allow-scripts"` UTEN allow-same-origin = JavaScript OG CSS-animasjon
+ * kjører, men koden er jailet i en opaque origin: ingen tilgang til vår origin,
+ * sesjon, cookies eller andre butikkers data, og ingen topp-navigasjon. Nett er
+ * tillatt (jailet). Fila serveres via /widget/html-content/<id> som text/html.
  *
  * Velger stående/liggende variant etter skjermens orientering; faller tilbake
  * til den andre når bare én er lastet opp (samme mønster som fullskjerm-media).
@@ -29,7 +28,7 @@ export function HtmlSlide({
       <iframe
         src={src}
         title="HTML-innhold"
-        sandbox=""
+        sandbox="allow-scripts"
         scrolling="no"
         style={{ position: "absolute", inset: 0, width: "100%", height: "100%", border: 0, display: "block" }}
       />
