@@ -14,6 +14,7 @@ import {
 } from "lucide-react"
 import { ReorderDialog } from "./reorder-dialog"
 import { TYPE_META, isVideoUrl } from "./content-thumb"
+import { HtmlThumb } from "./html-thumb"
 import { ConfirmDialog } from "@/components/admin/confirm-dialog"
 
 export interface ContentRow {
@@ -336,6 +337,9 @@ export function ContentListClient({ items, stores, tags, newHref = "/admin/innho
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img src={item.imageUrl} alt="" className="relative w-full h-full object-contain" />
                     </div>
+                  ) : item.type === "html" ? (
+                    // HTML-side: live mini-forhåndsvisning av selve innholdet.
+                    <HtmlThumb id={item.id} className="w-full h-full" />
                   ) : (
                     // Uten bilde: gjør kortet til et lesbart tittelkort i typefargen,
                     // ikke en «ødelagt»-lignende mørk klosse.
