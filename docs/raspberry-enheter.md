@@ -12,7 +12,7 @@ hostnavn, rolle, Xibo-ID, MAC, Connect-status. Oppsett-oppskriften ligger i
 | Butikk | Hostnavn | Rolle | Xibo-ID | Xibo-gruppe (id) | Rotasjon | Auto-start | Connect | TV-agent | Satt opp |
 |--------|----------|-------|---------|------------------|----------|-----------|---------|----------|----------|
 | EUROSPAR MOA | `gr-eurospar-moa1` | Kundeskjerm | 1 | EUROSPAR MOA (9) | `right` (portrett) | ✅ getty | ✅ org | ✅ * | 2026-06-30 |
-| EUROSPAR MOA | `gr-eurospar-moa2` | Bakrom/intern | 2 | EUROSPAR MOA – Bakrom (25) | `normal` | ✅ getty | ✅ org | ⬜ | 2026-06-30 |
+| EUROSPAR MOA | `gr-eurospar-moa2` | Bakrom/intern | 2 | EUROSPAR MOA – Bakrom (25) | `normal` | ✅ getty | ✅ org | ✅ * | 2026-06-30 |
 
 \* TV-agent installert og rapporterer til appen — men TV-kontroll (av/på via CEC) er ikke fysisk
 verifisert ennå: ved installasjon 2026-07-03 var ingen TV synlig på HDMI (`tvState=unknown`).
@@ -38,6 +38,8 @@ Begge MOA-skjermer kjører nå **getty-autologin + fbdev fjernet** (riktige farg
 - Xibo: display-id **2**, gruppe «EUROSPAR MOA – Bakrom» (25), viser layout 163
 - MAC: wlan0 `88:a2:9e:f2:e0:18`
 - Rotasjon `normal` (liggende) · getty-autologin-kiosk · fbdev fjernet (riktige farger) · Connect signed-in
+- TV-agent: installert 2026-07-03 (`infoskjerm-tvpower.timer`, poller hvert minutt, token fra
+  skjermkortet «EUROSPAR MOA intern»). Fysisk CEC-test gjenstår — se fotnoten i flåtetabellen.
 - ⚠️ Bakrom-layouten viser foreløpig **kun én KPI-side** — skal fylles med mer internt innhold.
 
 ## Felles fakta (gjelder alle)

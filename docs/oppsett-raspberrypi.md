@@ -316,7 +316,7 @@ ssh frlund3@<pi-ip> 'journalctl -u infoskjerm-tvpower -n 5 --no-pager'
 
 Begge MOA-Pi-ene er **ferdige** (getty-autologin, fbdev fjernet → riktige farger, Connect signed-in;
 moa1 migrert fra gammel systemd-metode, verifisert 2026-07-03). TV-agent (steg 9): installert på
-moa1 2026-07-03 — se [raspberry-enheter.md](raspberry-enheter.md) for status per enhet.
+begge 2026-07-03 — se [raspberry-enheter.md](raspberry-enheter.md) for status per enhet.
 
 > **Fjernaksess = Raspberry Pi Connect (Organisations), IKKE Tailscale.** Verifiser per Pi
 > med `rpi-connect status` → «Signed in: yes» + «Remote shell: allowed». moa1 ✅.
