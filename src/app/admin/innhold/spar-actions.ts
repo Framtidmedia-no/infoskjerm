@@ -2,12 +2,16 @@
 
 /**
  * Looks up a product from spar.no for the offer builder. Accepts a spar.no
- * product URL or a product id/GTIN. The product page embeds the full product
- * JSON (title, subtitle, price, deposit, unit price), and the image is served
- * deterministically from bilder.ngdata.no/{gtin}/kmh/large.jpg.
+ * product URL, a product id/GTIN, or a 4–5-digit PLU code for løsvekt
+ * (expanded to the internal «20»-EAN-13 in @/lib/gtin). The product page
+ * embeds the full product JSON (title, subtitle, price, deposit, unit price),
+ * and the image is served deterministically from
+ * bilder.ngdata.no/{gtin}/kmh/large.jpg.
  *
  * Server-side fetch (no CORS), best-effort — returns what it can resolve.
  */
+
+import { normalizeGtinInput } from "@/lib/gtin"
 
 const UA =
   "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124 Safari/537.36"
@@ -60,9 +64,10 @@ export async function lookupSparProduct(input: string): Promise<SparLookupResult
   // ellers kunne f.eks. https://evil.com/spar.no/ passere og bli hentet (SSRF).
   const url = sparUrl(raw)
   // The id/GTIN is the trailing number in the URL, or the raw number itself.
+  // Bare tall med 4–5 siffer tolkes som PLU (løsvekt) og utvides til EAN-13.
   const idMatch = (url ?? raw).match(/(\d{6,})(?:[/?#]|$)/)
-  const gtin = idMatch?.[1] ?? (/^\d{6,}$/.test(raw) ? raw : null)
-  if (!gtin) return { ok: false, error: "Fant ikke GTIN i lenken. Lim inn hele spar.no-lenken eller bare tallet." }
+  const gtin = idMatch?.[1] ?? normalizeGtinInput(raw)
+  if (!gtin) return { ok: false, error: "Fant ikke GTIN i lenken. Lim inn hele spar.no-lenken, GTIN eller PLU-nummeret (4–5 siffer)." }
 
   // Without a URL we can still give the image; name/price needs the product page.
   if (!url) {
