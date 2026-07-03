@@ -29,7 +29,7 @@ export async function signupForEvent(
   const human = await verifyTurnstileToken(input.turnstileToken)
   if (!human) return { ok: false, error: TURNSTILE_ERROR_MESSAGE }
 
-  const name = input.name.trim()
+  const name = input.name.trim().slice(0, 120)
   if (!name) return { ok: false, error: "Skriv inn navnet ditt" }
   if (!input.consent) return { ok: false, error: "Du må godta at vi lagrer påmeldingen" }
 
@@ -56,17 +56,17 @@ export async function signupForEvent(
   }
 
   const guests = Number.isFinite(input.guests) && input.guests > 0 ? Math.min(Math.floor(input.guests), 20) : 0
-  const email = input.email.trim()
+  const email = input.email.trim().slice(0, 200)
 
   const { error } = await supabase.from("event_signups").insert({
     content_item_id: item.id,
     tenant_id: item.tenant_id,
     store_id: storeId,
     name,
-    department: input.department.trim() || null,
+    department: input.department.trim().slice(0, 120) || null,
     guests,
-    dietary: input.dietary.trim() || null,
-    comment: input.comment.trim() || null,
+    dietary: input.dietary.trim().slice(0, 500) || null,
+    comment: input.comment.trim().slice(0, 1000) || null,
     email: email || null,
     consent: true,
   })
