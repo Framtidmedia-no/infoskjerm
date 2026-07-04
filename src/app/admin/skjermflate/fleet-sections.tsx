@@ -311,7 +311,11 @@ export function FleetMobile({ focus, heleLabel }: { focus: FleetStore; heleLabel
               </div>
               <div className="mx-auto w-full overflow-hidden rounded-2xl bg-[#0c0c0e] ring-1 ring-white/10" style={{ aspectRatio: landscape ? "16 / 9" : "9 / 16", maxWidth: landscape ? 340 : 240 }}>
                 {selected ? (
-                  <LiveThumb imageUrl={selected.imageUrl} type={selected.type} className="h-full w-full object-contain" />
+                  selected.type === "html" ? (
+                    <HtmlThumb id={selected.id} portrait={!landscape} className="h-full w-full" />
+                  ) : (
+                    <LiveThumb imageUrl={selected.imageUrl} type={selected.type} className="h-full w-full object-contain" />
+                  )
                 ) : (
                   <div className="flex h-full w-full items-center justify-center text-[12px] text-[#55545c]">Ingen aktive innslag</div>
                 )}
@@ -324,7 +328,11 @@ export function FleetMobile({ focus, heleLabel }: { focus: FleetStore; heleLabel
                   return (
                     <li key={it.id}>
                       <button onClick={() => setII(idx)} className={`-mx-2 flex w-full items-center gap-3 rounded-xl px-2 py-2.5 text-left transition-colors ${idx === ii ? "bg-white/[0.06]" : ""}`}>
-                        <LiveThumb imageUrl={it.imageUrl} type={it.type} className="h-10 w-10 shrink-0 rounded-lg ring-1 ring-white/10" />
+                        {it.type === "html" ? (
+                          <HtmlThumb id={it.id} portrait className="h-10 w-10 shrink-0 rounded-lg ring-1 ring-white/10" />
+                        ) : (
+                          <LiveThumb imageUrl={it.imageUrl} type={it.type} className="h-10 w-10 shrink-0 rounded-lg ring-1 ring-white/10" />
+                        )}
                         <div className="min-w-0 flex-1">
                           <p className="truncate text-[13px] font-semibold text-[#e7e5ea]">{it.title || "Uten tittel"}</p>
                           <p className="truncate text-[11.5px] text-[#6b6a72]">{avdLabel(it.avdeling)}{it.validTo ? ` · til ${new Date(it.validTo).toLocaleDateString("nb-NO", { day: "numeric", month: "short" })}` : ""}</p>
