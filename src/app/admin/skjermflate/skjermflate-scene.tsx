@@ -362,7 +362,7 @@ function Coverflow({ cards, total, active, onActive }: { cards: CardSpec[]; tota
                         : "0 40px 82px -30px rgba(0,0,0,0.85)",
                     }}
                   >
-                    <DeckContent spec={c} w={widths[i]} />
+                    <DeckContent spec={c} w={widths[i]} active={isCenter} />
                   </div>
                   {!isCenter && <div aria-hidden className="pointer-events-none absolute inset-0 rounded-[22px]" style={{ background: "rgba(8,8,10,0.34)" }} />}
                 </div>
