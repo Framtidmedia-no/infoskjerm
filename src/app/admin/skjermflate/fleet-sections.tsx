@@ -267,6 +267,82 @@ function ScaledWidget({ src, portrait }: { src: string; portrait: boolean }) {
   )
 }
 
+/* ── Mobil-variant — lettvekts, ingen iframes/3D/tung blur (iOS-trygg) ──────── */
+
+/**
+ * På mobil/PWA krasjer iOS Safari (WebKit) på den 3D-coverflow-en (perspektiv +
+ * preserve-3d + mange kompositt-lag + store blur/backdrop-filter + live-iframes).
+ * Denne varianten viser det samme innholdet STATISK: skjermvelger, et stille
+ * bilde-preview av valgt innslag, og innholdslista — null iframes, ingen 3D.
+ */
+export function FleetMobile({ focus, heleLabel }: { focus: FleetStore; heleLabel: string }) {
+  const { avdelinger, avdelingerIntern } = useTenantConfig()
+  const avdLabel = (k: string) => (k === "felles" ? heleLabel : avdelinger.find((a) => a.key === k)?.label ?? avdelingerIntern.find((a) => a.key === k)?.label ?? k)
+  const screens = focus.screens
+  const [si, setSi] = useState(0)
+  const screen = screens[Math.min(si, Math.max(0, screens.length - 1))] ?? null
+  const items = screen?.content ?? []
+  const [ii, setII] = useState(0)
+  useEffect(() => setII(0), [screen?.displayId])
+  const selected = items[Math.min(ii, Math.max(0, items.length - 1))] ?? null
+  const landscape = screen?.orientation === "landscape"
+
+  return (
+    <section className="relative z-10 px-4 pt-8">
+      <SectionHeading icon={Monitor} title="Skjermene nå" hint={screen ? screen.name : undefined} />
+      {screens.length === 0 ? (
+        <p className="text-[13px] text-[#8b8a92]">Ingen skjermer tilkoblet «{focus.name}» ennå.</p>
+      ) : (
+        <>
+          <div className="-mx-4 mb-3 flex gap-2 overflow-x-auto px-4 pb-1">
+            {screens.map((s, idx) => (
+              <button key={s.displayId} onClick={() => setSi(idx)} className={`flex shrink-0 items-center gap-2 rounded-full px-3 py-2 text-[12.5px] font-semibold transition-colors ${idx === si ? "bg-white/[0.1] text-white" : "bg-white/[0.04] text-[#8b8a92]"}`}>
+                <span className={s.online ? "sf-dot" : ""} style={{ width: 7, height: 7, borderRadius: "50%", background: s.online ? "#4ade80" : "#f0616a" }} />
+                {s.name}
+              </button>
+            ))}
+          </div>
+          {screen && (
+            <>
+              <div className="mb-3 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-[12px] text-[#8b8a92]">
+                <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${screen.flate === "intern" ? "text-sky-300 bg-sky-400/10" : "text-emerald-300 bg-emerald-400/10"}`}>{screen.flate === "intern" ? "Internskjerm" : "Kundeskjerm"}</span>
+                <span className="rounded-full bg-white/[0.06] px-2 py-0.5 text-[11px] font-semibold text-zinc-300">{screen.avdelingLabel}</span>
+                <span className="inline-flex items-center gap-1.5">{screen.online ? <Wifi className="h-3.5 w-3.5 text-emerald-400" /> : <WifiOff className="h-3.5 w-3.5 text-[#f0616a]" />}{screen.online ? "Online" : "Frakoblet"}</span>
+              </div>
+              <div className="mx-auto w-full overflow-hidden rounded-2xl bg-[#0c0c0e] ring-1 ring-white/10" style={{ aspectRatio: landscape ? "16 / 9" : "9 / 16", maxWidth: landscape ? 340 : 240 }}>
+                {selected ? (
+                  <LiveThumb imageUrl={selected.imageUrl} type={selected.type} className="h-full w-full object-contain" />
+                ) : (
+                  <div className="flex h-full w-full items-center justify-center text-[12px] text-[#55545c]">Ingen aktive innslag</div>
+                )}
+              </div>
+              {selected && <p className="mt-2 text-center text-[12.5px] font-medium text-[#c9c8d0]">{selected.title || "Uten tittel"}</p>}
+              <p className="mb-1 mt-6 flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.14em] text-[#6b6a72]"><Activity className="h-3.5 w-3.5" /> Aktivt nå · {items.length}</p>
+              <ul className="divide-y divide-white/[0.05]">
+                {items.map((it, idx) => {
+                  const meta = typeMeta(it.type)
+                  return (
+                    <li key={it.id}>
+                      <button onClick={() => setII(idx)} className={`-mx-2 flex w-full items-center gap-3 rounded-xl px-2 py-2.5 text-left transition-colors ${idx === ii ? "bg-white/[0.06]" : ""}`}>
+                        <LiveThumb imageUrl={it.imageUrl} type={it.type} className="h-10 w-10 shrink-0 rounded-lg ring-1 ring-white/10" />
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-[13px] font-semibold text-[#e7e5ea]">{it.title || "Uten tittel"}</p>
+                          <p className="truncate text-[11.5px] text-[#6b6a72]">{avdLabel(it.avdeling)}{it.validTo ? ` · til ${new Date(it.validTo).toLocaleDateString("nb-NO", { day: "numeric", month: "short" })}` : ""}</p>
+                        </div>
+                        <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10.5px] font-semibold ${meta.cls}`}>{meta.label}</span>
+                      </button>
+                    </li>
+                  )
+                })}
+              </ul>
+            </>
+          )}
+        </>
+      )}
+    </section>
+  )
+}
+
 /* ── Kommende innhold ──────────────────────────────────────────────────────── */
 
 export function Kommende({ upcoming }: { upcoming: UpcomingLite[] }) {
