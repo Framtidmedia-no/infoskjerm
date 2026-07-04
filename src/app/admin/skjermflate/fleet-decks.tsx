@@ -230,11 +230,28 @@ export function HoursBody({ hours }: { hours: string }) {
 
 /* ── Samlet portrett-innhold for coverflow-kort: live-widget eller demo ────── */
 
+/** Lett placeholder for et live-kort som IKKE er i fokus — ingen iframe. */
+function LivePlaceholder() {
+  return (
+    <div className="relative flex h-full w-full items-center justify-center" style={{ background: "linear-gradient(160deg, #141418, #0b0b0e)" }}>
+      <div aria-hidden className="pointer-events-none absolute inset-0" style={{ background: "radial-gradient(60% 50% at 50% 38%, color-mix(in oklab, var(--brand-primary) 24%, transparent), transparent 70%)" }} />
+      <div className="relative flex items-center gap-2 rounded-full border border-white/10 bg-black/30 px-3 py-1.5 backdrop-blur-sm">
+        <span className="sf-dot" style={{ width: 7, height: 7, borderRadius: "50%", background: "#4ade80" }} />
+        <span className="text-[11px] font-semibold text-[#c9c8d0]">Live</span>
+      </div>
+    </div>
+  )
+}
+
 /** Rendrer ett coverflow-korts innhold: ekte /widget-render (i skjermens
  * orientering) eller demo-deck. `w` = kortets bredde; høyden gir seg av
- * orienteringen (stående 9:16, liggende 16:9). */
-export function DeckContent({ spec, w }: { spec: CardSpec; w: number }) {
-  if (spec.live && spec.src) return <WidgetThumb src={spec.src} w={w} portrait={spec.orientation === "portrait"} />
+ * orienteringen (stående 9:16, liggende 16:9).
+ *
+ * `active`: KUN det aktive (senter) kortet laster live-iframe. Ellers mounter
+ * coverflow-en mange tunge /widget-iframes samtidig → iOS Safari/PWA OOM-krasj.
+ * Sidekort får en lett placeholder; iframen lastes når kortet blir senter. */
+export function DeckContent({ spec, w, active = true }: { spec: CardSpec; w: number; active?: boolean }) {
+  if (spec.live && spec.src) return active ? <WidgetThumb src={spec.src} w={w} portrait={spec.orientation === "portrait"} /> : <LivePlaceholder />
   if (spec.demo === "menu") return <MenuBody />
   if (spec.demo === "hours") return <HoursBody hours="Man–søn · 07–23" />
   return <OfferBody live={false} w={w} store={spec.store} />
