@@ -6,7 +6,7 @@ import { toast } from "sonner"
 import { Search, RefreshCw, ChevronDown, ChevronLeft, ChevronRight, Megaphone, Monitor, Layers, LayoutGrid } from "lucide-react"
 import { heleEnhetenLabel } from "@/lib/tenant/config"
 import { ScreenPill, DeckContent } from "./fleet-decks"
-import { NowPlaying, Kommende, FleetOverview, DriftPanel } from "./fleet-sections"
+import { NowPlaying, Kommende, FleetOverview, DriftPanel, FleetMobile } from "./fleet-sections"
 import type { CardSpec, ContentKind, FleetStore, FleetStats, FaultLite, TopPlayLite, ContentHealth, UpcomingLite } from "./types"
 
 /**
@@ -41,8 +41,26 @@ const KIND_META: Record<ContentKind, { icon: typeof Megaphone; cls: string }> = 
   demo: { icon: LayoutGrid, cls: "text-amber-300 bg-amber-400/10" },
 }
 
+/**
+ * true kun på desktop (lg+). Starter false (SSR + mobil), så coverflow-en (tung
+ * 3D/blur/iframes som krasjer iOS Safari) rendres ALDRI på mobil — `display:none`
+ * holder ikke, for skjulte iframes/kompositt-lag lastes likevel.
+ */
+function useIsDesktop(): boolean {
+  const [desktop, setDesktop] = useState(false)
+  useEffect(() => {
+    const mq = window.matchMedia("(min-width: 1024px)")
+    const on = () => setDesktop(mq.matches)
+    on()
+    mq.addEventListener("change", on)
+    return () => mq.removeEventListener("change", on)
+  }, [])
+  return desktop
+}
+
 export function SkjermflateScene({ stores, stats, faults, topPlays, health, upcoming, lastSync, userName, unitLabel, unitLabelPlural, showKpi }: SkjermflateSceneProps) {
   const router = useRouter()
+  const isDesktop = useIsDesktop()
   const [refreshing, startRefresh] = useTransition()
   const [tab, setTab] = useState<Tab>("alle")
   const heleLabel = heleEnhetenLabel(unitLabel)
@@ -177,11 +195,17 @@ export function SkjermflateScene({ stores, stats, faults, topPlays, health, upco
         <StatCard label="Aktive innslag" value={stats.liveItems} accent />
       </div>
 
-      {/* ── Coverflow (hero) ───────────────────────────────────────────────── */}
+      {/* ── Hero: coverflow (desktop) / lettvekts mobil-variant (iOS-trygg) ─── */}
       {focus && cards.length > 0 ? (
         <>
-          <Coverflow cards={cards} total={stats.totalScreens} active={active} onActive={setActive} />
-          {activeCard && <NowPlaying card={activeCard} store={focus} heleLabel={heleLabel} showKpi={showKpi} />}
+          {isDesktop ? (
+            <>
+              <Coverflow cards={cards} total={stats.totalScreens} active={active} onActive={setActive} />
+              {activeCard && <NowPlaying card={activeCard} store={focus} heleLabel={heleLabel} showKpi={showKpi} />}
+            </>
+          ) : (
+            <FleetMobile focus={focus} heleLabel={heleLabel} />
+          )}
           <Kommende upcoming={upcoming} />
           <FleetOverview stores={ordered} activeStoreId={focusId} onFocus={focusStore} />
           <DriftPanel health={health} faults={faults} topPlays={topPlays} />
