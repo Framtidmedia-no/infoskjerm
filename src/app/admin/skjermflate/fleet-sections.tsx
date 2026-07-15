@@ -29,7 +29,7 @@ const FIELD: React.CSSProperties = {
   background: "radial-gradient(130% 130% at 50% 0%, rgba(255,255,255,0.04), rgba(255,255,255,0) 66%)",
 }
 
-function SectionHeading({ icon: Icon, title, hint }: { icon: typeof Layers; title: string; hint?: string }) {
+export function SectionHeading({ icon: Icon, title, hint }: { icon: typeof Layers; title: string; hint?: string }) {
   return (
     <div className="mb-5 flex items-center gap-3">
       <span
@@ -58,7 +58,7 @@ const TYPE_META: Record<string, { label: string; cls: string }> = {
   birthday: { label: "Jubilant", cls: "text-pink-300 bg-pink-400/10" },
   html: { label: "HTML-side", cls: "text-violet-300 bg-violet-400/10" },
 }
-function typeMeta(type: string) {
+export function typeMeta(type: string) {
   return TYPE_META[type] ?? { label: type, cls: "text-zinc-300 bg-white/8" }
 }
 
@@ -542,7 +542,7 @@ function QuickActions() {
  * → object-cover, uten bilde → type-farget ikon) men legger til onError-fallback,
  * så en brukket URL ALDRI vises som ødelagt bilde.
  */
-function LiveThumb({ imageUrl, type, className }: { imageUrl: string | null; type: string; className: string }) {
+export function LiveThumb({ imageUrl, type, className }: { imageUrl: string | null; type: string; className: string }) {
   const [failed, setFailed] = useState(false)
   const tm = THUMB_META[type] ?? THUMB_META.slide
   const TypeIcon = tm.icon
