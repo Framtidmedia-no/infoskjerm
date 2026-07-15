@@ -6,6 +6,8 @@ import { createAdminClient } from "@/lib/supabase/server"
 import { getAdminContext } from "@/lib/admin/admin-context"
 import { requireRole } from "@/lib/admin/require-role"
 import { logAudit } from "@/lib/admin/audit"
+import { getTenantConfig } from "@/lib/tenant/config-server"
+import { enabledSurfaces } from "@/lib/tenant/features"
 
 /** Stabil nøkkel fra label (æøå→ae/oe/aa, resten kebab-case). */
 function slugify(label: string): string {
@@ -119,12 +121,19 @@ export async function createScreen(storeId: string, name: string) {
   if (storeErr || !store) return { ok: false, error: "Fant ikke butikk" }
 
   const token = "gr_" + randomBytes(24).toString("hex")
-  const { error } = await supabase.from("screens").insert({
+  // DB-default for flate er «kunde» — en tenant uten kundeflate skal få intern.
+  // flate (037) er ikke i genererte typer ennå → cast som i skjermer/actions.ts.
+  const { features } = await getTenantConfig(supabase, store.tenant_id)
+  const surfaces = enabledSurfaces(features)
+  const { error } = await (supabase.from("screens") as unknown as {
+    insert: (values: unknown) => Promise<{ error: { message: string } | null }>
+  }).insert({
     store_id: storeId,
     tenant_id: store.tenant_id,
     name: name.trim() || "Ny skjerm",
     token,
     status: "active",
+    ...(surfaces.kunde ? {} : { flate: "intern" }),
   })
   if (error) return { ok: false, error: error.message }
   await logAudit({ userId, action: "screen.create", entityType: "screen", summary: `Opprettet skjerm «${name.trim() || "Ny skjerm"}»`, metadata: { storeId } })

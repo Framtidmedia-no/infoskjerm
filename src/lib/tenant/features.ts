@@ -25,6 +25,10 @@ export const TENANT_FEATURES = {
   kpi: "KPI-dashboard (drift-synk)",
   /** Sesongatmosfære på skjermflatene (jul-snø, 17. mai-konfetti, sommertone) — «Levende skjerm». */
   seasonThemes: "Sesongtemaer på skjerm",
+  /** Tenanten har ingen kundeskjermer — skjul kundeflaten i admin og kiosk (kun interne skjermer). */
+  hideKundeflate: "Skjul kundeskjerm-flaten",
+  /** Tenanten har kun kundeskjermer — skjul intern-flaten i admin og kiosk. */
+  hideInternflate: "Skjul intern-flaten",
 } as const
 
 export type TenantFeature = keyof typeof TENANT_FEATURES
@@ -45,4 +49,35 @@ export function parseTenantFeatures(raw: unknown): TenantFeatures {
 /** True hvis tenanten har den gitte funksjonen slått på. */
 export function hasFeature(features: TenantFeatures | undefined, feature: TenantFeature): boolean {
   return features?.[feature] === true
+}
+
+/** Skjermflatene en tenant kan bruke (kundeskjermer / interne skjermer). */
+export interface EnabledSurfaces {
+  kunde: boolean
+  intern: boolean
+}
+
+/**
+ * Hvilke skjermflater tenanten faktisk har, styrt av hideKundeflate/hideInternflate.
+ * Begge skjult er en feilkonfigurasjon — da faller vi tilbake til begge på, slik at
+ * en tenant aldri kan miste hele admin-innholdsmenyen og alle kiosk-flater.
+ */
+export function enabledSurfaces(features: TenantFeatures | undefined): EnabledSurfaces {
+  const kunde = !hasFeature(features, "hideKundeflate")
+  const intern = !hasFeature(features, "hideInternflate")
+  if (!kunde && !intern) return { kunde: true, intern: true }
+  return { kunde, intern }
+}
+
+/**
+ * Klemmer en lagret visningsflate («kunde» | «intern» | «begge») til flatene
+ * tenanten har: med bare én flate på blir alt innhold liggende på den.
+ */
+export function clampAudience<T extends "kunde" | "intern" | "begge">(
+  features: TenantFeatures | undefined,
+  audience: T
+): "kunde" | "intern" | "begge" {
+  const surfaces = enabledSurfaces(features)
+  if (surfaces.kunde && surfaces.intern) return audience
+  return surfaces.kunde ? "kunde" : "intern"
 }

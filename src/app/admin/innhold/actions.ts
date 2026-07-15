@@ -4,6 +4,8 @@ import { requireRole } from "@/lib/admin/require-role"
 import { logAudit } from "@/lib/admin/audit"
 import { revalidatePath } from "next/cache"
 import { audienceForType, type StoredAudience } from "./audience"
+import { clampAudience } from "@/lib/tenant/features"
+import { getTenantConfig } from "@/lib/tenant/config-server"
 import type { OfferFields, CampaignFields } from "@/lib/content/live"
 import { isDeckUrl } from "@/lib/content/deck"
 import { triggerDeckRender } from "@/lib/content/trigger-render"
@@ -145,6 +147,11 @@ function buildBody(input: ContentInput): Json {
 export async function saveContent(input: ContentInput, id?: string): Promise<SaveResult> {
   const { supabase, userId, tenantId: rawTenant } = await requireRole([...AUTHOR_ROLES])
   const tenantId = effectiveTenant(rawTenant)
+
+  // Klem visningsflaten til flatene tenanten har (hideKundeflate/hideInternflate) —
+  // klienten skjuler valget, men serveren er fasit.
+  const { features } = await getTenantConfig(supabase, tenantId)
+  input = { ...input, audience: clampAudience(features, input.audience ?? audienceForType(input.type)) }
 
   if (!input.title.trim()) return { ok: false, error: "Tittel er påkrevd" }
   if (input.imageMode === "fullskjerm" && !input.imageUrl && !input.portraitUrl)

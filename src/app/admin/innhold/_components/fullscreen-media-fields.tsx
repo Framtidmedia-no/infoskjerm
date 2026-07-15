@@ -70,7 +70,7 @@ function Slot({ label, hint, url, onChange, wantW, wantH }: {
   )
 }
 
-export function FullscreenMediaFields({ landscapeUrl, portraitUrl, onLandscape, onPortrait, showBoth, onShowBoth, surface }: {
+export function FullscreenMediaFields({ landscapeUrl, portraitUrl, onLandscape, onPortrait, showBoth, onShowBoth, surface, allowBoth = true }: {
   landscapeUrl: string | null
   portraitUrl: string | null
   onLandscape: (url: string | null) => void
@@ -78,6 +78,8 @@ export function FullscreenMediaFields({ landscapeUrl, portraitUrl, onLandscape, 
   showBoth: boolean
   onShowBoth: (v: boolean) => void
   surface: "kunde" | "intern"
+  /** Skjul «vis på begge flater» når tenanten kun har én flate (hideKundeflate/hideInternflate). */
+  allowBoth?: boolean
 }) {
   const anyDeck = isDeckUrl(landscapeUrl) || isDeckUrl(portraitUrl)
   return (
@@ -98,10 +100,12 @@ export function FullscreenMediaFields({ landscapeUrl, portraitUrl, onLandscape, 
           sidene gjøres klare automatisk etter publisering (tar noen minutter).
         </p>
       )}
-      <label className="flex items-center gap-2 text-xs font-medium text-zinc-700">
-        <input type="checkbox" checked={showBoth} onChange={(e) => onShowBoth(e.target.checked)} className="rounded border-zinc-300" />
-        Vis også på {surface === "kunde" ? "interne skjermer" : "kundeskjermene"}
-      </label>
+      {allowBoth && (
+        <label className="flex items-center gap-2 text-xs font-medium text-zinc-700">
+          <input type="checkbox" checked={showBoth} onChange={(e) => onShowBoth(e.target.checked)} className="rounded border-zinc-300" />
+          Vis også på {surface === "kunde" ? "interne skjermer" : "kundeskjermene"}
+        </label>
+      )}
     </div>
   )
 }

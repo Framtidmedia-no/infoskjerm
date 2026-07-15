@@ -141,6 +141,57 @@ export async function updateTenant(id: string, name: string): Promise<ActionResu
   return { ok: true }
 }
 
+/**
+ * Setter hvilke skjermflater tenanten bruker. Lagres som hideKundeflate/
+ * hideInternflate i tenants.features (kun true-nøkler beholdes — usatt = flaten på),
+ * så eksisterende tenants er uendret uten konfigurasjon. Minst én flate må være på.
+ */
+export async function setTenantSurfaces(
+  id: string,
+  surfaces: { kunde: boolean; intern: boolean }
+): Promise<ActionResult> {
+  const { userId } = await requireSuperAdmin()
+  if (!surfaces.kunde && !surfaces.intern) {
+    return { ok: false, error: "Minst én flate må være på" }
+  }
+
+  const admin = createAdminClient()
+  // features (030) er ikke i genererte typer → cast slik config.ts-mønsteret gjør.
+  const { data } = await (admin.from("tenants") as unknown as {
+    select: (c: string) => { eq: (k: string, v: string) => { maybeSingle: () => Promise<{ data: { features: unknown } | null }> } }
+  })
+    .select("features")
+    .eq("id", id)
+    .maybeSingle()
+  if (!data) return { ok: false, error: "Fant ikke tenant" }
+
+  const current = (data.features && typeof data.features === "object" ? data.features : {}) as Record<string, unknown>
+  const next: Record<string, unknown> = { ...current }
+  if (surfaces.kunde) delete next.hideKundeflate
+  else next.hideKundeflate = true
+  if (surfaces.intern) delete next.hideInternflate
+  else next.hideInternflate = true
+
+  const { error } = await (admin.from("tenants") as unknown as {
+    update: (values: unknown) => { eq: (c: string, v: string) => Promise<{ error: { message: string } | null }> }
+  })
+    .update({ features: next })
+    .eq("id", id)
+  if (error) return { ok: false, error: error.message }
+
+  await logAudit({
+    userId,
+    action: "tenant.surfaces",
+    entityType: "tenant",
+    entityId: id,
+    summary: `Flater: kundeskjerm ${surfaces.kunde ? "på" : "av"}, intern ${surfaces.intern ? "på" : "av"}`,
+    metadata: { ...surfaces },
+    tenantId: id,
+  })
+  revalidatePath("/admin/plattform/tenants")
+  return { ok: true }
+}
+
 // status/archived_at (036) er ikke i genererte typer → cast payloaden slik
 // config.ts-mønsteret gjør for tenant-utvidelser.
 async function setTenantLifecycle(
