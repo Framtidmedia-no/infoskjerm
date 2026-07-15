@@ -50,7 +50,13 @@ export async function GET(req: Request, ctx: { params: Promise<{ id: string }> }
       "Content-Type": "text/html; charset=utf-8",
       "Content-Security-Policy": HTML_CSP,
       "X-Content-Type-Options": "nosniff",
-      "Cache-Control": "public, max-age=60",
+      // Edge + nettleser-cache: HTML-slides hentes i sandbox-iframes ved HVER
+      // rotasjon, og uten edge-cache ga funksjons-rundturen (Vercel → Storage)
+      // sekunder med svart skjerm per bytte. s-maxage lar Vercel-CDN svare
+      // øyeblikkelig, max-age dekker hele rotasjonssykluser i nettleseren, og
+      // stale-while-revalidate skjuler revalideringen. Prisen er at oppdatert
+      // slide-HTML kan bruke opptil ~10 min på å nå skjermene — greit for signage.
+      "Cache-Control": "public, max-age=600, s-maxage=600, stale-while-revalidate=86400",
     },
   })
 }
