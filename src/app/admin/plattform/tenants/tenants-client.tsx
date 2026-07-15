@@ -12,12 +12,40 @@ import {
   suspendTenant,
   reactivateTenant,
   archiveTenant,
+  setTenantSurfaces,
 } from "./actions"
 
 const STATUS_BADGE: Record<string, { label: string; className: string }> = {
   active: { label: "Aktiv", className: "bg-emerald-100 text-emerald-700" },
   suspended: { label: "Suspendert", className: "bg-amber-100 text-amber-700" },
   archived: { label: "Arkivert", className: "bg-zinc-200 text-zinc-600" },
+}
+
+/**
+ * Pille som viser/toggler en skjermflate for tenanten. Den siste påslåtte flaten
+ * er låst (serveren avviser også begge av) — en tenant må alltid ha minst én.
+ */
+function SurfaceToggle({ label, active, disabled, onToggle }: {
+  label: string
+  active: boolean
+  disabled: boolean
+  onToggle: () => void
+}) {
+  return (
+    <button
+      type="button"
+      disabled={disabled}
+      onClick={onToggle}
+      title={active ? `Skru av ${label.toLowerCase()}-flaten` : `Skru på ${label.toLowerCase()}-flaten`}
+      className={`rounded-full border px-2 py-0.5 text-[11px] font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-60 ${
+        active
+          ? "border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
+          : "border-zinc-200 bg-zinc-50 text-zinc-400 line-through hover:bg-zinc-100"
+      }`}
+    >
+      {label}
+    </button>
+  )
 }
 
 export function TenantsClient({ tenants }: { tenants: TenantRow[] }) {
@@ -116,12 +144,12 @@ function TenantCard({ tenant }: { tenant: TenantRow }) {
   const router = useRouter()
   const badge = STATUS_BADGE[tenant.status] ?? STATUS_BADGE.active
   const [name, setName] = useState(tenant.name)
-  const [busy, setBusy] = useState<null | "rename" | "suspend" | "reactivate" | "archive">(null)
+  const [busy, setBusy] = useState<null | "rename" | "suspend" | "reactivate" | "archive" | "surfaces">(null)
   const [suspendOpen, setSuspendOpen] = useState(false)
   const [archiveOpen, setArchiveOpen] = useState(false)
 
   async function run(
-    kind: "rename" | "suspend" | "reactivate" | "archive",
+    kind: "rename" | "suspend" | "reactivate" | "archive" | "surfaces",
     fn: () => Promise<{ ok: boolean; error?: string | null }>,
     okMsg: string
   ) {
@@ -147,6 +175,35 @@ function TenantCard({ tenant }: { tenant: TenantRow }) {
             </span>
           </div>
           <p className="truncate text-xs text-zinc-400">{tenant.slug}</p>
+          {tenant.status !== "archived" && (
+            <div className="mt-1.5 flex items-center gap-1.5">
+              <span className="text-[11px] font-medium text-zinc-400">Flater:</span>
+              <SurfaceToggle
+                label="Kundeskjerm"
+                active={tenant.surfaces.kunde}
+                disabled={busy !== null || (tenant.surfaces.kunde && !tenant.surfaces.intern)}
+                onToggle={() =>
+                  run(
+                    "surfaces",
+                    () => setTenantSurfaces(tenant.id, { kunde: !tenant.surfaces.kunde, intern: tenant.surfaces.intern }),
+                    `Kundeskjerm-flaten er ${tenant.surfaces.kunde ? "skrudd av" : "skrudd på"} for «${tenant.name}»`
+                  )
+                }
+              />
+              <SurfaceToggle
+                label="Internt"
+                active={tenant.surfaces.intern}
+                disabled={busy !== null || (tenant.surfaces.intern && !tenant.surfaces.kunde)}
+                onToggle={() =>
+                  run(
+                    "surfaces",
+                    () => setTenantSurfaces(tenant.id, { kunde: tenant.surfaces.kunde, intern: !tenant.surfaces.intern }),
+                    `Intern-flaten er ${tenant.surfaces.intern ? "skrudd av" : "skrudd på"} for «${tenant.name}»`
+                  )
+                }
+              />
+            </div>
+          )}
         </div>
 
         <div className="flex flex-wrap items-center gap-2">

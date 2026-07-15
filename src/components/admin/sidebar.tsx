@@ -8,6 +8,7 @@ import {
 } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 import { ImpersonationBanner } from "@/components/admin/impersonation-banner"
+import { enabledSurfaces } from "@/lib/tenant/features"
 import { useTenantConfig } from "./tenant-config-provider"
 import { TenantSwitcher, type SwitcherTenant } from "@/components/admin/tenant-switcher"
 
@@ -19,6 +20,8 @@ interface NavItem {
   icon: React.ElementType
   roles: UserRole[]
   matchPrefix?: boolean
+  /** Skjermflaten punktet hører til — skjules når tenanten har skrudd flaten av. */
+  surface?: "kunde" | "intern"
 }
 
 interface NavGroup {
@@ -32,8 +35,8 @@ const navGroups: NavGroup[] = [
   {
     label: "Innhold",
     items: [
-      { href: "/admin/kundeinnhold", label: "Kundeskjerm", icon: Megaphone, roles: ALL_AUTHORS, matchPrefix: true },
-      { href: "/admin/innhold", label: "Internt", icon: Newspaper, roles: ALL_AUTHORS, matchPrefix: true },
+      { href: "/admin/kundeinnhold", label: "Kundeskjerm", icon: Megaphone, roles: ALL_AUTHORS, matchPrefix: true, surface: "kunde" },
+      { href: "/admin/innhold", label: "Internt", icon: Newspaper, roles: ALL_AUTHORS, matchPrefix: true, surface: "intern" },
     ],
   },
   {
@@ -48,7 +51,7 @@ const navGroups: NavGroup[] = [
     label: "Kampanjer",
     items: [
       { href: "/admin/invitasjoner", label: "Invitasjoner", icon: Ticket, roles: ALL_AUTHORS, matchPrefix: true },
-      { href: "/admin/kundeklubb", label: "Kundeklubb", icon: QrCode, roles: ["super_admin", "chain_manager", "area_manager", "store_manager"], matchPrefix: true },
+      { href: "/admin/kundeklubb", label: "Kundeklubb", icon: QrCode, roles: ["super_admin", "chain_manager", "area_manager", "store_manager"], matchPrefix: true, surface: "kunde" },
     ],
   },
   {
@@ -98,14 +101,20 @@ export function Sidebar({ user, onNavigate }: SidebarProps) {
   const pathname = usePathname()
   const router = useRouter()
   const role = user.role as UserRole
-  const { unitLabelPlural } = useTenantConfig()
+  const { unitLabelPlural, features } = useTenantConfig()
+  // Skjul menypunkter for flater tenanten har skrudd av (hideKundeflate/hideInternflate).
+  const surfaces = enabledSurfaces(features)
   // Bytt «Butikker» → tenantens substantiv (f.eks. «Forhandlere»).
   const relabel = (s: string) => (s === "Butikker" ? unitLabelPlural : s)
-  const groups = navGroups.map((g) => ({
-    ...g,
-    label: relabel(g.label),
-    items: g.items.map((i) => ({ ...i, label: relabel(i.label) })),
-  }))
+  const groups = navGroups
+    .map((g) => ({
+      ...g,
+      label: relabel(g.label),
+      items: g.items
+        .filter((i) => !i.surface || surfaces[i.surface])
+        .map((i) => ({ ...i, label: relabel(i.label) })),
+    }))
+    .filter((g) => g.items.length > 0)
 
   const handleLogout = async () => {
     const supabase = createClient()

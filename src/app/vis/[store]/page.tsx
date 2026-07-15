@@ -2,6 +2,8 @@ import { notFound } from "next/navigation"
 import { cookies } from "next/headers"
 import type { Metadata, Viewport } from "next"
 import { createAdminClient } from "@/lib/supabase/server"
+import { getTenantConfig } from "@/lib/tenant/config-server"
+import { enabledSurfaces } from "@/lib/tenant/features"
 import { kioskCookieName, kioskCookieValid } from "@/lib/kiosk/auth"
 import { KioskGate } from "./kiosk-gate"
 import { KioskStage } from "./kiosk-stage"
@@ -30,14 +32,14 @@ export const viewport: Viewport = {
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
-type KioskStore = { id: string; name: string; kiosk_password_hash: string | null }
+type KioskStore = { id: string; name: string; tenant_id: string; kiosk_password_hash: string | null }
 
 /** Slår opp butikk på id (UUID) eller eksakt/likt navn — service-role, ingen innlogging. */
 async function resolveStore(param: string): Promise<KioskStore | null> {
   const key = decodeURIComponent(param).trim()
   if (!key) return null
   const supabase = createAdminClient()
-  const base = supabase.from("stores").select("id, name, kiosk_password_hash")
+  const base = supabase.from("stores").select("id, name, tenant_id, kiosk_password_hash")
   const { data } = UUID_RE.test(key)
     ? await base.eq("id", key).maybeSingle()
     : await base.ilike("name", key).maybeSingle()
@@ -79,12 +81,18 @@ export default async function KioskPage({
   const explicitPortrait = orientation === "staaende" || orientation === "stående" || orientation === "portrait"
   const explicitLandscape = orientation === "liggende" || orientation === "landscape"
 
+  // Tenantens flate-konfig styrer default: en tenant uten kundeskjermer
+  // (hideKundeflate) viser intern-flaten også uten ?type=intern — og omvendt
+  // ignoreres ?type=intern for tenants uten intern-flate.
+  const surfaces = enabledSurfaces((await getTenantConfig(null, row.tenant_id)).features)
+  const showIntern = surfaces.intern && (type === "intern" || !surfaces.kunde)
+
   // Intern skjerm (verksted/pauserom) via ?type=intern → FULL bakrom-rotasjon
   // (internt innhold + butikk-KPI + KPI-oversikt uke/år), akkurat som en ekte
   // internskjerm. Auto-orientering: liggende internskjerm → 1920×1080, stående
   // (f.eks. telefon på Mobile AS) → 1080×1920. Widgetene inne i bakrom oppdager
   // selv orienteringen fra sin iframe-viewport og velger stående/liggende layout.
-  if (type === "intern") {
+  if (showIntern) {
     const p = { src: `/widget/bakrom?store=${row.id}${avd}`, width: 1080, height: 1920 }
     const l = { src: `/widget/bakrom?store=${row.id}${avd}`, width: 1920, height: 1080 }
     if (explicitPortrait) return <KioskStage src={p.src} title={row.name} width={p.width} height={p.height} />
