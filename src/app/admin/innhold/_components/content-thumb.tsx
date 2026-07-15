@@ -1,8 +1,9 @@
 import {
-  Newspaper, Trophy, ImageIcon, Briefcase, PartyPopper, BarChart3, Megaphone, FileText,
+  Newspaper, Trophy, ImageIcon, Briefcase, PartyPopper, BarChart3, Megaphone, FileText, Code2,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { isDeckUrl } from "@/lib/content/deck"
+import { HtmlThumb } from "./html-thumb"
 
 /**
  * Delt kilde-til-sannhet for innholdstype-metadata (etikett, ikon, badge, gradient)
@@ -18,6 +19,7 @@ export const TYPE_META: Record<string, { label: string; icon: React.ElementType;
   stats: { label: "Salgstall", icon: BarChart3, badge: "bg-emerald-600 text-white", gradient: "from-emerald-500 to-emerald-700" },
   weather: { label: "Vær", icon: ImageIcon, badge: "bg-sky-500 text-white", gradient: "from-sky-400 to-sky-600" },
   ticker: { label: "Ticker", icon: Megaphone, badge: "bg-orange-500 text-white", gradient: "from-orange-400 to-orange-600" },
+  html: { label: "HTML-side", icon: Code2, badge: "bg-violet-600 text-white", gradient: "from-violet-500 to-violet-700" },
 }
 
 /** Uploads kan være PDF (kundeavis/plakat) eller video — begge må ikke rendres som <img>. */
@@ -35,9 +37,12 @@ export function isVideoUrl(url: string): boolean {
  * type-farget kort med type-ikon (ikke en «ødelagt»-lignende grå klosse).
  * `className` styrer størrelse/form fra kalleren (f.eks. w-full h-full).
  */
-export function ContentThumb({ imageUrl, type, className }: { imageUrl: string | null; type: string; className?: string }) {
+export function ContentThumb({ imageUrl, type, id, className }: { imageUrl: string | null; type: string; id?: string; className?: string }) {
   const tm = TYPE_META[type] ?? TYPE_META.slide
   const TypeIcon = tm.icon
+
+  // HTML-side: live mini-forhåndsvisning av selve innholdet (skalert i sandbox).
+  if (type === "html" && id) return <HtmlThumb id={id} className={className} />
 
   if (imageUrl && isDeckUrl(imageUrl)) {
     // PDF (kundeavis) og PowerPoint vises begge som dokument-ikon i miniatyren.

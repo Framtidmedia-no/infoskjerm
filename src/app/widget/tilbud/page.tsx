@@ -41,7 +41,7 @@ interface StoreChainRow {
 function klubbLiveItem(headline: string, subtext: string, cta: string | null): LiveItem {
   return {
     id: "kundeklubb", type: "slide", title: headline, blocks: [], imageUrl: null, imageUrls: [],
-    imageMode: "plakat", isPdf: false, isPpt: false, isVideo: false, durationSeconds: null, pages: [], portraitUrl: null, portraitPages: [], validFrom: null, validTo: null, author: "", date: "",
+    imageMode: "plakat", isPdf: false, isPpt: false, isVideo: false, durationSeconds: null, pages: [], portraitUrl: null, portraitPages: [], htmlLandscape: null, htmlPortrait: null, validFrom: null, validTo: null, author: "", date: "",
     contactPerson: null, applyUrl: null, statsValue: null, statsChange: null, offer: null, campaign: null,
     avdeling: "felles", bgColor: null, textColor: null, klubb: { headline, subtext, cta: cta || undefined }, invitation: null, gallery: null,
   }
@@ -51,7 +51,7 @@ export default async function TilbudWidgetPage({ searchParams }: { searchParams:
   const { store, avdeling, screen } = await searchParams
   const supabase = createAdminClient()
 
-  const [slides, comps, articles, galleries, storeRow, tickerItems, season] = await Promise.all([
+  const [slides, comps, articles, galleries, htmls, storeRow, tickerItems, season] = await Promise.all([
     fetchLiveContent(store ?? null, ["slide"], "kunde", avdeling, screen),
     // Customer competitions — same flashy module as internal, shown on the screen.
     fetchLiveContent(store ?? null, ["competition"], "kunde", avdeling, screen),
@@ -59,6 +59,8 @@ export default async function TilbudWidgetPage({ searchParams }: { searchParams:
     fetchLiveContent(store ?? null, ["news"], "kunde", avdeling, screen),
     // Galleries (catering/meny) — råflott rotating gallery card with QR.
     fetchLiveContent(store ?? null, ["gallery"], "kunde", avdeling, screen),
+    // HTML-sider (sanert, vist i låst sandbox-iframe) — kundens egne råflotte sider.
+    fetchLiveContent(store ?? null, ["html"], "kunde", avdeling, screen),
     store
       ? supabase.from("stores").select("name, kundeklubb_enabled, kundeklubb_url, kundeklubb_headline, kundeklubb_subtext, kundeklubb_cta, chains(name, logo_url, color, brand_fg)").eq("id", store).maybeSingle()
       : Promise.resolve({ data: null }),
@@ -67,7 +69,7 @@ export default async function TilbudWidgetPage({ searchParams }: { searchParams:
     seasonForStore(store ?? null),
   ])
   // Competitions first (attention-grabbing), then galleries, articles, offers.
-  const items = [...(comps as LiveItem[]), ...(galleries as LiveItem[]), ...(articles as LiveItem[]), ...(slides as LiveItem[])]
+  const items = [...(comps as LiveItem[]), ...(htmls as LiveItem[]), ...(galleries as LiveItem[]), ...(articles as LiveItem[]), ...(slides as LiveItem[])]
   const ticker = (tickerItems as LiveItem[]).map((t) => t.title.trim()).filter(Boolean)
 
   // QR codes: competitions + articles with a link (applyUrl) + galleries (qrUrl) + kundeklubb (per-store).

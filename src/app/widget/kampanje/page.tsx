@@ -31,11 +31,13 @@ export default async function KampanjeWidgetPage({ searchParams }: { searchParam
   const { store, avdeling, screen } = await searchParams
   const supabase = createAdminClient()
 
-  const [slides, comps, galleries, articles, storeRow, season] = await Promise.all([
+  const [slides, comps, galleries, articles, htmls, storeRow, season] = await Promise.all([
     fetchLiveContent(store ?? null, ["slide"], "kunde", avdeling, screen),
     fetchLiveContent(store ?? null, ["competition"], "kunde", avdeling, screen),
     fetchLiveContent(store ?? null, ["gallery"], "kunde", avdeling, screen),
     fetchLiveContent(store ?? null, ["news"], "kunde", avdeling, screen),
+    // HTML-sider (sanert, vist i låst sandbox-iframe) — liggende variant.
+    fetchLiveContent(store ?? null, ["html"], "kunde", avdeling, screen),
     store
       ? supabase.from("stores").select("chains(name, logo_url, color, brand_fg)").eq("id", store).maybeSingle()
       : Promise.resolve({ data: null }),
@@ -45,6 +47,7 @@ export default async function KampanjeWidgetPage({ searchParams }: { searchParam
   // Kampanjekort/plakater først, så konkurranse, galleri og artikler.
   const items = [
     ...(slides as LiveItem[]),
+    ...(htmls as LiveItem[]),
     ...(comps as LiveItem[]),
     ...(galleries as LiveItem[]),
     ...(articles as LiveItem[]),

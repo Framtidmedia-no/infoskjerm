@@ -10,7 +10,7 @@ import { matchesTargets, type ContentTarget } from "@/lib/content/targeting"
  * `content_items`, and the screens read it live here.
  */
 
-export type ImageMode = "plakat" | "bakgrunn" | "liten" | "fullskjerm"
+export type ImageMode = "plakat" | "bakgrunn" | "liten" | "fullskjerm" | "html"
 
 /** A text block parsed from the authored rich text — rendered as React (no raw HTML). */
 export interface Block {
@@ -80,6 +80,9 @@ export interface LiveItem {
   portraitUrl: string | null
   /** Fullskjerm: forhåndsrendrede sider for stående dokument-variant. */
   portraitPages: string[]
+  /** HTML-type: URL til sanert HTML-fil for liggende / stående (vises i sandbox-iframe). */
+  htmlLandscape: string | null
+  htmlPortrait: string | null
   validFrom: string | null
   validTo: string | null
   author: string
@@ -149,6 +152,8 @@ interface Body {
   pages?: string[]
   portraitUrl?: string | null
   portraitPages?: string[]
+  htmlLandscape?: string | null
+  htmlPortrait?: string | null
   klubb?: { headline: string; subtext: string; url?: string; cta?: string } | null
   invitation?: { eventDate?: string | null; eventPlace?: string | null; signupEnabled?: boolean; signupDeadline?: string | null; signupUrl?: string | null } | null
   gallery?: { theme?: string; items?: { name?: string; price?: string | null; priceInfo?: string | null; imageUrl?: string | null }[]; qrUrl?: string | null; qrLabel?: string | null } | null
@@ -227,7 +232,7 @@ export async function fetchLiveContent(storeId: string | null, types: string[], 
     .from("content_items")
     .select("id, type, title, body, created_by, created_at, published_at, valid_from, valid_to, content_targets(target_all, store_id, tag_id, screen_id)")
     .eq("status", "live")
-    .in("type", types as ("news" | "competition" | "stats" | "weather" | "slide" | "job" | "birthday" | "ticker" | "invitation" | "gallery")[])
+    .in("type", types as ("news" | "competition" | "stats" | "weather" | "slide" | "job" | "birthday" | "ticker" | "invitation" | "gallery" | "html")[])
 
   // With a store context, scope to its tenant. The null-storeId path (base/
   // all-stores feed) is intentionally NOT tenant-scoped — there is no store
@@ -294,9 +299,11 @@ export async function fetchLiveContent(storeId: string | null, types: string[], 
       blocks: htmlToBlocks(body.html ?? ""),
       imageUrl: firstImage,
       imageUrls,
-      imageMode: body.imageMode === "plakat" ? "plakat" : body.imageMode === "liten" ? "liten" : body.imageMode === "fullskjerm" ? "fullskjerm" : "bakgrunn",
+      imageMode: body.imageMode === "plakat" ? "plakat" : body.imageMode === "liten" ? "liten" : body.imageMode === "fullskjerm" ? "fullskjerm" : body.imageMode === "html" ? "html" : "bakgrunn",
       portraitUrl: body.portraitUrl ?? null,
       portraitPages: Array.isArray(body.portraitPages) ? body.portraitPages.filter(Boolean) : [],
+      htmlLandscape: body.htmlLandscape ?? null,
+      htmlPortrait: body.htmlPortrait ?? null,
       isPdf: isPdfUrl(firstImage),
       isPpt: isPptUrl(firstImage),
       isVideo: /\.(mp4|webm|mov|m4v)$/.test((firstImage ?? "").toLowerCase().split("?")[0]),
