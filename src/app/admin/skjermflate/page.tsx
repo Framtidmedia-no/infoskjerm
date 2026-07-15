@@ -7,6 +7,7 @@ import { getTenantConfig } from "@/lib/tenant/config-server"
 import { heleEnhetenLabel } from "@/lib/tenant/config"
 import { hasFeature } from "@/lib/tenant/features"
 import { SkjermflateScene } from "./skjermflate-scene"
+import { FleetOnboarding } from "./fleet-onboarding"
 import type { FleetStore, FleetScreen, FleetStats, LiveLite, FaultLite, TopPlayLite, ContentHealth, UpcomingLite } from "./types"
 
 /**
@@ -85,7 +86,7 @@ function buildPreviewData(row: { type: string; title: string; valid_from: string
 
 export default async function SkjermflatePage() {
   const { supabase, tenantId, userId } = await requireRole([...VIEW_ROLES])
-  const { unitLabel, unitLabelPlural, avdelinger, avdelingerIntern, features } = await getTenantConfig(supabase, tenantId)
+  const { unitLabel, avdelinger, avdelingerIntern, features } = await getTenantConfig(supabase, tenantId)
   // KPI-slides (butikk-KPI + alle butikker) — kun tenants med kpi-funksjonen (Gange-Rolv).
   const showKpi = hasFeature(features, "kpi")
   const heleLabel = heleEnhetenLabel(unitLabel)
@@ -119,9 +120,10 @@ export default async function SkjermflatePage() {
 
   // /widget/preview-payload per live-innslag (bygges fra det lagrede innslaget).
   const bodiesRes = await supabase.from("content_items").select("id, type, title, valid_from, valid_to, body").eq("tenant_id", tenantId).eq("status", "live")
+  const bodyRows = (bodiesRes.data ?? []) as { id: string; type: string; title: string; valid_from: string | null; valid_to: string | null; body: Record<string, unknown> | null }[]
   const previewById = new Map<string, string>()
   const thumbById = new Map<string, string | null>()
-  for (const row of (bodiesRes.data ?? []) as { id: string; type: string; title: string; valid_from: string | null; valid_to: string | null; body: Record<string, unknown> | null }[]) {
+  for (const row of bodyRows) {
     previewById.set(row.id, buildPreviewData(row))
     thumbById.set(row.id, buildThumb(row.body))
   }
@@ -237,6 +239,25 @@ export default async function SkjermflatePage() {
     storeName: null,
   }))
 
+  // Tom flåte er onboarding, ikke drift: egen scene som svarer på «hva gjør jeg
+  // nå?» og bruker det som ER ekte (innslagene som ligger klare) som motivasjon
+  // — aldri fabrikkert innhold utkledd som live skjermer.
+  if (totalScreens === 0) {
+    const liveSamples: LiveLite[] = bodyRows
+      .filter((r) => (!r.valid_from || new Date(r.valid_from).getTime() <= nowMs) && (!r.valid_to || new Date(r.valid_to).getTime() > nowMs))
+      .slice(0, 6)
+      .map((r) => ({
+        id: r.id,
+        type: r.type,
+        title: r.title,
+        avdeling: ((r.body?.avdeling as string | undefined) ?? "felles") || "felles",
+        validTo: r.valid_to,
+        imageUrl: thumbById.get(r.id) ?? null,
+        previewData: previewById.get(r.id) ?? "",
+      }))
+    return <FleetOnboarding liveItems={health.live} liveSamples={liveSamples} upcoming={upcoming} userName={firstName} unitLabel={unitLabel} />
+  }
+
   return (
     <SkjermflateScene
       stores={stores}
@@ -248,7 +269,6 @@ export default async function SkjermflatePage() {
       lastSync={lastSync}
       userName={firstName}
       unitLabel={unitLabel}
-      unitLabelPlural={unitLabelPlural}
       showKpi={showKpi}
     />
   )

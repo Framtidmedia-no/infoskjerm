@@ -249,10 +249,25 @@ function LivePlaceholder() {
  *
  * `active`: KUN det aktive (senter) kortet laster live-iframe. Ellers mounter
  * coverflow-en mange tunge /widget-iframes samtidig → iOS Safari/PWA OOM-krasj.
- * Sidekort får en lett placeholder; iframen lastes når kortet blir senter. */
+ * Sidekort får en lett placeholder; iframen lastes når kortet blir senter.
+ *
+ * Demo-decks vannmerkes med «EKSEMPEL» rett på flaten — pillen alene er for
+ * lett å overse, og fabrikkert innhold skal aldri kunne leses som live drift. */
 export function DeckContent({ spec, w, active = true }: { spec: CardSpec; w: number; active?: boolean }) {
   if (spec.live && spec.src) return active ? <WidgetThumb src={spec.src} w={w} portrait={spec.orientation === "portrait"} /> : <LivePlaceholder />
-  if (spec.demo === "menu") return <MenuBody />
-  if (spec.demo === "hours") return <HoursBody hours="Man–søn · 07–23" />
-  return <OfferBody live={false} w={w} store={spec.store} />
+  const body =
+    spec.demo === "menu" ? <MenuBody /> : spec.demo === "hours" ? <HoursBody hours="Man–søn · 07–23" /> : <OfferBody live={false} w={w} store={spec.store} />
+  return (
+    <div className="relative h-full w-full">
+      {body}
+      <div aria-hidden className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center overflow-hidden">
+        <span
+          className="-rotate-[24deg] whitespace-nowrap font-display text-[24px] font-black uppercase tracking-[0.42em] text-white/[0.16]"
+          style={{ textShadow: "0 2px 18px rgba(0,0,0,0.45)" }}
+        >
+          Eksempel
+        </span>
+      </div>
+    </div>
+  )
 }
