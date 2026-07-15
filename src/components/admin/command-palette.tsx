@@ -7,6 +7,8 @@ import {
   Store, Tv, Users, ScrollText, Settings, FilePlus, UserPlus, Loader2, Compass, type LucideIcon,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { enabledSurfaces } from "@/lib/tenant/features"
+import { useTenantConfig } from "@/components/admin/tenant-config-provider"
 import { kommandoSok, type KommandoTreff } from "@/app/admin/kommando-actions"
 
 /**
@@ -24,18 +26,20 @@ interface StatiskKommando {
   href: string
   icon: LucideIcon
   roller: Rolle[]
+  /** Skjermflaten kommandoen hører til — skjules når tenanten har skrudd flaten av. */
+  flate?: "kunde" | "intern"
 }
 
 const ALLE: Rolle[] = ["super_admin", "chain_manager", "area_manager", "store_manager", "store_employee"]
 const LEDERE: Rolle[] = ["super_admin", "chain_manager", "area_manager", "store_manager"]
 
 const SIDER: StatiskKommando[] = [
-  { label: "Kundeskjerm", sub: "Innhold til kundene", href: "/admin/kundeinnhold", icon: Megaphone, roller: ALLE },
-  { label: "Internt innhold", sub: "Bakrom og ansatte", href: "/admin/innhold", icon: Newspaper, roller: ALLE },
+  { label: "Kundeskjerm", sub: "Innhold til kundene", href: "/admin/kundeinnhold", icon: Megaphone, roller: ALLE, flate: "kunde" },
+  { label: "Internt innhold", sub: "Bakrom og ansatte", href: "/admin/innhold", icon: Newspaper, roller: ALLE, flate: "intern" },
   { label: "Planen", sub: "Hva som vises når", href: "/admin/plan", icon: CalendarRange, roller: ALLE },
   { label: "Forhåndsvisning", sub: "Se skjermene live", href: "/admin/cms", icon: Monitor, roller: LEDERE },
   { label: "Invitasjoner", sub: "Arrangementer og påmelding", href: "/admin/invitasjoner", icon: Ticket, roller: ALLE },
-  { label: "Kundeklubb", sub: "Medlemmer per butikk", href: "/admin/kundeklubb", icon: QrCode, roller: LEDERE },
+  { label: "Kundeklubb", sub: "Medlemmer per butikk", href: "/admin/kundeklubb", icon: QrCode, roller: LEDERE, flate: "kunde" },
   { label: "Butikker", sub: "Enheter og tagger", href: "/admin/stores", icon: Store, roller: ["super_admin", "chain_manager", "area_manager"] },
   { label: "Skjermer", sub: "Skjerm-styring og status", href: "/admin/skjermer", icon: Tv, roller: LEDERE },
   { label: "Brukere", sub: "Tilgang og roller", href: "/admin/users", icon: Users, roller: LEDERE },
@@ -44,8 +48,8 @@ const SIDER: StatiskKommando[] = [
 ]
 
 const HANDLINGER: StatiskKommando[] = [
-  { label: "Nytt kundeinnhold", sub: "Opprett innslag til kundeskjermen", href: "/admin/kundeinnhold/ny", icon: FilePlus, roller: ALLE },
-  { label: "Nytt internt innslag", sub: "Opprett innslag til internskjermen", href: "/admin/innhold/ny", icon: FilePlus, roller: ALLE },
+  { label: "Nytt kundeinnhold", sub: "Opprett innslag til kundeskjermen", href: "/admin/kundeinnhold/ny", icon: FilePlus, roller: ALLE, flate: "kunde" },
+  { label: "Nytt internt innslag", sub: "Opprett innslag til internskjermen", href: "/admin/innhold/ny", icon: FilePlus, roller: ALLE, flate: "intern" },
   { label: "Ny butikk", sub: "Registrer en ny enhet", href: "/admin/stores/new", icon: Store, roller: ["super_admin", "chain_manager", "area_manager"] },
   { label: "Inviter bruker", sub: "Gi noen tilgang", href: "/admin/users", icon: UserPlus, roller: LEDERE },
 ]
@@ -67,6 +71,8 @@ interface Rad {
 
 export function CommandPalette({ role }: { role: string }) {
   const router = useRouter()
+  // Skjul kommandoer for flater tenanten har skrudd av (speiler sidebaren).
+  const surfaces = enabledSurfaces(useTenantConfig().features)
   const [open, setOpen] = useState(false)
   const [query, setQuery] = useState("")
   const [treff, setTreff] = useState<KommandoTreff[]>([])
@@ -133,12 +139,14 @@ export function CommandPalette({ role }: { role: string }) {
   const rader = useMemo<Rad[]>(() => {
     const q = query.trim().toLowerCase()
     const passer = (k: StatiskKommando) =>
-      k.roller.includes(rolle) && (!q || k.label.toLowerCase().includes(q) || k.sub.toLowerCase().includes(q))
+      k.roller.includes(rolle) &&
+      (!k.flate || surfaces[k.flate]) &&
+      (!q || k.label.toLowerCase().includes(q) || k.sub.toLowerCase().includes(q))
     const sider: Rad[] = SIDER.filter(passer).map((k) => ({ key: `s:${k.href}`, label: k.label, sub: k.sub, href: k.href, icon: k.icon, gruppe: "Gå til" }))
     const handlinger: Rad[] = HANDLINGER.filter(passer).map((k) => ({ key: `h:${k.href}:${k.label}`, label: k.label, sub: k.sub, href: k.href, icon: k.icon, gruppe: "Handlinger" }))
     const dynamiske: Rad[] = treff.map((t, i) => ({ key: `d:${i}:${t.href}`, label: t.label, sub: t.sub, href: t.href, icon: GRUPPE_META[t.gruppe].icon, gruppe: GRUPPE_META[t.gruppe].label }))
     return [...dynamiske, ...handlinger, ...sider]
-  }, [query, treff, rolle])
+  }, [query, treff, rolle, surfaces])
 
   // Klampes ved render i stedet for å resettes i en effect.
   const aktivIdx = rader.length > 0 ? Math.min(aktiv, rader.length - 1) : 0

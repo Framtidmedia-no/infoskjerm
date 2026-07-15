@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import { Monitor, Wrench, Copy, Check, Plus, Trash2, Loader2, Smartphone, Wifi, WifiOff, PenLine } from "lucide-react"
 import { useTenantConfig } from "@/components/admin/tenant-config-provider"
+import { enabledSurfaces } from "@/lib/tenant/features"
 import { ConfirmDialog } from "@/components/admin/confirm-dialog"
 import { ScreenPowerControls, type ScreenPowerInfo } from "./power-controls"
 import type { OpeningHours } from "@/lib/power/schedule"
@@ -59,6 +60,8 @@ function AssignmentControls({
   onChange: (next: Assignment) => void
 }) {
   const avdelinger = value.flate === "intern" ? avdelingerIntern : avdelingerKunde
+  // Tilby kun flatene tenanten har (hideKundeflate/hideInternflate).
+  const surfaces = enabledSurfaces(useTenantConfig().features)
   return (
     <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
       <label className="block">
@@ -69,8 +72,8 @@ function AssignmentControls({
           onChange={(e) => onChange({ ...value, flate: e.target.value as Flate, avdeling: "felles" })}
           className={`${SEL} w-full mt-1`}
         >
-          <option value="kunde">Kundeskjerm</option>
-          <option value="intern">Internskjerm</option>
+          {(surfaces.kunde || value.flate === "kunde") && <option value="kunde">Kundeskjerm</option>}
+          {(surfaces.intern || value.flate === "intern") && <option value="intern">Internskjerm</option>}
         </select>
       </label>
       <label className="block">
@@ -268,8 +271,11 @@ function DisplayCard({
   const router = useRouter()
   const [saving, setSaving] = useState(false)
   const [token, setToken] = useState<string | null>(row?.token ?? null)
+  // Default-flate følger Xibo-rollen, men klemmes til flatene tenanten har.
+  const surfaces = enabledSurfaces(useTenantConfig().features)
+  const roleFlate: Flate = display.role === "kunde" ? "kunde" : "intern"
   const [value, setValue] = useState<Assignment>({
-    flate: row?.flate ?? (display.role === "kunde" ? "kunde" : "intern"),
+    flate: row?.flate ?? (surfaces[roleFlate] ? roleFlate : surfaces.kunde ? "kunde" : "intern"),
     avdeling: row?.avdeling ?? "felles",
     orientation: row?.orientation ?? (display.role === "kunde" ? "portrait" : "landscape"),
   })
@@ -421,6 +427,8 @@ export function StoreScreens({
   apningstider?: OpeningHours | null
 }) {
   const config = useTenantConfig()
+  // Tilby kun kiosk-knapper for flatene tenanten har.
+  const surfaces = enabledSurfaces(config.features)
   const router = useRouter()
   const [adding, setAdding] = useState<Flate | null>(null)
 
@@ -472,14 +480,18 @@ export function StoreScreens({
       ))}
 
       <div className="flex flex-wrap gap-2 pt-1">
-        <button onClick={() => add("kunde")} disabled={adding !== null}
-          className="inline-flex items-center gap-1.5 text-xs font-semibold text-zinc-700 border border-dashed border-zinc-300 hover:border-zinc-400 rounded-lg px-3 py-2 disabled:opacity-50">
-          {adding === "kunde" ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />} Legg til kiosk-kundeskjerm
-        </button>
-        <button onClick={() => add("intern")} disabled={adding !== null}
-          className="inline-flex items-center gap-1.5 text-xs font-semibold text-zinc-700 border border-dashed border-zinc-300 hover:border-zinc-400 rounded-lg px-3 py-2 disabled:opacity-50">
-          {adding === "intern" ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />} Legg til kiosk-internskjerm
-        </button>
+        {surfaces.kunde && (
+          <button onClick={() => add("kunde")} disabled={adding !== null}
+            className="inline-flex items-center gap-1.5 text-xs font-semibold text-zinc-700 border border-dashed border-zinc-300 hover:border-zinc-400 rounded-lg px-3 py-2 disabled:opacity-50">
+            {adding === "kunde" ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />} Legg til kiosk-kundeskjerm
+          </button>
+        )}
+        {surfaces.intern && (
+          <button onClick={() => add("intern")} disabled={adding !== null}
+            className="inline-flex items-center gap-1.5 text-xs font-semibold text-zinc-700 border border-dashed border-zinc-300 hover:border-zinc-400 rounded-lg px-3 py-2 disabled:opacity-50">
+            {adding === "intern" ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />} Legg til kiosk-internskjerm
+          </button>
+        )}
       </div>
     </div>
   )

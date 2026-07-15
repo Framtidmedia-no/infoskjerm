@@ -1,4 +1,5 @@
 import { createAdminClient } from "@/lib/supabase/server"
+import { enabledSurfaces, parseTenantFeatures, type EnabledSurfaces } from "@/lib/tenant/features"
 
 export interface TenantRow {
   id: string
@@ -8,6 +9,8 @@ export interface TenantRow {
   status: string
   archivedAt: string | null
   logoUrl: string | null
+  /** Skjermflatene tenanten bruker (hideKundeflate/hideInternflate i features). */
+  surfaces: EnabledSurfaces
 }
 
 // Kolonnene status/archived_at (036) er ikke i den genererte Database-typen ennå
@@ -20,6 +23,7 @@ type TenantSelectRow = {
   status: string | null
   archived_at: string | null
   logo_url: string | null
+  features: unknown
 }
 
 function mapTenant(row: TenantSelectRow): TenantRow {
@@ -31,6 +35,7 @@ function mapTenant(row: TenantSelectRow): TenantRow {
     status: row.status ?? "active",
     archivedAt: row.archived_at ?? null,
     logoUrl: row.logo_url ?? null,
+    surfaces: enabledSurfaces(parseTenantFeatures(row.features)),
   }
 }
 
@@ -42,7 +47,7 @@ export async function listAllTenants(): Promise<TenantRow[]> {
       order: (col: string) => Promise<{ data: TenantSelectRow[] | null; error: unknown }>
     }
   })
-    .select("id, name, slug, created_at, status, archived_at, logo_url")
+    .select("id, name, slug, created_at, status, archived_at, logo_url, features")
     .order("name")
   if (error) throw error
   return (data ?? []).map(mapTenant)
@@ -55,7 +60,7 @@ export async function getTenantById(id: string): Promise<TenantRow | null> {
       eq: (c: string, v: string) => { maybeSingle: () => Promise<{ data: TenantSelectRow | null }> }
     }
   })
-    .select("id, name, slug, created_at, status, archived_at, logo_url")
+    .select("id, name, slug, created_at, status, archived_at, logo_url, features")
     .eq("id", id)
     .maybeSingle()
   if (!data) return null

@@ -13,6 +13,7 @@ import { LivePreview } from "./live-preview"
 import { FullscreenMediaFields } from "./fullscreen-media-fields"
 import { HtmlFields } from "./html-fields"
 import { useTenantConfig, useTenantFeature } from "@/components/admin/tenant-config-provider"
+import { enabledSurfaces } from "@/lib/tenant/features"
 import { toast } from "sonner"
 import {
   Dialog, DialogContent, DialogHeader, DialogFooter, DialogTitle, DialogDescription,
@@ -157,7 +158,7 @@ export function ContentForm({ stores, tags, screens = [], initial, audience = "i
   const router = useRouter()
   // Avdeling-lista følger flaten: intern-innhold merkes med INTERNE avdelinger,
   // kunde-innhold med kunde-avdelinger (egne lister per tenant, migrasjon 037).
-  const { avdelinger: AVDELINGER_KUNDE, avdelingerIntern: AVDELINGER_INTERN, unitLabel, unitLabelPlural } = useTenantConfig()
+  const { avdelinger: AVDELINGER_KUNDE, avdelingerIntern: AVDELINGER_INTERN, unitLabel, unitLabelPlural, features } = useTenantConfig()
   const AVDELINGER = audience === "intern" ? AVDELINGER_INTERN : AVDELINGER_KUNDE
   // Varekort-bygger (struktur) + spar.no-oppslag er dagligvare-spesifikt — kun
   // for tenants med «offerCards». Andre tenants laster kun opp plakat/PDF.
@@ -191,7 +192,11 @@ export function ContentForm({ stores, tags, screens = [], initial, audience = "i
   const [fsPortraitUrl, setFsPortraitUrl] = useState<string | null>(initial?.portraitUrl ?? null)
   const [htmlLandscape, setHtmlLandscape] = useState<string | null>(initial?.htmlLandscape ?? null)
   const [htmlPortrait, setHtmlPortrait] = useState<string | null>(initial?.htmlPortrait ?? null)
-  const [showBoth, setShowBoth] = useState(initial?.audienceBoth ?? false)
+  const [showBothRaw, setShowBoth] = useState(initial?.audienceBoth ?? false)
+  // «Vis på begge flater» gir bare mening når tenanten faktisk har begge flater.
+  const surfaces = enabledSurfaces(features)
+  const bothSurfaces = surfaces.kunde && surfaces.intern
+  const showBoth = showBothRaw && bothSurfaces
   // Nyheter har samme fullskjerm-valg som slides (egen toggle — offerMode er slide-spesifikk).
   const [newsFullscreen, setNewsFullscreen] = useState(initial?.type === "news" && initial?.imageMode === "fullskjerm")
   const [offer, setOffer] = useState<OfferFields>(initial?.offer ?? EMPTY_OFFER)
@@ -756,6 +761,7 @@ export function ContentForm({ stores, tags, screens = [], initial, audience = "i
               showBoth={showBoth}
               onShowBoth={setShowBoth}
               surface={audience}
+              allowBoth={bothSurfaces}
             />
           )}
 
