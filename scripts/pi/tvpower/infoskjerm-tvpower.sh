@@ -21,7 +21,8 @@ CEC_DEV="${CEC_DEVICE:-/dev/cec0}"
 [ -e "$CEC_DEV" ] || { echo "tvpower: $CEC_DEV finnes ikke (mangler kernel-CEC?)"; exit 1; }
 
 # Sørg for at CEC-adapteren er konfigurert som Playback-enhet (idempotent).
-if ! cec-ctl -s -d "$CEC_DEV" | grep -q "Playback"; then
+# NB: `-s` undertrykker adapterinfoen, så sjekken MÅ leses uten -s.
+if ! cec-ctl -d "$CEC_DEV" | grep -q "Logical Address Type.*: Playback"; then
   cec-ctl -s -d "$CEC_DEV" --playback >/dev/null 2>&1
 fi
 
@@ -61,9 +62,14 @@ if [ "$DESIRED" = "on" ]; then
   echo "tvpower: slår PÅ TV (var $STATE)"
   cec-ctl -s -d "$CEC_DEV" --to 0 --image-view-on >/dev/null 2>&1
   # Be TV-en bytte til vår HDMI-inngang etter oppvåkning.
-  PHYS=$(cec-ctl -s -d "$CEC_DEV" | sed -n 's/.*Physical Address[^:]*: \([0-9a-f.]*\).*/\1/p' | head -1)
-  [ -n "$PHYS" ] && cec-ctl -s -d "$CEC_DEV" --active-source phys-addr="$PHYS" >/dev/null 2>&1
+  # f.f.f.f = ugyldig adresse (ingen hotplug/EDID fra TV-en) — da kan vi ikke active-source.
+  PHYS=$(cec-ctl -d "$CEC_DEV" | sed -n 's/.*Physical Address[^:]*: \([0-9a-f.]*\).*/\1/p' | head -1)
+  if [ -n "$PHYS" ] && [ "$PHYS" != "f.f.f.f" ]; then
+    cec-ctl -s -d "$CEC_DEV" --active-source phys-addr="$PHYS" >/dev/null 2>&1
+  fi
 else
   echo "tvpower: slår AV TV (var $STATE)"
   cec-ctl -s -d "$CEC_DEV" --to 0 --standby >/dev/null 2>&1
 fi
+
+exit 0
