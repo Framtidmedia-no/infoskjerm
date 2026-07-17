@@ -105,11 +105,18 @@ function LoginInner({ branding }: { branding: AuthBrand | null }) {
     <AuthShell
       brand={branding}
       below={
-        <p className="mt-6 text-center text-xs text-zinc-600">
-          {branding
-            ? "Kun autoriserte brukere · Levert av Framtid Tech"
-            : "Kun autoriserte brukere. Ta kontakt med administrator for tilgang."}
-        </p>
+        <div className="mt-6 text-center text-xs text-zinc-600">
+          <p>
+            {branding
+              ? "Kun autoriserte brukere · Levert av Framtid Tech"
+              : "Kun autoriserte brukere. Ta kontakt med administrator for tilgang."}
+          </p>
+          <p className="mt-2">
+            <a href="/" className="text-zinc-500 underline-offset-2 hover:text-zinc-300 hover:underline">
+              ← Til forsiden
+            </a>
+          </p>
+        </div>
       }
     >
       {step === "biometric" ? (

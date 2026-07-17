@@ -32,6 +32,44 @@ export async function sendInviteEmail({ to, link, role, storeNames }: InviteEmai
   if (error) throw new Error(`Resend: ${error.message}`)
 }
 
+type LeadNotificationArgs = {
+  to: string
+  name: string
+  company: string
+  email: string
+  phone: string
+  scope: string
+  message: string
+}
+
+/** Varsel om ny henvendelse fra kontaktskjemaet på den offentlige produktsiden. */
+export async function sendLeadNotification({ to, name, company, email, phone, scope, message }: LeadNotificationArgs): Promise<void> {
+  const esc = (value: string) =>
+    value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+  const row = (label: string, value: string) =>
+    value ? `<tr><td style="padding:4px 12px 4px 0;color:#666;white-space:nowrap;vertical-align:top">${label}</td><td style="padding:4px 0">${esc(value)}</td></tr>` : ""
+
+  const { error } = await getResend().emails.send({
+    from: FROM,
+    to,
+    replyTo: email,
+    subject: `Ny Infoskjerm-henvendelse fra ${name}${company ? ` (${company})` : ""}`,
+    html: `<div style="font-family:ui-sans-serif,system-ui,sans-serif;font-size:14px;color:#111">
+      <h2 style="font-size:16px">Ny henvendelse fra infoskjerm.framtidtech.no</h2>
+      <table style="border-collapse:collapse">
+        ${row("Navn", name)}
+        ${row("Firma", company)}
+        ${row("E-post", email)}
+        ${row("Telefon", phone)}
+        ${row("Omfang", scope)}
+      </table>
+      ${message ? `<p style="white-space:pre-wrap;border-left:3px solid #ddd;padding-left:12px">${esc(message)}</p>` : ""}
+      <p style="color:#666">Henvendelsen ligger også i marketing_leads-tabellen. Svar direkte på denne e-posten for å nå avsenderen.</p>
+    </div>`,
+  })
+  if (error) throw new Error(`Resend: ${error.message}`)
+}
+
 type ResetEmailArgs = {
   to: string
   link: string

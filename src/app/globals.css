@@ -343,3 +343,443 @@ body {
   .sf-glow, .sf-dot, .sf-ticker { animation: none !important; }
   .sf-deck-in { animation: none; opacity: 1; }
 }
+
+/* ============================================================
+   Offentlig produktside (/) — Carnival
+   Hallmark · macrostructure: Marquee Hero · genre: editorial (Carnival)
+   theme: Carnival · drop: Cold Snap · enrichment: none (CSS halftone-ornament)
+   nav: N7 slab · footer: Ft5 statement · H1 knobs: size=xxl, alignment=left-bias
+   Hallmark · pre-emit critique: P4 H5 E4 S5 R4 V5
+   Alt er scopet under .mk — påvirker IKKE admin/widget/auth-flatene.
+   ============================================================ */
+
+.mk {
+  /* Cold Snap-paletten (Hallmark Carnival, drop 01) */
+  --mk-paper: oklch(92% 0.045 50);
+  --mk-paper-2: oklch(88% 0.05 45);
+  --mk-ink: oklch(18% 0.08 20);
+  --mk-ink-2: oklch(28% 0.06 25);
+  --mk-muted: oklch(45% 0.05 30);
+  --mk-rule: oklch(40% 0.18 25);
+  --mk-accent: oklch(86% 0.18 95);   /* sennep — fyllflater med mørk tekst */
+  --mk-accent-2: oklch(40% 0.21 25); /* oksblod — fyllflater med lys tekst */
+  --mk-accent-ink: oklch(18% 0.08 20);
+  --mk-focus: oklch(40% 0.21 25);
+
+  --mk-font-display: var(--font-carnival), var(--font-geist-sans), ui-sans-serif, sans-serif;
+  --mk-font-body: var(--font-geist-sans), ui-sans-serif, sans-serif;
+  --mk-font-mono: var(--font-geist-mono), ui-monospace, monospace;
+
+  --mk-space-xs: 0.5rem;
+  --mk-space-sm: 0.75rem;
+  --mk-space-md: 1rem;
+  --mk-space-lg: 1.5rem;
+  --mk-space-xl: 2.5rem;
+  --mk-space-2xl: 4rem;
+  --mk-space-3xl: 6rem;
+  --mk-gutter: clamp(1rem, 4vw, 2.5rem);
+  --mk-measure: 62ch;
+
+  --mk-dur-micro: 120ms;
+  --mk-dur-short: 220ms;
+  --mk-ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+
+  background: var(--mk-paper);
+  color: var(--mk-ink);
+  font-family: var(--mk-font-body);
+  overflow-x: clip;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+}
+
+.mk ::selection { background: var(--mk-accent); color: var(--mk-accent-ink); }
+
+.mk :focus-visible {
+  outline: 3px solid var(--mk-focus);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+.mk-shell { width: 100%; max-width: 72rem; margin-inline: auto; padding-inline: var(--mk-gutter); }
+
+/* —— N7 slab-nav: oksblod bar, trackede caps-lenker, sennep-CTA —— */
+.mk-nav {
+  background: var(--mk-ink);
+  color: var(--mk-paper);
+  border-bottom: 3px solid var(--mk-ink);
+}
+.mk-nav__row { display: flex; align-items: center; gap: var(--mk-space-lg); padding-block: 0.875rem; }
+.mk-wordmark {
+  font-family: var(--mk-font-display);
+  font-weight: 800;
+  font-size: 1.35rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--mk-paper);
+  text-decoration: none;
+  white-space: nowrap;
+}
+.mk-wordmark .mk-orn { color: var(--mk-accent); }
+.mk-nav__links { display: flex; align-items: center; gap: var(--mk-space-lg); margin-left: auto; }
+.mk-nav__link {
+  font-family: var(--mk-font-mono);
+  font-size: 0.8rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--mk-paper);
+  text-decoration: none;
+  white-space: nowrap;
+  border-bottom: 2px solid transparent;
+  padding-block: 0.25rem;
+  transition: border-color var(--mk-dur-micro) var(--mk-ease-out);
+}
+.mk-nav__link:hover { border-bottom-color: var(--mk-accent); }
+.mk-btn {
+  display: inline-block;
+  font-family: var(--mk-font-display);
+  font-weight: 800;
+  font-size: 0.95rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  text-decoration: none;
+  white-space: nowrap;
+  padding: 0.6rem 1.1rem;
+  border: 2px solid var(--mk-ink);
+  box-shadow: 4px 4px 0 var(--mk-ink);
+  transition: transform var(--mk-dur-micro) var(--mk-ease-out), box-shadow var(--mk-dur-micro) var(--mk-ease-out);
+}
+.mk-btn:hover { transform: translate(-1px, -1px); box-shadow: 5px 5px 0 var(--mk-ink); }
+.mk-btn:active { transform: translate(2px, 2px); box-shadow: 2px 2px 0 var(--mk-ink); }
+.mk-btn--accent { background: var(--mk-accent); color: var(--mk-accent-ink); }
+.mk-btn--ink { background: var(--mk-accent-2); color: var(--mk-paper); }
+.mk-btn--deep { background: var(--mk-ink); color: var(--mk-paper); }
+
+/* —— Marquee Hero —— */
+.mk-hero { padding-block: var(--mk-space-3xl) var(--mk-space-2xl); }
+.mk-hero__meta {
+  display: flex;
+  align-items: center;
+  gap: var(--mk-space-md);
+  font-family: var(--mk-font-mono);
+  font-size: 0.8rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--mk-muted);
+  margin-bottom: var(--mk-space-xl);
+}
+.mk-hero__meta::after { content: ""; flex: 0 1 16rem; height: 2px; background: var(--mk-rule); }
+.mk-display {
+  font-family: var(--mk-font-display);
+  font-weight: 800;
+  font-size: clamp(3.25rem, 13vw, 8.5rem);
+  line-height: 0.9;
+  letter-spacing: -0.005em;
+  text-transform: uppercase;
+  margin: 0;
+  overflow-wrap: anywhere;
+  min-width: 0;
+}
+.mk-display span { display: block; }
+.mk-display .mk-display__alt { color: var(--mk-accent-2); }
+.mk-hero__lede {
+  max-width: var(--mk-measure);
+  font-size: 1.125rem;
+  line-height: 1.6;
+  margin-block: var(--mk-space-xl) var(--mk-space-lg);
+}
+.mk-hero__actions { display: flex; flex-wrap: wrap; gap: var(--mk-space-md); }
+
+/* Fakta-stripen (Cold Snap-spec-strip) */
+.mk-facts {
+  border-top: 2px solid var(--mk-rule);
+  margin-top: var(--mk-space-2xl);
+  padding-top: var(--mk-space-lg);
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--mk-space-lg);
+}
+.mk-facts dt {
+  font-family: var(--mk-font-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--mk-muted);
+  margin-bottom: 0.35rem;
+}
+.mk-facts dd { margin: 0; font-weight: 700; font-size: 0.95rem; }
+
+/* —— Ticker-bånd (marquee — det som faktisk ruller på skjermene) —— */
+.mk-ticker {
+  background: var(--mk-accent);
+  color: var(--mk-accent-ink);
+  border-block: 3px solid var(--mk-ink);
+  overflow: hidden;
+  white-space: nowrap;
+  padding-block: 0.75rem;
+}
+.mk-ticker__track { display: inline-flex; animation: mk-ticker 32s linear infinite; }
+.mk-ticker__item {
+  font-family: var(--mk-font-display);
+  font-weight: 800;
+  font-size: clamp(1.25rem, 3vw, 2rem);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding-inline: 0.75rem;
+}
+.mk-ticker__sep { color: var(--mk-ink); }
+@keyframes mk-ticker { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+
+/* —— Seksjonshoder: ◆ + caps, stablet, venstrejustert —— */
+.mk-section { padding-block: var(--mk-space-3xl); }
+.mk-h2 {
+  font-family: var(--mk-font-display);
+  font-weight: 800;
+  font-size: clamp(1.9rem, 4.5vw, 3rem);
+  line-height: 0.95;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  margin: 0 0 var(--mk-space-sm);
+}
+.mk-h2 .mk-orn { color: var(--mk-accent-2); margin-right: 0.35rem; }
+.mk-section__lede { max-width: var(--mk-measure); line-height: 1.6; margin: 0 0 var(--mk-space-xl); }
+
+/* Prosess-stegene (ordinale — ekte rekkefølge) */
+.mk-stages {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--mk-space-xl) var(--mk-space-lg);
+  counter-reset: mk-stage;
+}
+.mk-stage {
+  counter-increment: mk-stage;
+  border: 2px solid var(--mk-ink);
+  box-shadow: 4px 4px 0 var(--mk-ink);
+  background: var(--mk-paper-2);
+  padding: var(--mk-space-lg);
+  display: flex;
+  flex-direction: column;
+  gap: var(--mk-space-sm);
+}
+.mk-stage::before {
+  content: counter(mk-stage) ".0";
+  font-family: var(--mk-font-display);
+  font-weight: 800;
+  font-size: 2.6rem;
+  line-height: 1;
+  color: var(--mk-accent-2);
+}
+.mk-stage h3 {
+  font-family: var(--mk-font-display);
+  font-weight: 800;
+  font-size: 1.3rem;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  margin: 0;
+}
+.mk-stage p { margin: 0; line-height: 1.55; font-size: 0.95rem; }
+
+/* Ornament-divider */
+.mk-divider {
+  display: flex;
+  justify-content: center;
+  gap: var(--mk-space-md);
+  color: var(--mk-accent-2);
+  font-size: 1.1rem;
+  padding-block: var(--mk-space-xs);
+}
+
+/* —— Hardware-blokk: oksblod plakat som blør ut til kanten —— */
+.mk-hardware { background: var(--mk-accent-2); color: var(--mk-paper); border-block: 3px solid var(--mk-ink); }
+.mk-hardware .mk-h2 .mk-orn { color: var(--mk-paper); }
+.mk-hardware__grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.8fr);
+  gap: var(--mk-space-2xl);
+  align-items: center;
+  padding-block: var(--mk-space-2xl);
+}
+.mk-hardware__body { max-width: var(--mk-measure); line-height: 1.6; margin: 0; }
+.mk-halftone {
+  aspect-ratio: 16 / 10;
+  border: 2px solid var(--mk-paper);
+  background-image: radial-gradient(var(--mk-paper) 1.5px, transparent 1.5px);
+  background-size: 12px 12px;
+  box-shadow: 4px 4px 0 var(--mk-ink);
+}
+
+/* —— Pristabell (spec-ark: 2px-linjer, plakat-tall) —— */
+.mk-prices { list-style: none; margin: 0; padding: 0; border-top: 2px solid var(--mk-rule); }
+.mk-price {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--mk-space-md);
+  padding-block: var(--mk-space-md);
+  border-bottom: 2px solid var(--mk-rule);
+}
+.mk-price__product { font-weight: 700; font-size: 1.05rem; }
+.mk-price__meta {
+  font-family: var(--mk-font-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--mk-muted);
+  margin-top: 0.25rem;
+}
+.mk-price__amount {
+  font-family: var(--mk-font-display);
+  font-weight: 800;
+  font-size: clamp(1.9rem, 4vw, 2.6rem);
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  white-space: nowrap;
+}
+.mk-price__unit { font-family: var(--mk-font-body); font-weight: 400; font-size: 0.8rem; color: var(--mk-muted); display: block; margin-top: 0.2rem; }
+.mk-pricing__footnote { color: var(--mk-muted); font-size: 0.875rem; margin-top: var(--mk-space-md); }
+
+/* —— CTA-bånd: sennep —— */
+.mk-cta { background: var(--mk-accent); color: var(--mk-accent-ink); border-block: 3px solid var(--mk-ink); }
+.mk-cta__inner { padding-block: var(--mk-space-2xl); display: grid; gap: var(--mk-space-lg); justify-items: start; }
+.mk-cta__body { max-width: var(--mk-measure); line-height: 1.6; margin: 0; }
+
+/* —— Ft5 Statement-footer —— */
+.mk-footer { padding-block: var(--mk-space-2xl) var(--mk-space-xl); margin-top: auto; }
+.mk-footer__line {
+  font-family: var(--mk-font-display);
+  font-weight: 800;
+  font-size: clamp(1.75rem, 5vw, 3.25rem);
+  line-height: 0.95;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+  max-width: 22ch;
+  margin: 0 0 var(--mk-space-xl);
+  overflow-wrap: anywhere;
+}
+.mk-footer__meta {
+  border-top: 2px solid var(--mk-rule);
+  padding-top: var(--mk-space-md);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--mk-space-md) var(--mk-space-lg);
+  font-size: 0.875rem;
+  color: var(--mk-muted);
+}
+.mk-footer__meta a { color: var(--mk-ink); text-decoration: none; border-bottom: 2px solid var(--mk-accent); white-space: nowrap; }
+.mk-footer__meta a:hover { border-bottom-color: var(--mk-accent-2); }
+
+/* —— Én orkestrert inngang (hero) —— */
+@keyframes mk-rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+.mk-rise { opacity: 0; animation: mk-rise 420ms var(--mk-ease-out) forwards; animation-delay: calc(var(--i, 0) * 70ms); }
+
+/* —— Mobil —— */
+@media (max-width: 60rem) {
+  .mk-hardware__grid { grid-template-columns: minmax(0, 1fr); gap: var(--mk-space-lg); }
+  .mk-stages { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 40rem) {
+  .mk-nav__links { gap: var(--mk-space-md); }
+  .mk-nav__link--optional { display: none; }
+  .mk-facts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .mk-hero { padding-block: var(--mk-space-2xl) var(--mk-space-xl); }
+  .mk-section { padding-block: var(--mk-space-2xl); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mk-ticker__track { animation: none; }
+  .mk-rise { animation: none; opacity: 1; }
+  .mk-btn { transition: none; }
+}
+
+/* —— Marketing runde 2: skip-link, prose (juridiske sider), kontaktskjema —— */
+.mk-skip {
+  position: absolute;
+  left: -9999px;
+  z-index: 200;
+  background: var(--mk-ink);
+  color: var(--mk-paper);
+  padding: 0.6rem 1rem;
+  font-weight: 700;
+}
+.mk-skip:focus-visible { left: var(--mk-space-md); top: var(--mk-space-md); position: fixed; }
+
+.mk-prose-wrap { padding-block: var(--mk-space-2xl) var(--mk-space-3xl); flex: 1; }
+.mk-prose-title { margin-bottom: var(--mk-space-xl); }
+.mk-prose { max-width: var(--mk-measure); }
+.mk-prose h2 {
+  font-family: var(--mk-font-display);
+  font-weight: 800;
+  font-size: 1.35rem;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  margin: var(--mk-space-xl) 0 var(--mk-space-sm);
+  padding-top: var(--mk-space-md);
+  border-top: 2px solid var(--mk-rule);
+}
+.mk-prose p { line-height: 1.65; margin: 0 0 var(--mk-space-md); }
+.mk-prose ul { list-style: none; margin: 0 0 var(--mk-space-md); padding: 0; }
+.mk-prose li { line-height: 1.6; padding-left: 1.4rem; position: relative; margin-bottom: 0.35rem; }
+.mk-prose li::before { content: "❋"; position: absolute; left: 0; color: var(--mk-accent-2); font-size: 0.8em; top: 0.25em; }
+.mk-prose a { color: var(--mk-ink); border-bottom: 2px solid var(--mk-accent-2); text-decoration: none; }
+
+/* Kontaktskjema — på sennep-flaten, ink-kanter, harde skygger */
+.mk-form { display: grid; gap: var(--mk-space-md); width: 100%; max-width: 40rem; }
+.mk-form__grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--mk-space-md); }
+.mk-field { display: grid; gap: 0.3rem; }
+.mk-field span {
+  font-family: var(--mk-font-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+.mk-field input,
+.mk-field textarea {
+  font-family: var(--mk-font-body);
+  font-size: 1rem;
+  color: var(--mk-ink);
+  background: var(--mk-paper);
+  border: 2px solid var(--mk-ink);
+  padding: 0.6rem 0.75rem;
+  width: 100%;
+  transition: box-shadow var(--mk-dur-micro) var(--mk-ease-out);
+}
+.mk-field input:hover,
+.mk-field textarea:hover { box-shadow: 2px 2px 0 var(--mk-ink); }
+.mk-field input:focus-visible,
+.mk-field textarea:focus-visible { outline: 3px solid var(--mk-focus); outline-offset: 1px; box-shadow: none; }
+.mk-field input::placeholder,
+.mk-field textarea::placeholder { color: var(--mk-muted); }
+.mk-form__turnstile { min-height: 65px; }
+.mk-form__error {
+  background: var(--mk-paper);
+  border: 2px solid var(--mk-accent-2);
+  color: var(--mk-accent-2);
+  font-weight: 600;
+  padding: 0.6rem 0.75rem;
+  margin: 0;
+}
+.mk-form .mk-btn:disabled { opacity: 0.55; cursor: not-allowed; transform: none; box-shadow: 4px 4px 0 var(--mk-ink); }
+.mk-form__privacy { font-size: 0.8rem; margin: 0; }
+.mk-form__privacy a { color: var(--mk-ink); border-bottom: 2px solid var(--mk-ink); text-decoration: none; }
+.mk-form__sent {
+  background: var(--mk-paper);
+  border: 2px solid var(--mk-ink);
+  box-shadow: 4px 4px 0 var(--mk-ink);
+  padding: var(--mk-space-lg);
+  max-width: 40rem;
+}
+.mk-form__sent-title { font-family: var(--mk-font-display); font-weight: 800; font-size: 1.3rem; text-transform: uppercase; letter-spacing: 0.03em; margin: 0 0 0.4rem; }
+.mk-form__sent p:last-child { margin: 0; line-height: 1.6; }
+
+@media (max-width: 40rem) {
+  .mk-form__grid { grid-template-columns: minmax(0, 1fr); }
+}
+
+/* Ekte produktbilde i hardware-seksjonen (CMS-styrt URL, halftone-fallback) */
+.mk-screenshot { margin: 0; border: 2px solid var(--mk-paper); box-shadow: 4px 4px 0 var(--mk-ink); line-height: 0; }
+.mk-screenshot img { width: 100%; height: auto; display: block; }
