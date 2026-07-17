@@ -45,20 +45,20 @@ create policy "marketing_prices_public_read"
 insert into public.marketing_blocks (kind, title, body, extra, sort_order) values
   (
     'seo',
-    'Infoskjerm — skjermer i butikk, styrt fra ett panel | Framtid Tech',
-    'Skjermplattform for kjeder: publiser tilbud, nyheter og nøkkeltall til alle butikkskjermer fra ett panel. Oppsett, overvåking og drift fra Framtid Tech.',
+    'Infoskjerm — innhold på skjerm, styrt fra ett panel | Framtid Tech',
+    'Skjermplattform fra Framtid Tech: publiser tilbud, nyheter og nøkkeltall til alle skjermene dine fra ett panel — fra én skjerm til mange lokasjoner. Oppsett, overvåking og drift inkludert.',
     '{}'::jsonb,
     0
   ),
   (
     'hero',
-    E'Én kjede.\nAlle skjermer.',
-    'Infoskjerm er skjermplattformen fra Framtid Tech: vi setter opp og drifter spillerne, dere styrer innholdet fra ett panel. I daglig drift i norske butikkjeder.',
-    '{"meta_line": "Framtid Tech ◆ Infoskjerm ◆ For kjeder og butikker", "cta_label": "Ta kontakt", "cta_url": "https://framtidtech.no/kontakt", "secondary_label": "Se prisene", "secondary_url": "#priser", "ticker_items": "Tilbud ◆ Nyheter ◆ Vær ◆ Nøkkeltall ◆ Åpningstider ◆ Arrangementer ◆ Kundeklubb"}'::jsonb,
+    E'Ett panel.\nAlle skjermer.',
+    'Infoskjerm er skjermplattformen fra Framtid Tech: vi setter opp og drifter spillerne, dere styrer innholdet fra ett panel — enten dere har én skjerm eller hundre. I daglig drift over hele landet.',
+    '{"meta_line": "Framtid Tech ◆ Infoskjerm ◆ Fra én skjerm til hele flåten", "cta_label": "Ta kontakt", "cta_url": "https://framtidtech.no/kontakt", "secondary_label": "Se prisene", "secondary_url": "#priser", "ticker_items": "Tilbud ◆ Nyheter ◆ Vær ◆ Nøkkeltall ◆ Åpningstider ◆ Arrangementer ◆ Kundeklubb"}'::jsonb,
     0
   ),
   ('fact', 'Publisering', 'Fra ett panel', '{}'::jsonb, 1),
-  ('fact', 'Målretting', 'Butikk · avdeling · kjede', '{}'::jsonb, 2),
+  ('fact', 'Målretting', 'Skjerm · enhet · hele flåten', '{}'::jsonb, 2),
   ('fact', 'Innhold', 'Tilbud, nyheter, vær, nøkkeltall', '{}'::jsonb, 3),
   ('fact', 'Drift', 'Overvåket av Framtid Tech', '{}'::jsonb, 4),
   (
@@ -71,28 +71,28 @@ insert into public.marketing_blocks (kind, title, body, extra, sort_order) value
   (
     'stage',
     'Innhold',
-    'Publiser tilbud, nyheter, arrangementer og nøkkeltall fra admin-panelet. Målrett per butikk, per avdeling eller hele kjeden — med fra- og til-dato på alt.',
+    'Publiser tilbud, nyheter, arrangementer og nøkkeltall fra admin-panelet. Målrett per skjerm, per enhet eller alle lokasjoner — med fra- og til-dato på alt.',
     '{}'::jsonb,
     2
   ),
   (
     'stage',
     'Visning',
-    'Skjermene henter innholdet selv. Én endring i panelet, og hver skjerm i kjeden viser det i løpet av få minutter — uten minnepinner og uten butikkrunder.',
+    'Skjermene henter innholdet selv. Én endring i panelet, og hver skjerm viser det i løpet av få minutter — uten minnepinner og uten manuelle runder.',
     '{}'::jsonb,
     3
   ),
   (
     'stage',
     'Drift',
-    'Vi overvåker spillerne og følger med på at skjermene lever. Skjermene skrur seg av og på etter butikkens åpningstider, og dere når oss når noe skal endres.',
+    'Vi overvåker spillerne og følger med på at skjermene lever. Skjermene skrur seg av og på etter åpningstidene deres, og dere når oss når noe skal endres.',
     '{}'::jsonb,
     4
   ),
   (
     'hardware',
     'Skjermene kjøper dere selv',
-    'Plattformen leverer innholdet — panelet på veggen velger dere. Vi anbefaler kommersielle skjermer beregnet for kontinuerlig drift (16/7 eller 24/7), i stedet for forbruker-TV-er som ikke er bygget for butikkdøgnet. Vi hjelper dere gjerne med modellvalg og antall før oppstart.',
+    'Plattformen leverer innholdet — panelet på veggen velger dere. Vi anbefaler kommersielle skjermer beregnet for kontinuerlig drift (16/7 eller 24/7), i stedet for forbruker-TV-er som ikke er laget for å stå på hele dagen. Vi hjelper dere gjerne med modellvalg og antall før oppstart.',
     '{}'::jsonb,
     0
   ),
@@ -105,8 +105,8 @@ insert into public.marketing_blocks (kind, title, body, extra, sort_order) value
   ),
   (
     'cta',
-    'Skal kjeden deres på skjerm?',
-    'Fortell oss hvor mange butikker og skjermer det gjelder, så kommer vi tilbake med et konkret forslag.',
+    'Skal innholdet deres på skjerm?',
+    'Fortell oss hvor mange skjermer og lokasjoner det gjelder — én er også nok — så kommer vi tilbake med et konkret forslag.',
     '{"cta_label": "Ta kontakt", "cta_url": "https://framtidtech.no/kontakt"}'::jsonb,
     0
   ),
