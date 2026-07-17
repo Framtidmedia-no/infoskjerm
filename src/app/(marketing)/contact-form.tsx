@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { TurnstileWidget } from "@/components/turnstile-widget"
 import { submitLead } from "./actions"
 
@@ -9,6 +9,30 @@ import { submitLead } from "./actions"
  * remountes (attempt-key) etter hvert innsendingsforsøk.
  */
 export function ContactForm() {
+  // Turnstile laster ~500 KB tredjeparts-JS — utsett til skjemaet er i nærheten
+  // av viewporten, så sidelastingen (LCP) slipper å konkurrere med den.
+  const formRef = useRef<HTMLFormElement>(null)
+  const [nearViewport, setNearViewport] = useState(false)
+  useEffect(() => {
+    const el = formRef.current
+    if (!el) return
+    if (typeof IntersectionObserver === "undefined") {
+      setNearViewport(true)
+      return
+    }
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((entry) => entry.isIntersecting)) {
+          setNearViewport(true)
+          observer.disconnect()
+        }
+      },
+      { rootMargin: "600px" }
+    )
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [])
+
   const [name, setName] = useState("")
   const [company, setCompany] = useState("")
   const [email, setEmail] = useState("")
@@ -58,7 +82,7 @@ export function ContactForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="mk-form" noValidate>
+    <form ref={formRef} onSubmit={handleSubmit} className="mk-form" noValidate>
       <div className="mk-form__grid">
         <label className="mk-field">
           <span>Navn *</span>
@@ -123,7 +147,11 @@ export function ContactForm() {
         />
       </label>
 
-      <TurnstileWidget key={attempt} onToken={setToken} theme="light" className="mk-form__turnstile" />
+      {nearViewport ? (
+        <TurnstileWidget key={attempt} onToken={setToken} theme="light" className="mk-form__turnstile" />
+      ) : (
+        <div className="mk-form__turnstile" aria-hidden />
+      )}
 
       {error ? (
         <p className="mk-form__error" role="alert">
