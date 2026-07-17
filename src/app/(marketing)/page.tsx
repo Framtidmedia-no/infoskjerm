@@ -147,6 +147,28 @@ function PricingSection({
   )
 }
 
+function FaqSection({ faqs }: { faqs: MarketingBlock[] }) {
+  if (faqs.length === 0) return null
+  return (
+    <section id="sporsmal" className="mk-section mk-shell">
+      <h2 className="mk-h2">
+        <span className="mk-orn" aria-hidden>
+          ◆
+        </span>
+        Spørsmål og svar
+      </h2>
+      <div className="mk-faq">
+        {faqs.map((faq) => (
+          <details key={faq.id} className="mk-faq__item">
+            <summary>{faq.title}</summary>
+            <p>{faq.body}</p>
+          </details>
+        ))}
+      </div>
+    </section>
+  )
+}
+
 function ContactSection({ cta }: { cta: MarketingBlock | null }) {
   if (!cta) return null
   return (
@@ -295,6 +317,8 @@ export default async function MarketingPage() {
         <HardwareSection hardware={content.hardware} />
 
         <PricingSection pricing={content.pricing} prices={content.prices} />
+
+        <FaqSection faqs={content.faqs} />
 
         <ContactSection cta={content.cta} />
       </main>

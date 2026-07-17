@@ -23,6 +23,7 @@ const KIND_LABEL: Record<string, string> = {
   footer: "Footer-setning",
   seo: "SEO (tittel + beskrivelse)",
   page: "Underside (personvern/vilkår)",
+  faq: "Spørsmål og svar",
 }
 
 /** Hvilke extra-felter som redigeres per blokk-type. */

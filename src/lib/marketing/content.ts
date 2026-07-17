@@ -17,6 +17,7 @@ export type MarketingBlockKind =
   | "footer"
   | "seo"
   | "page"
+  | "faq"
 
 export interface MarketingBlock {
   id: string
@@ -48,6 +49,7 @@ export interface MarketingContent {
   footer: MarketingBlock | null
   seo: MarketingBlock | null
   pages: MarketingBlock[]
+  faqs: MarketingBlock[]
   prices: MarketingPrice[]
 }
 
@@ -127,6 +129,7 @@ export async function getMarketingContent(): Promise<MarketingContent> {
     footer: oneOf("footer"),
     seo: oneOf("seo"),
     pages: byKind("page"),
+    faqs: byKind("faq"),
     prices: pricesRes.data ?? [],
   }
 }

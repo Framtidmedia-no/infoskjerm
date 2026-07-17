@@ -783,3 +783,31 @@ body {
 /* Ekte produktbilde i hardware-seksjonen (CMS-styrt URL, halftone-fallback) */
 .mk-screenshot { margin: 0; border: 2px solid var(--mk-paper); box-shadow: 4px 4px 0 var(--mk-ink); line-height: 0; }
 .mk-screenshot img { width: 100%; height: auto; display: block; }
+
+/* FAQ — details/summary i Carnival-språket: 2px-linjer, ❋-markør, ingen animasjon */
+.mk-faq { max-width: 46rem; border-top: 2px solid var(--mk-rule); }
+.mk-faq__item { border-bottom: 2px solid var(--mk-rule); }
+.mk-faq__item summary {
+  cursor: pointer;
+  list-style: none;
+  display: flex;
+  align-items: baseline;
+  gap: var(--mk-space-sm);
+  padding: var(--mk-space-md) 0;
+  font-weight: 700;
+  font-size: 1.05rem;
+}
+.mk-faq__item summary::-webkit-details-marker { display: none; }
+.mk-faq__item summary::before {
+  content: "❋";
+  color: var(--mk-accent-2);
+  font-size: 0.85em;
+  flex-shrink: 0;
+  transition: transform var(--mk-dur-micro) var(--mk-ease-out);
+}
+.mk-faq__item[open] summary::before { transform: rotate(45deg); }
+.mk-faq__item summary:hover { color: var(--mk-accent-2); }
+.mk-faq__item p { margin: 0 0 var(--mk-space-md) 1.6rem; line-height: 1.6; max-width: var(--mk-measure); }
+@media (prefers-reduced-motion: reduce) {
+  .mk-faq__item summary::before { transition: none; }
+}
