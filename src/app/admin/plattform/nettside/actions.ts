@@ -18,6 +18,8 @@ const ALLOWED_EXTRA_KEYS = [
   "footnote",
   "slug",
   "lead_recipient",
+  "image_url",
+  "image_alt",
 ] as const
 
 function sanitizeExtra(input: Record<string, string>): Record<string, string> {

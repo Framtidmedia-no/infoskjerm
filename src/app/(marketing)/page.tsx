@@ -87,7 +87,20 @@ function HardwareSection({ hardware }: { hardware: MarketingBlock | null }) {
           </h2>
           <p className="mk-hardware__body">{hardware.body}</p>
         </div>
-        <div className="mk-halftone" aria-hidden />
+        {hardware.extra.image_url ? (
+          <figure className="mk-screenshot">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={hardware.extra.image_url}
+              alt={hardware.extra.image_alt || "Infoskjerm i drift — faktisk skjerminnhold"}
+              loading="lazy"
+              width={1920}
+              height={1080}
+            />
+          </figure>
+        ) : (
+          <div className="mk-halftone" aria-hidden />
+        )}
       </div>
     </section>
   )

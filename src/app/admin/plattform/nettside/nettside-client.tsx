@@ -35,6 +35,10 @@ const EXTRA_FIELDS: Record<string, Array<{ key: string; label: string }>> = {
     { key: "secondary_url", label: "Sekundærknapp lenke" },
     { key: "ticker_items", label: "Ticker-bånd (skill med ◆)" },
   ],
+  hardware: [
+    { key: "image_url", label: "Bilde-URL (fra media-bucketen)" },
+    { key: "image_alt", label: "Alt-tekst for bildet" },
+  ],
   pricing: [{ key: "footnote", label: "Fotnote under prisene" }],
   cta: [
     { key: "cta_label", label: "Knappetekst" },

@@ -779,3 +779,7 @@ body {
 @media (max-width: 40rem) {
   .mk-form__grid { grid-template-columns: minmax(0, 1fr); }
 }
+
+/* Ekte produktbilde i hardware-seksjonen (CMS-styrt URL, halftone-fallback) */
+.mk-screenshot { margin: 0; border: 2px solid var(--mk-paper); box-shadow: 4px 4px 0 var(--mk-ink); line-height: 0; }
+.mk-screenshot img { width: 100%; height: auto; display: block; }
