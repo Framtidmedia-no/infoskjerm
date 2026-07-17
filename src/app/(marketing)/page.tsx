@@ -1,6 +1,7 @@
 import type { Metadata } from "next"
 import Link from "next/link"
 import { cache } from "react"
+import { ContactForm } from "./contact-form"
 import {
   getMarketingContent,
   formatNok,
@@ -133,18 +134,14 @@ function PricingSection({
   )
 }
 
-function CtaSection({ cta }: { cta: MarketingBlock | null }) {
+function ContactSection({ cta }: { cta: MarketingBlock | null }) {
   if (!cta) return null
   return (
-    <section className="mk-cta">
+    <section id="kontakt" className="mk-cta">
       <div className="mk-shell mk-cta__inner">
         <h2 className="mk-h2">{cta.title}</h2>
         <p className="mk-cta__body">{cta.body}</p>
-        {cta.extra.cta_url ? (
-          <a href={cta.extra.cta_url} className="mk-btn mk-btn--deep">
-            {cta.extra.cta_label || "Ta kontakt"}
-          </a>
-        ) : null}
+        <ContactForm />
       </div>
     </section>
   )
@@ -156,8 +153,51 @@ export default async function MarketingPage() {
   const heroLines = (hero?.title ?? "").split("\n").filter(Boolean)
   const year = new Date().getFullYear()
 
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Organization",
+        name: "Framtid Tech AS",
+        url: "https://framtidtech.no",
+        email: "hei@framtidtech.no",
+        telephone: "+47 940 03 452",
+        vatID: "NO837596092MVA",
+        address: {
+          "@type": "PostalAddress",
+          streetAddress: "Luhrtoppen 2",
+          postalCode: "1470",
+          addressLocality: "Lørenskog",
+          addressCountry: "NO",
+        },
+      },
+      {
+        "@type": "Service",
+        name: "Infoskjerm",
+        serviceType: "Digital signage / infoskjermer",
+        provider: { "@type": "Organization", name: "Framtid Tech AS" },
+        areaServed: "NO",
+        offers: content.prices
+          .filter((price) => price.active)
+          .map((price) => ({
+            "@type": "Offer",
+            name: `${price.product} (${price.quantity_label})`,
+            price: price.price_nok,
+            priceCurrency: "NOK",
+          })),
+      },
+    ],
+  }
+
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+      <a href="#hovedinnhold" className="mk-skip">
+        Hopp til innholdet
+      </a>
       <header className="mk-nav">
         <nav className="mk-shell mk-nav__row" aria-label="Hovednavigasjon">
           <Link href="/" className="mk-wordmark">
@@ -185,7 +225,7 @@ export default async function MarketingPage() {
         </nav>
       </header>
 
-      <main>
+      <main id="hovedinnhold">
         {hero ? (
           <section className="mk-hero mk-shell">
             {hero.extra.meta_line ? (
@@ -243,7 +283,7 @@ export default async function MarketingPage() {
 
         <PricingSection pricing={content.pricing} prices={content.prices} />
 
-        <CtaSection cta={content.cta} />
+        <ContactSection cta={content.cta} />
       </main>
 
       <footer className="mk-footer mk-shell">
@@ -252,6 +292,9 @@ export default async function MarketingPage() {
           <span>
             Utviklet av <a href="https://framtidtech.no">Framtid Tech AS</a>
           </span>
+          <span>Org.nr 837&nbsp;596&nbsp;092</span>
+          <Link href="/personvern">Personvern</Link>
+          <Link href="/vilkar">Vilkår</Link>
           <Link href="/login">Logg inn</Link>
           <span>© {year} Framtid Tech AS</span>
         </div>

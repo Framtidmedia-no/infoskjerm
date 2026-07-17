@@ -16,6 +16,8 @@ const ALLOWED_EXTRA_KEYS = [
   "secondary_url",
   "ticker_items",
   "footnote",
+  "slug",
+  "lead_recipient",
 ] as const
 
 function sanitizeExtra(input: Record<string, string>): Record<string, string> {

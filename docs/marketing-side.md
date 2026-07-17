@@ -40,3 +40,18 @@ bilde av seed-verdiene.
 - Ornamenter (◆ ✱ ❋), fallback-tekster («Ta kontakt», «Priser») og
   stage-numereringen (1.0–4.0 genereres av rekkefølgen).
 - OG-bilde finnes ikke ennå (kun tittel/beskrivelse) — mulig oppfølging.
+
+## Runde 2 (2026-07-17): juridisk + konvertering
+
+- **/personvern + /vilkar**: CMS-drevne (kind `page`, slug i extra), markdown-lite
+  rendering. **Vilkårene er et utkast — Frank må godkjenne det juridiske innholdet.**
+- **Kontaktskjema** på forsiden (#kontakt): Turnstile + volumsperre (20/t) →
+  `marketing_leads` (RLS uten policies = kun service-role) + Resend-varsel til
+  `cta.extra.lead_recipient` (CMS-styrt, default hei@framtidtech.no).
+- **SEO**: robots.ts, sitemap.ts, JSON-LD (Organization + Service + Offers fra DB),
+  statisk OG-bilde (Carnival-plakat).
+- **Analytics**: Vercel Web Analytics (cookieless) kun på marketing-flaten —
+  aktiveres i Vercel-dashboardet (Project → Analytics) ved første deploy.
+- **Cookies**: ingen samtykkebanner nødvendig (ingen analyse-/markedsføringscookies).
+  Cookiebot kobles KUN på hvis GA4/pixel legges til senere (uc.js via useEffect!).
+- Footer: org.nr 837 596 092 + Personvern/Vilkår-lenker. Login har «← Til forsiden».

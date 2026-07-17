@@ -695,3 +695,87 @@ body {
   .mk-rise { animation: none; opacity: 1; }
   .mk-btn { transition: none; }
 }
+
+/* —— Marketing runde 2: skip-link, prose (juridiske sider), kontaktskjema —— */
+.mk-skip {
+  position: absolute;
+  left: -9999px;
+  z-index: 200;
+  background: var(--mk-ink);
+  color: var(--mk-paper);
+  padding: 0.6rem 1rem;
+  font-weight: 700;
+}
+.mk-skip:focus-visible { left: var(--mk-space-md); top: var(--mk-space-md); position: fixed; }
+
+.mk-prose-wrap { padding-block: var(--mk-space-2xl) var(--mk-space-3xl); flex: 1; }
+.mk-prose-title { margin-bottom: var(--mk-space-xl); }
+.mk-prose { max-width: var(--mk-measure); }
+.mk-prose h2 {
+  font-family: var(--mk-font-display);
+  font-weight: 800;
+  font-size: 1.35rem;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  margin: var(--mk-space-xl) 0 var(--mk-space-sm);
+  padding-top: var(--mk-space-md);
+  border-top: 2px solid var(--mk-rule);
+}
+.mk-prose p { line-height: 1.65; margin: 0 0 var(--mk-space-md); }
+.mk-prose ul { list-style: none; margin: 0 0 var(--mk-space-md); padding: 0; }
+.mk-prose li { line-height: 1.6; padding-left: 1.4rem; position: relative; margin-bottom: 0.35rem; }
+.mk-prose li::before { content: "❋"; position: absolute; left: 0; color: var(--mk-accent-2); font-size: 0.8em; top: 0.25em; }
+.mk-prose a { color: var(--mk-ink); border-bottom: 2px solid var(--mk-accent-2); text-decoration: none; }
+
+/* Kontaktskjema — på sennep-flaten, ink-kanter, harde skygger */
+.mk-form { display: grid; gap: var(--mk-space-md); width: 100%; max-width: 40rem; }
+.mk-form__grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--mk-space-md); }
+.mk-field { display: grid; gap: 0.3rem; }
+.mk-field span {
+  font-family: var(--mk-font-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+.mk-field input,
+.mk-field textarea {
+  font-family: var(--mk-font-body);
+  font-size: 1rem;
+  color: var(--mk-ink);
+  background: var(--mk-paper);
+  border: 2px solid var(--mk-ink);
+  padding: 0.6rem 0.75rem;
+  width: 100%;
+  transition: box-shadow var(--mk-dur-micro) var(--mk-ease-out);
+}
+.mk-field input:hover,
+.mk-field textarea:hover { box-shadow: 2px 2px 0 var(--mk-ink); }
+.mk-field input:focus-visible,
+.mk-field textarea:focus-visible { outline: 3px solid var(--mk-focus); outline-offset: 1px; box-shadow: none; }
+.mk-field input::placeholder,
+.mk-field textarea::placeholder { color: var(--mk-muted); }
+.mk-form__turnstile { min-height: 65px; }
+.mk-form__error {
+  background: var(--mk-paper);
+  border: 2px solid var(--mk-accent-2);
+  color: var(--mk-accent-2);
+  font-weight: 600;
+  padding: 0.6rem 0.75rem;
+  margin: 0;
+}
+.mk-form .mk-btn:disabled { opacity: 0.55; cursor: not-allowed; transform: none; box-shadow: 4px 4px 0 var(--mk-ink); }
+.mk-form__privacy { font-size: 0.8rem; margin: 0; }
+.mk-form__privacy a { color: var(--mk-ink); border-bottom: 2px solid var(--mk-ink); text-decoration: none; }
+.mk-form__sent {
+  background: var(--mk-paper);
+  border: 2px solid var(--mk-ink);
+  box-shadow: 4px 4px 0 var(--mk-ink);
+  padding: var(--mk-space-lg);
+  max-width: 40rem;
+}
+.mk-form__sent-title { font-family: var(--mk-font-display); font-weight: 800; font-size: 1.3rem; text-transform: uppercase; letter-spacing: 0.03em; margin: 0 0 0.4rem; }
+.mk-form__sent p:last-child { margin: 0; line-height: 1.6; }
+
+@media (max-width: 40rem) {
+  .mk-form__grid { grid-template-columns: minmax(0, 1fr); }
+}

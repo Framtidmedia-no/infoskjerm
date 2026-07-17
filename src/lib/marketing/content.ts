@@ -16,6 +16,7 @@ export type MarketingBlockKind =
   | "cta"
   | "footer"
   | "seo"
+  | "page"
 
 export interface MarketingBlock {
   id: string
@@ -46,6 +47,7 @@ export interface MarketingContent {
   cta: MarketingBlock | null
   footer: MarketingBlock | null
   seo: MarketingBlock | null
+  pages: MarketingBlock[]
   prices: MarketingPrice[]
 }
 
@@ -124,8 +126,15 @@ export async function getMarketingContent(): Promise<MarketingContent> {
     cta: oneOf("cta"),
     footer: oneOf("footer"),
     seo: oneOf("seo"),
+    pages: byKind("page"),
     prices: pricesRes.data ?? [],
   }
+}
+
+/** Undersider (/personvern, /vilkar) — slug ligger i extra.slug. */
+export async function getMarketingPageBySlug(slug: string): Promise<MarketingBlock | null> {
+  const { pages } = await getMarketingContent()
+  return pages.find((page) => page.extra.slug === slug) ?? null
 }
 
 /** «2 990» — norsk tusenskille (smalt mellomrom) for plakat-tallene. */

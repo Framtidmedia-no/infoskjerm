@@ -18,6 +18,7 @@ export default async function NettsidePage() {
     ...(content.cta ? [content.cta] : []),
     ...(content.footer ? [content.footer] : []),
     ...(content.seo ? [content.seo] : []),
+    ...content.pages,
   ]
 
   return (

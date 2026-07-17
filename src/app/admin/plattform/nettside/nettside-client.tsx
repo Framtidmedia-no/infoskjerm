@@ -22,6 +22,7 @@ const KIND_LABEL: Record<string, string> = {
   cta: "Kontakt-oppfordring",
   footer: "Footer-setning",
   seo: "SEO (tittel + beskrivelse)",
+  page: "Underside (personvern/vilkår)",
 }
 
 /** Hvilke extra-felter som redigeres per blokk-type. */
@@ -38,6 +39,7 @@ const EXTRA_FIELDS: Record<string, Array<{ key: string; label: string }>> = {
   cta: [
     { key: "cta_label", label: "Knappetekst" },
     { key: "cta_url", label: "Knappelenke" },
+    { key: "lead_recipient", label: "E-post som mottar henvendelser" },
   ],
 }
 
@@ -128,7 +130,7 @@ function BlockCard({ block }: { block: MarketingBlock }) {
             <textarea
               value={body}
               onChange={(e) => setBody(e.target.value)}
-              rows={3}
+              rows={block.kind === "page" ? 18 : 3}
               className={inputCls}
             />
           </label>
