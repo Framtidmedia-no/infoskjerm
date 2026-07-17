@@ -14,12 +14,16 @@ export const revalidate = 300
 
 const getContent = cache(getMarketingContent)
 
+const BASE_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://infoskjerm.framtidtech.no"
+
 export async function generateMetadata(): Promise<Metadata> {
   const { seo } = await getContent()
   if (!seo) return {}
   return {
+    metadataBase: new URL(BASE_URL),
     title: seo.title,
     description: seo.body,
+    alternates: { canonical: "/" },
     openGraph: { title: seo.title, description: seo.body, locale: "nb_NO", type: "website" },
   }
 }
