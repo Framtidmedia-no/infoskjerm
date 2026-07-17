@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 import Link from "next/link"
 import { cache } from "react"
 import { ContactForm } from "./contact-form"
+import { getPublishedReferences, type PublicReference } from "@/lib/marketing/references"
 import {
   getMarketingContent,
   formatNok,
@@ -155,6 +156,46 @@ function PricingSection({
   )
 }
 
+function ReferenceSection({ references }: { references: PublicReference[] }) {
+  if (references.length === 0) return null
+  return (
+    <section id="referanser" className="mk-section mk-shell">
+      <h2 className="mk-h2">
+        <span className="mk-orn" aria-hidden>
+          ◆
+        </span>
+        Kunder som bruker Infoskjerm
+      </h2>
+      <div className="mk-refs">
+        {references.map((ref) => (
+          <article key={ref.id} className="mk-ref">
+            {ref.screenshot_url ? (
+              <figure className="mk-ref__shot">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={ref.screenshot_url} alt={`Infoskjerm hos ${ref.company_name}`} loading="lazy" width={1400} height={788} />
+              </figure>
+            ) : null}
+            {ref.quote ? <blockquote className="mk-ref__quote">«{ref.quote}»</blockquote> : null}
+            <div className="mk-ref__by">
+              {ref.logo_url ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img className="mk-ref__logo" src={ref.logo_url} alt={ref.company_name} loading="lazy" />
+              ) : (
+                <span className="mk-ref__company">{ref.company_name}</span>
+              )}
+              {ref.contact_name || ref.contact_role ? (
+                <span className="mk-ref__person">
+                  {[ref.contact_name, ref.contact_role].filter(Boolean).join(", ")}
+                </span>
+              ) : null}
+            </div>
+          </article>
+        ))}
+      </div>
+    </section>
+  )
+}
+
 function FaqSection({ faqs }: { faqs: MarketingBlock[] }) {
   if (faqs.length === 0) return null
   return (
@@ -192,6 +233,7 @@ function ContactSection({ cta }: { cta: MarketingBlock | null }) {
 
 export default async function MarketingPage() {
   const content = await getContent()
+  const references = await getPublishedReferences()
   const { hero } = content
   const heroLines = (hero?.title ?? "").split("\n").filter(Boolean)
   const year = new Date().getFullYear()
@@ -325,6 +367,8 @@ export default async function MarketingPage() {
         <HardwareSection hardware={content.hardware} />
 
         <PricingSection pricing={content.pricing} prices={content.prices} />
+
+        <ReferenceSection references={references} />
 
         <FaqSection faqs={content.faqs} />
 

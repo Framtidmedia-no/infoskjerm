@@ -1,5 +1,7 @@
 import { getMarketingContent } from "@/lib/marketing/content"
+import { listReferences } from "@/lib/marketing/references"
 import { NettsideClient } from "./nettside-client"
+import { ReferencesClient } from "./references-client"
 
 export const dynamic = "force-dynamic"
 
@@ -9,6 +11,7 @@ export const dynamic = "force-dynamic"
  */
 export default async function NettsidePage() {
   const content = await getMarketingContent()
+  const references = await listReferences()
   const blocks = [
     ...(content.hero ? [content.hero] : []),
     ...content.facts,
@@ -41,7 +44,10 @@ export default async function NettsidePage() {
           Åpne forsiden ↗
         </a>
       </div>
-      <NettsideClient blocks={blocks} prices={content.prices} />
+      <div className="space-y-8">
+        <NettsideClient blocks={blocks} prices={content.prices} />
+        <ReferencesClient references={references} />
+      </div>
     </div>
   )
 }
