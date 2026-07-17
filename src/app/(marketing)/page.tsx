@@ -23,7 +23,11 @@ export async function generateMetadata(): Promise<Metadata> {
     metadataBase: new URL(BASE_URL),
     title: seo.title,
     description: seo.body,
-    alternates: { canonical: "/" },
+    alternates: {
+      canonical: "/",
+      // Oppdagbar for AI-crawlere: peker mot den maskinlesbare oppsummeringen.
+      types: { "text/plain": `${BASE_URL}/llms.txt` },
+    },
     openGraph: { title: seo.title, description: seo.body, locale: "nb_NO", type: "website" },
   }
 }
