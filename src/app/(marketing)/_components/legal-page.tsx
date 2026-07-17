@@ -9,10 +9,17 @@ import { getMarketingPageBySlug } from "@/lib/marketing/content"
  * blank linje = nytt avsnitt.
  */
 
+const BASE_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://infoskjerm.framtidtech.no"
+
 export async function legalMetadata(slug: string): Promise<Metadata> {
   const page = await getMarketingPageBySlug(slug)
   if (!page) return {}
-  return { title: `${page.title} | Infoskjerm — Framtid Tech`, robots: { index: true } }
+  return {
+    metadataBase: new URL(BASE_URL),
+    title: `${page.title} | Infoskjerm — Framtid Tech`,
+    alternates: { canonical: `/${slug}` },
+    robots: { index: true },
+  }
 }
 
 function renderBody(body: string): React.ReactNode[] {
