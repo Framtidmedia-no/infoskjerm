@@ -13,6 +13,7 @@ const NAV_ITEMS: NavItem[] = [
   { href: "/admin/plattform/tenants", label: "Tenants" },
   { href: "/admin/plattform/brukere", label: "Brukere" },
   { href: "/admin/plattform/skjermer", label: "Skjermer" },
+  { href: "/admin/plattform/nettside", label: "Nettside" },
 ]
 
 export function PlattformNav() {
